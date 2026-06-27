@@ -2948,7 +2948,7 @@ tr:hover td{background:#f8fafc;}
       <div style="text-align:right;margin-bottom:10px;">
         <a href="#" style="font-size:12px;color:var(--primary);font-weight:600;" onclick="showForgotPasswordView('customer');return false;"><i class="fas fa-key"></i> Forgot Password?</a>
       </div>
-      <button class="btn btn-lg btn-primary w-full mt-4" onclick="submitLogin()">Login</button>
+      <button id="loginSubmitBtn" class="btn btn-lg btn-primary w-full mt-4" onclick="submitLogin()">Login</button>
       <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted);">Don't have an account? <a href="#" style="color:var(--primary);font-weight:600;" onclick="showAuthView('signup');return false;">Register</a></div>
     </div>
 
@@ -3060,7 +3060,7 @@ tr:hover td{background:#f8fafc;}
       </label>
       <div id="signupTermsError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">You must accept the Terms and Conditions to create an account.</div>
 
-      <button class="btn btn-lg btn-primary w-full" style="margin-top:14px;" onclick="submitSignup()">Create Account</button>
+      <button id="signupSubmitBtn" class="btn btn-lg btn-primary w-full" style="margin-top:14px;" onclick="submitSignup()">Create Account</button>
       <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted);">Already have an account? <a href="#" style="color:var(--primary);font-weight:600;" onclick="showAuthView('login');return false;">Login</a></div>
     </div>
 
@@ -3091,7 +3091,7 @@ tr:hover td{background:#f8fafc;}
         <div style="text-align:right;margin-bottom:10px;">
           <a href="#" style="font-size:12px;color:var(--primary);font-weight:600;" onclick="showForgotPasswordView('maid');return false;"><i class="fas fa-key"></i> Forgot Password?</a>
         </div>
-        <button class="btn btn-lg btn-primary w-full" onclick="submitMaidLogin()">Login as Maid</button>
+        <button id="maidLoginSubmitBtn" class="btn btn-lg btn-primary w-full" onclick="submitMaidLogin()">Login as Maid</button>
         <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted);">New maid? <a href="#" style="color:var(--primary);font-weight:600;" onclick="switchMaidSubTab('register');return false;">Register here</a></div>
       </div>
 
@@ -3160,19 +3160,14 @@ tr:hover td{background:#f8fafc;}
 </div>
 
 <div id="toast" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.3);">Message</div>
+<!-- Firebase sync loading bar — shown while data loads from Firebase on startup -->
+<div id="fbSyncIndicator" style="position:fixed;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#f97316,#fb923c,#f97316);background-size:200% 100%;animation:fbBar 1.2s linear infinite;z-index:99999;display:none;"></div>
+<style>@keyframes fbBar{0%{background-position:200% 0}100%{background-position:-200% 0}}</style>
 
 <script>
 // ── DATA ──
-const MAIDS = [
-  { id:1, name:"Sunita Devi", city:"Mumbai", state:"Maharashtra", services:["Full-Time Maid","Cook / Bai"], rating:4.8, reviewCount:34, experience:6, languages:["Hindi","Marathi"], available:true, verified:true, phone:"9000000001", photo:"https://images.unsplash.com/photo-1494790108755-2616b612b5db?q=80&w=400&auto=format&fit=crop" },
-  { id:2, name:"Kamla Bai", city:"Delhi", state:"Delhi", services:["Part-Time Maid","Laundry"], rating:4.6, reviewCount:21, experience:4, languages:["Hindi","Punjabi"], available:true, verified:true, phone:"9000000002", photo:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop" },
-  { id:3, name:"Meena Kumari", city:"Bangalore", state:"Karnataka", services:["Babysitter / Nanny","Elder Care"], rating:4.9, reviewCount:52, experience:8, languages:["Kannada","Hindi","Telugu"], available:false, verified:true, phone:"9000000003", photo:"https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop" },
-  { id:4, name:"Rekha Sharma", city:"Chennai", state:"Tamil Nadu", services:["Elder Care","Patient Care"], rating:4.7, reviewCount:18, experience:5, languages:["Tamil","Telugu"], available:true, verified:true, phone:"9000000004", photo:"https://images.unsplash.com/photo-1587614382346-4ec70e388b28?q=80&w=400&auto=format&fit=crop" },
-  { id:5, name:"Anita Yadav", city:"Pune", state:"Maharashtra", services:["Full-Time Maid","Laundry"], rating:4.5, reviewCount:28, experience:3, languages:["Hindi","Marathi"], available:true, verified:false, phone:"9000000005", photo:"" },
-  { id:6, name:"Pushpa Singh", city:"Hyderabad", state:"Telangana", services:["Cook / Bai","Cleaning"], rating:4.8, reviewCount:41, experience:7, languages:["Telugu","Hindi"], available:true, verified:true, phone:"9000000006", photo:"https://images.unsplash.com/photo-1551836022-4c4c79ecde51?q=80&w=400&auto=format&fit=crop" },
-  { id:7, name:"Sarla Devi", city:"Jaipur", state:"Rajasthan", services:["Part-Time Maid","Cook / Bai"], rating:4.4, reviewCount:15, experience:2, languages:["Hindi","Rajasthani"], available:false, verified:true, phone:"9000000007", photo:"" },
-  { id:8, name:"Rani Gupta", city:"Kolkata", state:"West Bengal", services:["Babysitter / Nanny","Home Tutor"], rating:4.9, reviewCount:67, experience:10, languages:["Bengali","Hindi","English"], available:true, verified:true, phone:"9000000008", photo:"https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop" },
-];
+// MAIDS array: Firebase/admin panel se load hota hai (DOMContentLoaded mein)
+const MAIDS = []; // Sab real data Firebase se aata hai
 const CITIES = [
   { name:"Mumbai", state:"Maharashtra", maidCount:320, img:"https://images.unsplash.com/photo-1567157577867-05ccb1388e66?q=80&w=600&auto=format&fit=crop" },
   { name:"Delhi", state:"Delhi", maidCount:450, img:"https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=600&auto=format&fit=crop" },
@@ -3599,7 +3594,8 @@ document.addEventListener('DOMContentLoaded', () => {
         adminMaids.forEach(function(m){ MAIDS.push(m); });
       }
     }
-    // If localStorage empty or missing → MAIDS keeps its hardcoded default values
+    // If localStorage empty → Firebase se data load hoga (Firebase script ke loadFromFirebase() mein)
+    // Tab tak empty grid dikhega
   } catch(e) {}
   // Home page: show top 4 verified+available maids, fallback to any 4
   var featured = MAIDS.filter(function(m){ return m.verified && m.available; }).slice(0,4);
@@ -4169,10 +4165,8 @@ function writeCustomers(data) {
   if (typeof window._fbSet === "function") return window._fbSet("siteData", "registeredCustomers", data);
   return Promise.resolve();
 }
-// OTP store is kept in localStorage (not sessionStorage) so it survives
-// page reloads / new tabs on the same device — sessionStorage was getting
-// wiped any time the page reloaded or a new tab was opened, which made
-// freshly-sent OTPs look "expired" even though they were just sent.
+// OTP store is kept in localStorage AND Firebase so it works across devices/browsers.
+// Firebase se OTP sync hota hai taaki naye domain/browser pe bhi OTP kaam kare.
 const OTP_VALID_MS = 10 * 60 * 1000; // OTP valid for 10 minutes
 function readOtpStore() {
   try { return JSON.parse(localStorage.getItem('otpStore') || '{}'); }
@@ -4180,6 +4174,32 @@ function readOtpStore() {
 }
 function writeOtpStore(data) {
   localStorage.setItem('otpStore', JSON.stringify(data));
+  // Firebase mein bhi save karo taaki cross-device OTP kaam kare
+  if (typeof window._fbSet === "function") {
+    window._fbSet("siteData", "otpStore", data).catch(e => console.warn('OTP Firebase save failed:', e));
+  }
+}
+// Firebase se OTP sync karo — returns Promise
+async function syncOtpFromFirebase() {
+  try {
+    if (typeof window._fbGet === "function") {
+      const fbData = await window._fbGet("siteData", "otpStore");
+      if (fbData && typeof fbData === 'object') {
+        // Merge: local + firebase, keep freshest entries
+        const local = readOtpStore();
+        const merged = Object.assign({}, fbData, local);
+        // Firebase wali entries jo local mein nahi hain unhe add karo
+        Object.keys(fbData).forEach(k => {
+          if (!local[k] || (fbData[k] && fbData[k].ts && local[k] && (!local[k].ts || fbData[k].ts > local[k].ts))) {
+            merged[k] = fbData[k];
+          }
+        });
+        localStorage.setItem('otpStore', JSON.stringify(merged));
+        return merged;
+      }
+    }
+  } catch(e) { console.warn('OTP Firebase sync failed:', e); }
+  return readOtpStore();
 }
 // Store an OTP with a timestamp so we can tell "expired" apart from "wrong".
 function setOtpEntry(store, key, code) {
@@ -4301,7 +4321,7 @@ async function sendRealOtpSms(phone, otp) {
   } catch(e) { return false; }
 }
 
-function sendOtp(context) {
+async function sendOtp(context) {
   // context: 'login' | 'signup'
   const phoneId = context === 'login' ? 'loginPhone' : 'signupPhone';
   const errorId = context === 'login' ? 'loginPhoneError' : 'signupPhoneError';
@@ -4316,24 +4336,39 @@ function sendOtp(context) {
     return;
   }
   errEl.style.display = 'none';
+  hintEl.textContent = 'Data check ho raha hai...';
+  hintEl.style.display = 'block';
+
+  // Firebase se latest customer data sync karo pehle
+  if (typeof window._fbGet === 'function') {
+    try {
+      const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
+      if (fbCustomers && typeof fbCustomers === 'object') {
+        const local = readCustomers();
+        const merged = Object.assign({}, fbCustomers, local);
+        localStorage.setItem('registeredCustomers', JSON.stringify(merged));
+      }
+    } catch(e) {}
+  }
 
   const customers = readCustomers();
   if (context === 'login' && !customers[phone]) {
     errEl.textContent = 'No account found with this number. Please register first.';
     errEl.style.display = 'block';
+    hintEl.style.display = 'none';
     return;
   }
   if (context === 'signup' && customers[phone]) {
     errEl.textContent = 'An account with this number already exists. Please login instead.';
     errEl.style.display = 'block';
+    hintEl.style.display = 'none';
     return;
   }
 
-  // DEMO OTP — replace this block with a real SMS API call when ready.
-  const otp = String(Math.floor(1000 + Math.random() * 9000));
+  const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit OTP
   const otpStore = readOtpStore();
   setOtpEntry(otpStore, phone, otp);
-  writeOtpStore(otpStore);
+  writeOtpStore(otpStore); // saves to localStorage + Firebase
 
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
@@ -4341,7 +4376,10 @@ function sendOtp(context) {
   showToast('OTP bheja ja raha hai...');
 }
 
-function submitLogin() {
+async function submitLogin() {
+  // Double-click guard
+  const submitBtn = document.getElementById('loginSubmitBtn');
+  if (submitBtn) { if (submitBtn._processing) return; submitBtn._processing = true; setTimeout(() => { submitBtn._processing = false; }, 3000); }
   const phone = document.getElementById('loginPhone').value.replace(/\D/g, '');
   const pass = document.getElementById('loginPassword').value;
   const phoneErr = document.getElementById('loginPhoneError');
@@ -4351,41 +4389,69 @@ function submitLogin() {
 
   if (!isValidIndianMobile(phone)) {
     phoneErr.textContent = 'Valid 10-digit mobile number enter karein.';
-    phoneErr.style.display = 'block'; return;
-  }
-  const customers = readCustomers();
-  if (!customers[phone]) {
-    phoneErr.textContent = 'Is number par koi account nahi hai. Pehle register karein.';
-    phoneErr.style.display = 'block'; return;
+    phoneErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
+    return;
   }
   if (!pass) {
     passErr.textContent = 'Password enter karein.';
-    passErr.style.display = 'block'; return;
-  }
-  // Hash compare karo
-  const storedHash = customers[phone].passwordHash;
-  if (!storedHash || storedHash !== simpleHash(pass)) {
-    passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
-    passErr.style.display = 'block'; return;
+    passErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
+    return;
   }
 
-  // Success
-  setAuthToken(phone);
-  localStorage.setItem('userRole', 'customer');
-  const redirectTo = pendingPageAfterLogin;
-  pendingPageAfterLogin = null;
-  try { if (history.state && history.state.modalOpen) history.back(); } catch(e) {}
-  const loginModal = document.getElementById('loginModal');
-  if (loginModal) { loginModal.style.display = 'none'; loginModal.classList.remove('open-modal'); }
-  showToast('Welcome back, ' + customers[phone].name + '!');
-  document.getElementById('loginPhone').value = '';
-  document.getElementById('loginPassword').value = '';
-  updateNavbarUI();
-  const profilePage = document.getElementById('page-maid-profile');
-  if (profilePage && profilePage.classList.contains('active') && window._currentMaidProfileId) {
-    setTimeout(() => showMaidProfile(window._currentMaidProfileId), 120); return;
-  }
-  if (redirectTo) setTimeout(() => showPage(redirectTo), 100);
+  // Firebase se latest data sync karo pehle (async)
+  (async () => {
+    if (typeof window._fbGet === 'function') {
+      try {
+        const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
+        if (fbCustomers && typeof fbCustomers === 'object') {
+          const local = readCustomers();
+          const merged = Object.assign({}, fbCustomers, local);
+          // Firebase wala passwordHash fresh hai to usse prefer karo
+          Object.keys(fbCustomers).forEach(ph => {
+            if (!local[ph]) merged[ph] = fbCustomers[ph];
+          });
+          localStorage.setItem('registeredCustomers', JSON.stringify(merged));
+        }
+      } catch(e) {}
+    }
+
+    const customers = readCustomers();
+    if (!customers[phone]) {
+      phoneErr.textContent = 'Is number par koi account nahi hai. Pehle register karein.';
+      phoneErr.style.display = 'block';
+      if (submitBtn) submitBtn._processing = false;
+      return;
+    }
+    // Hash compare karo
+    const storedHash = customers[phone].passwordHash;
+    if (!storedHash || storedHash !== simpleHash(pass)) {
+      passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
+      passErr.style.display = 'block';
+      if (submitBtn) submitBtn._processing = false;
+      return;
+    }
+
+    // Success
+    setAuthToken(phone);
+    localStorage.setItem('userRole', 'customer');
+    const redirectTo = pendingPageAfterLogin;
+    pendingPageAfterLogin = null;
+    try { if (history.state && history.state.modalOpen) history.back(); } catch(e) {}
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) { loginModal.style.display = 'none'; loginModal.classList.remove('open-modal'); }
+    showToast('Welcome back, ' + customers[phone].name + '!');
+    document.getElementById('loginPhone').value = '';
+    document.getElementById('loginPassword').value = '';
+    if (submitBtn) submitBtn._processing = false;
+    updateNavbarUI();
+    const profilePage = document.getElementById('page-maid-profile');
+    if (profilePage && profilePage.classList.contains('active') && window._currentMaidProfileId) {
+      setTimeout(() => showMaidProfile(window._currentMaidProfileId), 120); return;
+    }
+    if (redirectTo) setTimeout(() => showPage(redirectTo), 100);
+  })();
 }
 
 function previewSignupPhoto(event) {
@@ -4407,7 +4473,10 @@ function previewSignupPhoto(event) {
   reader.readAsDataURL(file);
 }
 
-function submitSignup() {
+async function submitSignup() {
+  // Double-click guard
+  const submitBtn = document.getElementById('signupSubmitBtn');
+  if (submitBtn) { if (submitBtn._processing) return; submitBtn._processing = true; setTimeout(() => { submitBtn._processing = false; }, 5000); }
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const phone = document.getElementById('signupPhone').value.replace(/\D/g, '');
@@ -4447,26 +4516,32 @@ function submitSignup() {
   if (!otp) {
     otpErr.textContent = 'Please request and enter the OTP sent to your mobile.';
     otpErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
     return;
   }
+  // Firebase se OTP sync karo taaki cross-device OTP kaam kare
+  await syncOtpFromFirebase().catch(()=>{});
   const otpStore = readOtpStore();
   const otpResult = checkOtpEntry(otpStore, phone, otp);
   if (otpResult === 'missing') {
     otpErr.textContent = 'OTP expired or not requested. Please request a new OTP.';
     otpErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
     return;
   }
   if (otpResult === 'expired') {
     otpErr.textContent = 'OTP expire ho gaya. Please request a new OTP.';
     otpErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
     return;
   }
   if (otpResult === 'wrong') {
-    otpErr.textContent = 'Incorrect OTP.';
+    otpErr.textContent = 'Incorrect OTP. Dobara check karein.';
     otpErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
     return;
   }
-  if (!state) { showToast('Please select your state.'); document.getElementById('signupState').focus(); return; }
+  if (!state) { showToast('Please select your state.'); document.getElementById('signupState').focus(); if (submitBtn) submitBtn._processing = false; return; }
   if (!district) { showToast('Please select your district / city.'); document.getElementById('signupDistrict').focus(); return; }
   if (!address) { showToast('Please enter your complete address.'); document.getElementById('signupAddress').focus(); return; }
 
@@ -4664,7 +4739,7 @@ function regClearStepError(step) {
   if (el) el.style.display = 'none';
 }
 
-function regValidateStep(step) {
+async function regValidateStep(step) {
   if (step === 1) {
     // Photo compulsory
     const regPhotoPreview = document.getElementById('regPhotoPreview');
@@ -4695,8 +4770,9 @@ function regValidateStep(step) {
       const adminMaidsCheck = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
       if (adminMaidsCheck.find(m => String(m.phone) === phone)) return 'Is number se pehle se registration ho chuki hai. Maid login se login karein.';
     } catch(e) {}
-    // OTP verification
+    // OTP verification — Firebase se sync karo pehle
     const otpVal = (document.getElementById('regOtpInput').value || '').trim();
+    await syncOtpFromFirebase().catch(()=>{});
     const otpStore = readOtpStore();
     const regOtpResult = checkOtpEntry(otpStore, 'reg_' + phone, otpVal);
     if (regOtpResult === 'missing') return 'Pehle "Send OTP" button dabao aur OTP enter karein.';
@@ -4759,8 +4835,8 @@ function regValidateStep(step) {
   return null;
 }
 
-function regNextStep(current) {
-  const error = regValidateStep(current);
+async function regNextStep(current) {
+  const error = await regValidateStep(current);
   if (error) {
     regShowStepError(current, error);
     return;
@@ -4820,10 +4896,10 @@ function sendMaidOtp() {
     errEl.style.display = 'block';
     return;
   }
-  const otp = String(Math.floor(1000 + Math.random() * 9000));
+  const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
   const otpStore = readOtpStore();
   setOtpEntry(otpStore, 'maid_' + phone, otp);
-  writeOtpStore(otpStore);
+  writeOtpStore(otpStore); // saves to localStorage + Firebase
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
   sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
@@ -4861,10 +4937,10 @@ function sendRegOtp() {
     }
   } catch(e) {}
 
-  const otp = String(Math.floor(1000 + Math.random() * 9000));
+  const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
   const otpStore = readOtpStore();
   setOtpEntry(otpStore, 'reg_' + phone, otp);
-  writeOtpStore(otpStore);
+  writeOtpStore(otpStore); // saves to localStorage + Firebase
   otpRow.style.display = 'block';
   document.getElementById('regPasswordRow').style.display = 'block';
   document.getElementById('regConfirmPasswordRow').style.display = 'block';
@@ -4877,6 +4953,9 @@ function sendRegOtp() {
 }
 
 function submitMaidLogin() {
+  // Double-click guard
+  const submitBtn = document.getElementById('maidLoginSubmitBtn');
+  if (submitBtn) { if (submitBtn._processing) return; submitBtn._processing = true; setTimeout(() => { submitBtn._processing = false; }, 3000); }
   const phone = document.getElementById('maidLoginPhone').value.replace(/\D/g, '');
   const pass = document.getElementById('maidLoginPassword').value;
   const phoneErr = document.getElementById('maidLoginPhoneError');
@@ -4886,36 +4965,62 @@ function submitMaidLogin() {
 
   if (!isValidIndianMobile(phone)) {
     phoneErr.textContent = 'Valid 10-digit mobile number enter karein.';
-    phoneErr.style.display = 'block'; return;
-  }
-  const maids = readRegisteredMaids();
-  if (!maids[phone]) {
-    phoneErr.textContent = 'Is number par koi maid account nahi hai. Pehle register karein.';
-    phoneErr.style.display = 'block'; return;
-  }
-  if (!maids[phone].verified) {
-    phoneErr.textContent = 'Aapka account admin approval ka wait kar raha hai. Approved hone ke baad login kar sakti hain.';
-    phoneErr.style.display = 'block'; return;
+    phoneErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
+    return;
   }
   if (!pass) {
     passErr.textContent = 'Password enter karein.';
-    passErr.style.display = 'block'; return;
-  }
-  const storedHash = maids[phone].passwordHash;
-  if (!storedHash || storedHash !== simpleHash(pass)) {
-    passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
-    passErr.style.display = 'block'; return;
+    passErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
+    return;
   }
 
-  // Success
-  setAuthToken(phone);
-  localStorage.setItem('userRole', 'maid');
-  closeLoginModal();
-  document.getElementById('maidLoginPhone').value = '';
-  document.getElementById('maidLoginPassword').value = '';
-  showToast('Welcome back, ' + maids[phone].name + '!');
-  showPage('dashboard');
-  if (typeof refreshNavUI === 'function') refreshNavUI();
+  // Firebase se latest maid data sync karo
+  (async () => {
+    if (typeof window._fbGet === 'function') {
+      try {
+        const fbMaids = await window._fbGet('adminData', 'ram_registered_maids');
+        if (fbMaids && typeof fbMaids === 'object') {
+          const local = readRegisteredMaids();
+          const merged = Object.assign({}, fbMaids, local);
+          localStorage.setItem('ram_registered_maids', JSON.stringify(merged));
+        }
+      } catch(e) {}
+    }
+
+    const maids = readRegisteredMaids();
+    if (!maids[phone]) {
+      phoneErr.textContent = 'Is number par koi maid account nahi hai. Pehle register karein.';
+      phoneErr.style.display = 'block';
+      if (submitBtn) submitBtn._processing = false;
+      return;
+    }
+    if (!maids[phone].verified) {
+      phoneErr.textContent = 'Aapka account admin approval ka wait kar raha hai. Approved hone ke baad login kar sakti hain.';
+      phoneErr.style.display = 'block';
+      if (submitBtn) submitBtn._processing = false;
+      return;
+    }
+    const storedHash = maids[phone].passwordHash;
+    if (!storedHash || storedHash !== simpleHash(pass)) {
+      passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
+      passErr.style.display = 'block';
+      if (submitBtn) submitBtn._processing = false;
+      return;
+    }
+
+    // Success
+    setAuthToken(phone);
+    localStorage.setItem('userRole', 'maid');
+    closeLoginModal();
+    document.getElementById('maidLoginPhone').value = '';
+    document.getElementById('maidLoginPassword').value = '';
+    if (submitBtn) submitBtn._processing = false;
+    showToast('Welcome back, ' + maids[phone].name + '!');
+    showPage('dashboard');
+    if (typeof refreshNavUI === 'function') refreshNavUI();
+  })();
 }
 
 function readRegisteredMaids() {
@@ -4928,8 +5033,8 @@ function writeRegisteredMaids(data) {
   return Promise.resolve();
 }
 
-function submitReg() {
-  const error = regValidateStep(4);
+async function submitReg() {
+  const error = await regValidateStep(4);
   if (error) {
     regShowStepError(4, error);
     return;
@@ -6707,6 +6812,8 @@ function rcSubmitLogin() {
       <div class="nav-item" onclick="gotoPage('services')"><i class="fas fa-concierge-bell"></i> Services</div>
       <div class="nav-item" onclick="gotoPage('cities')"><i class="fas fa-city"></i> Cities</div>
       <div class="nav-item" onclick="gotoPage('testimonials')"><i class="fas fa-quote-left"></i> Testimonials</div>
+      <div class="nav-section-label">Verification</div>
+      <div class="nav-item" onclick="gotoPage('aadhar')"><i class="fas fa-id-card" style="color:#f59e0b;"></i> Aadhar Verification <span class="nav-badge" id="aadharNavBadge" style="background:#f59e0b;">0</span></div>
       <div class="nav-section-label">System</div>
       <div class="nav-item" onclick="gotoPage('admins')"><i class="fas fa-user-shield"></i> Admin Users</div>
       <div class="nav-item" onclick="gotoPage('settings')"><i class="fas fa-sliders"></i> Settings</div>
@@ -7108,6 +7215,20 @@ function rcSubmitLogin() {
           <div class="tbl-wrapper">
             <table><thead><tr><th>Reviewer</th><th>City</th><th>Service</th><th>Rating</th><th>Review</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="reviewTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ AADHAR VERIFICATION PAGE ══ -->
+      <div class="admin-page" id="pg-aadhar">
+        <div class="section-head">
+          <div><h2>Aadhar Verification</h2><p>Maids ke Aadhar card photos dekhein aur verify/reject karein</p></div>
+          <button class="action-btn action-btn-outline" onclick="loadAllAadharData()"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div id="aadharListContainer">
+          <div style="text-align:center;padding:40px;color:var(--text2);">
+            <i class="fas fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>
+            Loading Aadhar data...
           </div>
         </div>
       </div>
@@ -7872,16 +7993,8 @@ const ADMIN_STATES_KEY = 'ram_admin_states'; // localStorage key for states
 // ══════════════════════════════════════
 // DEFAULT DATA (from main website)
 // ══════════════════════════════════════
-const DEFAULT_MAIDS = [
-  {id:1,name:"Sunita Devi",city:"Mumbai",state:"Maharashtra",services:["Full-Time Maid","Cook / Bai"],rating:4.8,reviewCount:34,experience:6,languages:["Hindi","Marathi"],available:true,verified:true,phone:"9000000001",photo:"https://images.unsplash.com/photo-1494790108755-2616b612b5db?q=80&w=400&auto=format&fit=crop"},
-  {id:2,name:"Kamla Bai",city:"Delhi",state:"Delhi",services:["Part-Time Maid","Laundry"],rating:4.6,reviewCount:21,experience:4,languages:["Hindi","Punjabi"],available:true,verified:true,phone:"9000000002",photo:"https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=400&auto=format&fit=crop"},
-  {id:3,name:"Meena Kumari",city:"Bangalore",state:"Karnataka",services:["Babysitter / Nanny","Elder Care"],rating:4.9,reviewCount:52,experience:8,languages:["Kannada","Hindi","Telugu"],available:false,verified:true,phone:"9000000003",photo:"https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop"},
-  {id:4,name:"Rekha Sharma",city:"Chennai",state:"Tamil Nadu",services:["Elder Care","Patient Care"],rating:4.7,reviewCount:18,experience:5,languages:["Tamil","Telugu"],available:true,verified:true,phone:"9000000004",photo:"https://images.unsplash.com/photo-1587614382346-4ec70e388b28?q=80&w=400&auto=format&fit=crop"},
-  {id:5,name:"Anita Yadav",city:"Pune",state:"Maharashtra",services:["Full-Time Maid","Laundry"],rating:4.5,reviewCount:28,experience:3,languages:["Hindi","Marathi"],available:true,verified:false,phone:"9000000005",photo:""},
-  {id:6,name:"Pushpa Singh",city:"Hyderabad",state:"Telangana",services:["Cook / Bai","Cleaning"],rating:4.8,reviewCount:41,experience:7,languages:["Telugu","Hindi"],available:true,verified:true,phone:"9000000006",photo:"https://images.unsplash.com/photo-1551836022-4c4c79ecde51?q=80&w=400&auto=format&fit=crop"},
-  {id:7,name:"Sarla Devi",city:"Jaipur",state:"Rajasthan",services:["Part-Time Maid","Cook / Bai"],rating:4.4,reviewCount:15,experience:2,languages:["Hindi","Rajasthani"],available:false,verified:true,phone:"9000000007",photo:""},
-  {id:8,name:"Rani Gupta",city:"Kolkata",state:"West Bengal",services:["Babysitter / Nanny","Home Tutor"],rating:4.9,reviewCount:67,experience:10,languages:["Bengali","Hindi","English"],available:true,verified:true,phone:"9000000008",photo:"https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=400&auto=format&fit=crop"},
-];
+// DEFAULT_MAIDS: Koi fake data nahi. Sab data Firebase se aata hai.
+const DEFAULT_MAIDS = [];
 const DEFAULT_CITIES = [
   {name:"Mumbai",state:"Maharashtra",maidCount:320,img:"https://images.unsplash.com/photo-1567157577867-05ccb1388e66?q=80&w=600&auto=format&fit=crop"},
   {name:"Delhi",state:"Delhi",maidCount:450,img:"https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=600&auto=format&fit=crop"},
@@ -7924,28 +8037,17 @@ const DEFAULT_SERVICE_ICONS = [
   {id:"icon-newborncare",name:"Newborn Care",icon:"fa-baby-carriage",color1:"#f43f5e",color2:"#fb7185",photo:"",filterTarget:"Newborn Care"},
   {id:"icon-hometutor",name:"Home Tutor",icon:"fa-book-open",color1:"#eab308",color2:"#facc15",photo:"",filterTarget:"Home Tutor"},
 ];
-const DEFAULT_BOOKINGS = [
-  {id:"BK001",custName:"Vikram Nair",phone:"9876500001",service:"Full-Time Maid",city:"Pune",date:"2025-01-15",status:"Completed",notes:""},
-  {id:"BK002",custName:"Shilpa Iyer",phone:"9876500002",service:"Part-Time Maid",city:"Chennai",date:"2025-01-18",status:"Active",notes:"Morning shift preferred"},
-  {id:"BK003",custName:"Amit Verma",phone:"9876500003",service:"Cook / Bai",city:"Delhi",date:"2025-01-20",status:"Pending",notes:"North Indian food only"},
-  {id:"BK004",custName:"Pooja Joshi",phone:"9876500004",service:"Elder Care",city:"Mumbai",date:"2025-01-22",status:"Confirmed",notes:"For 78yr old mother"},
-  {id:"BK005",custName:"Rahul Singh",phone:"9876500005",service:"Babysitter / Nanny",city:"Bangalore",date:"2025-01-25",status:"Pending",notes:""},
-];
+// DEFAULT_BOOKINGS: Koi fake data nahi.
+const DEFAULT_BOOKINGS = [];
 const SUB_PLANS = [
   {id:"basic",name:"Basic",price:499,duration:"1 Month",perks:["Profile listed","5 customer views/month","Basic support"]},
   {id:"standard",name:"Standard",price:999,duration:"3 Months",perks:["Priority listing","Unlimited views","WhatsApp support","Verified badge"]},
   {id:"premium",name:"Premium",price:1999,duration:"6 Months",perks:["Top listing","Unlimited views","Dedicated manager","Featured on homepage","Job alerts"]},
 ];
-const DEFAULT_SUBSCRIBERS = [
-  {maidName:"Sunita Devi",phone:"9000000001",plan:"Premium",start:"2024-10-01",expiry:"2025-04-01",status:"Active"},
-  {maidName:"Kamla Bai",phone:"9000000002",plan:"Standard",start:"2024-11-15",expiry:"2025-02-15",status:"Active"},
-  {maidName:"Rekha Sharma",phone:"9000000004",plan:"Basic",start:"2025-01-01",expiry:"2025-02-01",status:"Expired"},
-];
-const DEFAULT_REVIEWS = [
-  {id:1,name:"Meera Patel",city:"Ahmedabad",service:"Cleaning",rating:4,review:"Service was good, maid was punctual.",status:"Approved"},
-  {id:2,name:"Sanjay Kumar",city:"Lucknow",service:"Driver",rating:5,review:"Excellent driver, very professional.",status:"Approved"},
-  {id:3,name:"Kavitha Nair",city:"Kochi",service:"Elder Care",rating:5,review:"Very caring attendant for my father.",status:"Pending"},
-];
+// DEFAULT_SUBSCRIBERS: Koi fake data nahi.
+const DEFAULT_SUBSCRIBERS = [];
+// DEFAULT_REVIEWS: Koi fake data nahi.
+const DEFAULT_REVIEWS = [];
 const DEFAULT_ADMINS = [
   {username:"admin",role:"Super Admin",created:"2024-01-01",lastLogin:new Date().toISOString().split('T')[0]},
 ];
@@ -7979,11 +8081,9 @@ function setCustomers(v) { setLS('registeredCustomers', v); }
 function getMaids() {
   var stored = null;
   try { var raw = localStorage.getItem('ram_admin_maids'); if (raw) stored = JSON.parse(raw); } catch(e) {}
-  if (!stored) {
-    // First time: save DEFAULT_MAIDS to localStorage so new entries merge correctly
-    localStorage.setItem('ram_admin_maids', JSON.stringify(DEFAULT_MAIDS));
-    if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_maids', DEFAULT_MAIDS);
-    return DEFAULT_MAIDS.slice();
+  if (!stored || !Array.isArray(stored)) {
+    // Firebase se data aane tak empty array return karo
+    return [];
   }
   return stored;
 }
@@ -8139,13 +8239,25 @@ function updateNavBadges() {
   if(custBadge) custBadge.textContent = custs;
   if(maidBadge) maidBadge.textContent = maids;
   if(bookBadge) bookBadge.textContent = books;
-  // Pending approvals nav item — always show/hide correctly
+  // Pending approvals nav item
   const pendingNav = document.getElementById('pendingApprovalsNav');
   const pendingBadge = document.getElementById('pendingMaidNavBadge');
   if(pendingNav && pendingBadge) {
     pendingBadge.textContent = pendingMaids;
     pendingNav.style.display = pendingMaids > 0 ? 'flex' : 'none';
   }
+  // Aadhar pending count
+  let pendingAadhar = 0;
+  getMaids().forEach(m => {
+    if (m.phone) {
+      try {
+        const ad = JSON.parse(localStorage.getItem('aadhar_' + m.phone) || 'null');
+        if (ad && ad.status === 'pending') pendingAadhar++;
+      } catch(e) {}
+    }
+  });
+  const aadharBadge = document.getElementById('aadharNavBadge');
+  if(aadharBadge) { aadharBadge.textContent = pendingAadhar; aadharBadge.style.display = pendingAadhar > 0 ? 'inline' : 'none'; }
   renderNotifications();
 }
 
@@ -8159,7 +8271,7 @@ function gotoPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
   });
-  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings'};
+  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification'};
   document.getElementById('topbarTitle').textContent = titles[page] || page;
   currentPage = page;
   closeSidebar();
@@ -8169,6 +8281,10 @@ function gotoPage(page) {
     if (activeStab && activeStab.id === 'stab-pricing') {
       if (typeof renderAdminPlansEditor === 'function') renderAdminPlansEditor();
     }
+  }
+  // Jab aadhar page khule, auto-load Firebase se data
+  if (page === 'aadhar') {
+    setTimeout(() => { if (typeof loadAllAadharData === 'function') loadAllAadharData(); }, 100);
   }
 }
 function toggleSidebar() {
@@ -8654,6 +8770,8 @@ function verifyAadharAdmin(phone, maidId) {
   viewMaid(maidId);
   renderMaids();
   renderDashboard();
+  renderAadharPage();
+  updateNavBadges();
 }
 
 // ── Admin: Reject Aadhar ──
@@ -8668,6 +8786,139 @@ function rejectAadharAdmin(phone) {
   showToast('❌ Aadhar rejected. Maid ko resubmit karna hoga.');
   closeModal('viewMaidModal');
   renderMaids();
+  renderAadharPage();
+}
+
+// ══════════════════════════════════════
+// AADHAR VERIFICATION PAGE
+// ══════════════════════════════════════
+async function loadAllAadharData() {
+  const container = document.getElementById('aadharListContainer');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2);"><i class="fas fa-spinner fa-spin" style="font-size:24px;margin-bottom:12px;display:block;"></i>Firebase se Aadhar data load ho raha hai...</div>';
+  
+  const maids = getMaids();
+  // Load all aadhar data from Firebase
+  const promises = maids.filter(m => m.phone).map(async m => {
+    if (typeof window.loadAadharData === 'function') {
+      await Promise.all([
+        window.loadAadharData(m.phone).catch(() => {}),
+        window.loadAadharData(m.phone + '_back').catch(() => {})
+      ]);
+    }
+  });
+  await Promise.all(promises).catch(() => {});
+  renderAadharPage();
+  updateNavBadges();
+}
+
+function renderAadharPage() {
+  window.renderAadharPage = renderAadharPage;
+  const container = document.getElementById('aadharListContainer');
+  if (!container) return;
+  const maids = getMaids();
+  
+  const maidAadharList = maids.filter(m => m.phone).map(m => {
+    let aadharData = null, aadharBack = null;
+    try { aadharData = JSON.parse(localStorage.getItem('aadhar_' + m.phone) || 'null'); } catch(e) {}
+    try { aadharBack = JSON.parse(localStorage.getItem('aadhar_' + m.phone + '_back') || 'null'); } catch(e) {}
+    return { m, aadharData, aadharBack };
+  }).filter(x => x.aadharData); // Only maids who submitted aadhar
+  
+  if (maidAadharList.length === 0) {
+    container.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text2);">
+      <i class="fas fa-id-card" style="font-size:40px;margin-bottom:16px;display:block;opacity:.3;"></i>
+      <h3 style="font-size:18px;margin-bottom:8px;">Koi Aadhar submission nahi</h3>
+      <p style="font-size:14px;">Jab maid apna Aadhar upload karegi, yahan dikhega.</p>
+      <button class="action-btn action-btn-outline mt-16" onclick="loadAllAadharData()"><i class="fas fa-rotate-right"></i> Refresh</button>
+    </div>`;
+    return;
+  }
+  
+  const pending = maidAadharList.filter(x => x.aadharData.status === 'pending');
+  const verified = maidAadharList.filter(x => x.aadharData.status === 'verified');
+  const rejected = maidAadharList.filter(x => x.aadharData.status === 'rejected');
+  
+  container.innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:14px 20px;flex:1;min-width:140px;">
+        <div style="font-size:24px;font-weight:800;color:#d97706;">${pending.length}</div>
+        <div style="font-size:13px;color:#92400e;font-weight:600;">⏳ Pending Review</div>
+      </div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:14px 20px;flex:1;min-width:140px;">
+        <div style="font-size:24px;font-weight:800;color:#16a34a;">${verified.length}</div>
+        <div style="font-size:13px;color:#15803d;font-weight:600;">✅ Verified</div>
+      </div>
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 20px;flex:1;min-width:140px;">
+        <div style="font-size:24px;font-weight:800;color:#dc2626;">${rejected.length}</div>
+        <div style="font-size:13px;color:#b91c1c;font-weight:600;">❌ Rejected</div>
+      </div>
+    </div>
+    ${maidAadharList.sort((a,b) => {
+      const order = {'pending':0,'rejected':1,'verified':2};
+      return (order[a.aadharData.status]||0) - (order[b.aadharData.status]||0);
+    }).map(({m, aadharData, aadharBack}) => `
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;${aadharData.status==='pending'?'border-left:4px solid #f59e0b;':aadharData.status==='verified'?'border-left:4px solid #22c55e;':'border-left:4px solid #ef4444;'}">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+          <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--primary),#fb923c);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0;">
+            ${m.photo ? `<img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none'"/>` : m.name[0]}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:16px;font-weight:700;">${m.name}</div>
+            <div style="font-size:13px;color:var(--text2);">📞 +91 ${m.phone} · 📍 ${m.city}, ${m.state}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px;">Submitted: ${aadharData.submittedAt ? new Date(aadharData.submittedAt).toLocaleString('en-IN') : 'N/A'}</div>
+          </div>
+          <span style="padding:6px 14px;border-radius:999px;font-size:12px;font-weight:700;background:${aadharData.status==='pending'?'#fef3c7;color:#92400e':aadharData.status==='verified'?'#dcfce7;color:#15803d':'#fee2e2;color:#b91c1c'};">
+            ${aadharData.status==='pending'?'⏳ Pending':aadharData.status==='verified'?'✅ Verified':'❌ Rejected'}
+          </span>
+        </div>
+        
+        <div style="background:#f8fafc;border-radius:10px;padding:12px;margin-bottom:14px;">
+          <div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Aadhar Details</div>
+          <div style="font-size:14px;font-weight:600;">Aadhar No: <span style="font-family:monospace;background:#e2e8f0;padding:2px 8px;border-radius:4px;">${aadharData.aadharNum || 'N/A'}</span></div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;">FRONT SIDE</div>
+            ${aadharData.frontUrl ? 
+              `<img src="${aadharData.frontUrl}" style="width:100%;max-width:280px;height:160px;object-fit:contain;border-radius:10px;border:2px solid #e2e8f0;background:#f1f5f9;cursor:pointer;display:block;" onclick="window.open('${aadharData.frontUrl}','_blank')" title="Click to open full size"/>
+               <div style="font-size:11px;color:var(--text2);margin-top:4px;"><i class="fas fa-expand"></i> Click to view full size</div>` : 
+              '<div style="height:100px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;"><i class="fas fa-image" style="margin-right:6px;"></i>Not uploaded</div>'}
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;text-transform:uppercase;">BACK SIDE</div>
+            ${aadharBack && aadharBack.backUrl ? 
+              `<img src="${aadharBack.backUrl}" style="width:100%;max-width:280px;height:160px;object-fit:contain;border-radius:10px;border:2px solid #e2e8f0;background:#f1f5f9;cursor:pointer;display:block;" onclick="window.open('${aadharBack.backUrl}','_blank')" title="Click to open full size"/>
+               <div style="font-size:11px;color:var(--text2);margin-top:4px;"><i class="fas fa-expand"></i> Click to view full size</div>` : 
+              '<div style="height:100px;background:#f1f5f9;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:13px;"><i class="fas fa-image" style="margin-right:6px;"></i>Not uploaded</div>'}
+          </div>
+        </div>
+        
+        ${aadharData.status === 'pending' ? `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="action-btn action-btn-success" onclick="verifyAadharAdmin('${m.phone}',${m.id})">
+            <i class="fas fa-check-circle"></i> Verify Aadhar & Approve Maid
+          </button>
+          <button class="action-btn action-btn-danger" onclick="rejectAadharAdmin('${m.phone}')">
+            <i class="fas fa-times-circle"></i> Reject Aadhar
+          </button>
+          <button class="action-btn action-btn-outline" onclick="viewMaid(${m.id})">
+            <i class="fas fa-eye"></i> View Full Profile
+          </button>
+        </div>` : aadharData.status === 'verified' ? `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="color:#16a34a;font-size:14px;font-weight:600;"><i class="fas fa-circle-check"></i> Verified on ${aadharData.verifiedAt ? new Date(aadharData.verifiedAt).toLocaleDateString('en-IN') : 'N/A'}</span>
+          <button class="action-btn action-btn-outline" onclick="viewMaid(${m.id})"><i class="fas fa-eye"></i> View Profile</button>
+        </div>` : `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="color:#dc2626;font-size:14px;font-weight:600;"><i class="fas fa-circle-xmark"></i> Rejected on ${aadharData.rejectedAt ? new Date(aadharData.rejectedAt).toLocaleDateString('en-IN') : 'N/A'}</span>
+          <button class="action-btn action-btn-success" onclick="verifyAadharAdmin('${m.phone}',${m.id})"><i class="fas fa-rotate-right"></i> Override & Verify</button>
+          <button class="action-btn action-btn-outline" onclick="viewMaid(${m.id})"><i class="fas fa-eye"></i> View Profile</button>
+        </div>`}
+      </div>
+    `).join('')}
+  `;
 }
 function openAddMaidModal() {
   editingKey = null;
@@ -10751,6 +11002,16 @@ window._fbSet = function(coll, key, val) {
   } catch(e) { return Promise.reject(e); }
 };
 
+// ── Universal Firestore get ──
+window._fbGet = async function(coll, key) {
+  try {
+    const { getDoc } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+    const snap = await getDoc(doc(_db, coll, _fbKey(key)));
+    if (snap.exists() && snap.data().data !== undefined) return snap.data().data;
+  } catch(e) { console.warn('FB get failed:', key, e); }
+  return null;
+};
+
 // ── Firebase Storage photo upload ──
 window._fbUploadPhoto = async function(file, path) {
   try {
@@ -10764,8 +11025,26 @@ window._fbUploadPhoto = async function(file, path) {
   }
 };
 
+// ── Firebase loading state — auth buttons tab tak disabled rahein jab tak data load na ho ──
+window._fbDataReady = false;
+function _setFbLoadingState(loading) {
+  // Auth modal ke submit/send buttons disable/enable karo
+  const btnIds = ['loginSubmitBtn','signupSubmitBtn','maidLoginSubmitBtn','forgotSendBtn','regSendOtpBtn'];
+  btnIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (loading) { el.dataset.fbDisabled = 'true'; el.disabled = true; }
+      else { if (el.dataset.fbDisabled) { el.disabled = false; delete el.dataset.fbDisabled; } }
+    }
+  });
+  // Firebase sync indicator (agar page pe koi loading bar ho)
+  const indicator = document.getElementById('fbSyncIndicator');
+  if (indicator) indicator.style.display = loading ? 'block' : 'none';
+}
+
 // ── Load ALL data from Firebase on startup ──
 async function loadFromFirebase() {
+  _setFbLoadingState(true);
   try {
     const adminSnap = await getDocs(collection(_db, 'adminData'));
     adminSnap.forEach(d => {
@@ -10773,16 +11052,50 @@ async function loadFromFirebase() {
     });
     const siteSnap = await getDocs(collection(_db, 'siteData'));
     siteSnap.forEach(d => {
-      if (d.data().data !== undefined) localStorage.setItem(d.id, JSON.stringify(d.data().data));
+      if (d.data().data !== undefined) {
+        // OTP store ke liye merge strategy use karo (local + firebase)
+        if (d.id === 'otpStore') {
+          const local = (() => { try { return JSON.parse(localStorage.getItem('otpStore') || '{}'); } catch(e) { return {}; } })();
+          const fbOtp = d.data().data;
+          const merged = Object.assign({}, fbOtp, local);
+          Object.keys(fbOtp).forEach(k => {
+            if (!local[k] || (fbOtp[k] && fbOtp[k].ts && local[k] && (!local[k].ts || fbOtp[k].ts > local[k].ts))) {
+              merged[k] = fbOtp[k];
+            }
+          });
+          localStorage.setItem('otpStore', JSON.stringify(merged));
+        } else {
+          localStorage.setItem(d.id, JSON.stringify(d.data().data));
+        }
+      }
     });
+    window._fbDataReady = true;
     console.log('✅ Firebase data loaded!');
   } catch(e) {
+    window._fbDataReady = true; // fallback: localStorage se kaam chalao
     console.warn('⚠️ Firebase load failed — localStorage fallback:', e);
+  } finally {
+    _setFbLoadingState(false);
   }
 }
 
 // ── Real-time sync — admin changes turant website pe ──
 function setupRealtimeSync() {
+  // OTP store real-time sync — cross-device OTP support
+  onSnapshot(doc(_db, 'siteData', 'otpStore'), snap => {
+    if (!snap.exists()) return;
+    const fbOtp = snap.data().data || {};
+    const local = (() => { try { return JSON.parse(localStorage.getItem('otpStore') || '{}'); } catch(e) { return {}; } })();
+    // Merge: Firebase ke naye OTPs local mein add karo, local ke existing OTPs rakho
+    const merged = Object.assign({}, fbOtp);
+    Object.keys(local).forEach(k => {
+      if (!merged[k] || (local[k] && local[k].ts && merged[k].ts && local[k].ts >= merged[k].ts)) {
+        merged[k] = local[k];
+      }
+    });
+    localStorage.setItem('otpStore', JSON.stringify(merged));
+  });
+
   onSnapshot(doc(_db, 'adminData', 'ram_admin_maids'), snap => {
     if (snap.exists()) {
       localStorage.setItem('ram_admin_maids', JSON.stringify(snap.data().data));
@@ -10824,7 +11137,7 @@ function setupRealtimeSync() {
 }
 
 // ── Admin ke liye aadhar data bhi real-time load ──
-function setupAdminRealtimeSync() {
+async function setupAdminRealtimeSync() {
   // Pending maids — real-time notification for admin
   onSnapshot(doc(_db, 'adminData', 'ram_admin_maids'), snap => {
     if (!snap.exists()) return;
@@ -10872,9 +11185,26 @@ function setupAdminRealtimeSync() {
 
   // Registered maids real-time sync is handled once in setupRealtimeSync()
   // above (with stale-data protection for password changes).
+  
+  // Aadhar siteData keys — real-time watch for admin panel
+  // We use a collection-level snapshot to catch any new aadhar_ key
+  try {
+    const { collection: fbCol } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+    onSnapshot(fbCol(_db, 'siteData'), snap => {
+      snap.docs.forEach(d => {
+        if (d.id.startsWith('aadhar_') && d.data().data !== undefined) {
+          localStorage.setItem(d.id, JSON.stringify(d.data().data));
+        }
+      });
+      // Update aadhar badge in admin navbar
+      if (typeof window.updateNavBadges === 'function') window.updateNavBadges();
+      // If aadhar page is open, re-render
+      if (typeof window.renderAadharPage === 'function' && document.getElementById('pg-aadhar') && document.getElementById('pg-aadhar').classList.contains('active')) {
+        window.renderAadharPage();
+      }
+    });
+  } catch(e) { console.warn('Aadhar realtime sync failed:', e); }
 }
-
-// ── Load aadhar data for all maids (admin panel use) ──
 window.loadAadharData = async function(phone) {
   try {
     const { getDoc } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
@@ -10954,7 +11284,7 @@ function closeForgotModal() {
   document.getElementById('forgotPasswordModal').style.display = 'none';
 }
 
-function forgotSendOtp() {
+async function forgotSendOtp() {
   const phone = document.getElementById('forgotPhone').value.replace(/\D/g, '');
   const phoneErr = document.getElementById('forgotPhoneError');
   const hint = document.getElementById('forgotOtpHint');
@@ -10967,18 +11297,33 @@ function forgotSendOtp() {
     phoneErr.style.display = 'block'; return;
   }
 
+  btn.disabled = true; btn.textContent = 'Checking...';
+
+  // Firebase se latest data sync karo pehle
+  if (typeof window._fbGet === 'function') {
+    try {
+      if (_forgotRole === 'customer') {
+        const fbC = await window._fbGet('siteData', 'registeredCustomers');
+        if (fbC && typeof fbC === 'object') { const m = Object.assign({}, fbC, readCustomers()); localStorage.setItem('registeredCustomers', JSON.stringify(m)); }
+      } else {
+        const fbM = await window._fbGet('adminData', 'ram_registered_maids');
+        if (fbM && typeof fbM === 'object') { const m = Object.assign({}, fbM, readRegisteredMaids()); localStorage.setItem('ram_registered_maids', JSON.stringify(m)); }
+      }
+    } catch(e) {}
+  }
+
   // Check account exists
   if (_forgotRole === 'customer') {
     const customers = readCustomers();
     if (!customers[phone]) {
       phoneErr.textContent = 'Is number par koi customer account nahi hai.';
-      phoneErr.style.display = 'block'; return;
+      phoneErr.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send OTP'; return;
     }
   } else {
     const maids = readRegisteredMaids();
     if (!maids[phone]) {
       phoneErr.textContent = 'Is number par koi maid account nahi hai.';
-      phoneErr.style.display = 'block'; return;
+      phoneErr.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send OTP'; return;
     }
   }
 
@@ -10986,15 +11331,15 @@ function forgotSendOtp() {
   const otp = String(Math.floor(100000 + Math.random() * 900000));
   const otpStore = readOtpStore();
   setOtpEntry(otpStore, 'forgot_' + phone, otp);
-  writeOtpStore(otpStore);
+  writeOtpStore(otpStore); // saves to localStorage + Firebase
 
-  btn.disabled = true; btn.textContent = 'Sending...';
+  btn.textContent = 'Sending...';
   hint.textContent = 'OTP bheja ja raha hai...';
   hint.style.display = 'block';
 
   sendRealOtpSms(phone, otp).then(ok => {
     btn.disabled = false; btn.textContent = 'Resend OTP';
-    hint.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ SMS fail — demo OTP: ' + otp;
+    hint.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ SMS fail — dobara try karein.';
     hint.style.display = 'block';
     // Show Step 2
     document.getElementById('forgotStep2').style.display = 'block';
@@ -11002,7 +11347,7 @@ function forgotSendOtp() {
   });
 }
 
-function forgotResetPassword() {
+async function forgotResetPassword() {
   const phone = document.getElementById('forgotPhone').value.replace(/\D/g, '');
   const otp = document.getElementById('forgotOtp').value.trim();
   const newPass = document.getElementById('forgotNewPass').value;
@@ -11011,6 +11356,9 @@ function forgotResetPassword() {
   const passErr = document.getElementById('forgotPassError');
   otpErr.style.display = 'none';
   passErr.style.display = 'none';
+
+  // Firebase se OTP sync karo pehle — taaki cross-device OTP kaam kare
+  await syncOtpFromFirebase().catch(()=>{});
 
   // OTP verify
   const otpStore = readOtpStore();
