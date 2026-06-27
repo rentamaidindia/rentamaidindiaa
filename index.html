@@ -4172,14 +4172,16 @@ function isValidIndianMobile(num) {
 }
 
 
-// ── Fast2SMS Real OTP ──
+// ── Fast2SMS Real OTP (via secure Netlify function, API key not exposed) ──
 async function sendRealOtpSms(phone, otp) {
   try {
-    const msg = 'Your OTP for Rent a Maid India is ' + otp + '. Valid for 10 minutes. Do not share.';
-    const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=GEcI5xmvNl9MSOyUoV218QagtsXw4ekLP6H0zKrDWbFTAZJpd73nT2X84Z1K9EDodpNgrRBWJVxsPlHO&route=q&message=' + encodeURIComponent(msg) + '&numbers=' + phone;
-    const resp = await fetch(url);
+    const resp = await fetch('/.netlify/functions/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, otp })
+    });
     const data = await resp.json();
-    return data.return === true;
+    return data.success === true;
   } catch(e) { return false; }
 }
 
@@ -4219,7 +4221,7 @@ function sendOtp(context) {
 
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ OTP: ' + otp; });
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
   showToast('OTP bheja ja raha hai...');
 }
 
@@ -4699,7 +4701,7 @@ function sendMaidOtp() {
   writeOtpStore(otpStore);
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ OTP: ' + otp; });
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
   showToast('OTP bheja ja raha hai...');
 }
 
@@ -4741,7 +4743,7 @@ function sendRegOtp() {
   otpRow.style.display = 'block';
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '⚠️ OTP: ' + otp; });
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
   document.getElementById('regOtpInput').value = '';
   document.getElementById('regOtpError').style.display = 'none';
   showToast('OTP sent to +91 ' + phone);
@@ -6474,7 +6476,7 @@ function rcSendOtp() {
   localStorage.setItem('ram_otps', JSON.stringify(store));
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '⚠️ OTP: ' + otp; });
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
 }
 function rcSubmitLogin() {
   const phone = document.getElementById('rcPhone').value.replace(/\D/g, '');
