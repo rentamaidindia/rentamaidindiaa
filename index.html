@@ -4180,20 +4180,20 @@ function writeOtpStore(data) {
   }
 }
 // Firebase se OTP sync karo — returns Promise
+// IMPORTANT: the OTP that matters most is always the one generated on THIS device
+// (that's the one the user just received by SMS). Firebase data is only useful to
+// fill in entries that are missing locally (true cross-device case). A Firebase
+// entry must NEVER be allowed to overwrite a local entry for the same key, even if
+// its timestamp looks newer — stale/duplicate writes were causing valid, freshly
+// entered OTPs to be compared against an old code, showing "Incorrect OTP".
 async function syncOtpFromFirebase() {
   try {
     if (typeof window._fbGet === "function") {
       const fbData = await window._fbGet("siteData", "otpStore");
       if (fbData && typeof fbData === 'object') {
-        // Merge: local + firebase, keep freshest entries
         const local = readOtpStore();
+        // Start from Firebase data, then let local entries win for any shared key.
         const merged = Object.assign({}, fbData, local);
-        // Firebase wali entries jo local mein nahi hain unhe add karo
-        Object.keys(fbData).forEach(k => {
-          if (!local[k] || (fbData[k] && fbData[k].ts && local[k] && (!local[k].ts || fbData[k].ts > local[k].ts))) {
-            merged[k] = fbData[k];
-          }
-        });
         localStorage.setItem('otpStore', JSON.stringify(merged));
         return merged;
       }
@@ -4308,6 +4308,24 @@ function isValidIndianMobile(num) {
 }
 
 
+// ── Shared "Send OTP" cooldown guard ──
+// Every Send OTP button (signup, registration, forgot-password, recurring-customer
+// login) funnels through here. Without this, a fast double-tap on mobile — or the
+// network call simply taking a moment while the button stays clickable — fires the
+// real Fast2SMS API twice, and gets billed twice (₹5/SMS each time) for one OTP
+// request. This tracks an in-flight/cooldown window per phone+context so a second
+// click while one is already in progress (or within a few seconds of the last one)
+// is silently ignored instead of sending another SMS.
+const _otpSendCooldowns = {};
+const OTP_SEND_COOLDOWN_MS = 8000; // block re-sends for 8s after a send starts
+function otpSendGuardStart(cooldownKey) {
+  const now = Date.now();
+  const last = _otpSendCooldowns[cooldownKey] || 0;
+  if (now - last < OTP_SEND_COOLDOWN_MS) return false; // still cooling down — reject
+  _otpSendCooldowns[cooldownKey] = now;
+  return true; // allowed — proceed with sending
+}
+
 // ── Fast2SMS Real OTP (via secure Netlify function, API key not exposed) ──
 async function sendRealOtpSms(phone, otp) {
   try {
@@ -4320,6 +4338,7 @@ async function sendRealOtpSms(phone, otp) {
     return data.success === true;
   } catch(e) { return false; }
 }
+
 
 async function sendOtp(context) {
   // context: 'login' | 'signup'
@@ -4335,6 +4354,8 @@ async function sendOtp(context) {
     errEl.style.display = 'block';
     return;
   }
+  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
+  if (!otpSendGuardStart('sendOtp_' + context + '_' + phone)) return;
   errEl.style.display = 'none';
   hintEl.textContent = 'Data check ho raha hai...';
   hintEl.style.display = 'block';
@@ -4936,6 +4957,9 @@ function sendRegOtp() {
       return;
     }
   } catch(e) {}
+
+  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
+  if (!otpSendGuardStart('sendRegOtp_' + phone)) return;
 
   const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
   const otpStore = readOtpStore();
@@ -6696,6 +6720,8 @@ function rcSendOtp() {
     errEl.textContent = 'Please enter a valid 10-digit mobile number.';
     errEl.style.display = 'block'; return;
   }
+  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
+  if (!otpSendGuardStart('rcSendOtp_' + phone)) return;
   const otp = String(Math.floor(1000 + Math.random() * 9000));
   const store = JSON.parse(localStorage.getItem('ram_otps') || '{}');
   store[phone] = otp;
@@ -11296,6 +11322,9 @@ async function forgotSendOtp() {
     phoneErr.textContent = 'Valid 10-digit mobile number enter karein.';
     phoneErr.style.display = 'block'; return;
   }
+
+  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
+  if (!otpSendGuardStart('forgotSendOtp_' + phone)) return;
 
   btn.disabled = true; btn.textContent = 'Checking...';
 
