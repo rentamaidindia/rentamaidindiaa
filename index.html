@@ -4171,6 +4171,18 @@ function isValidIndianMobile(num) {
   return /^[6-9]\d{9}$/.test((num || '').replace(/\D/g, ''));
 }
 
+
+// ── Fast2SMS Real OTP ──
+async function sendRealOtpSms(phone, otp) {
+  try {
+    const msg = 'Your OTP for Rent a Maid India is ' + otp + '. Valid for 10 minutes. Do not share.';
+    const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=GEcI5xmvNl9MSOyUoV218QagtsXw4ekLP6H0zKrDWbFTAZJpd73nT2X84Z1K9EDodpNgrRBWJVxsPlHO&route=q&message=' + encodeURIComponent(msg) + '&numbers=' + phone;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    return data.return === true;
+  } catch(e) { return false; }
+}
+
 function sendOtp(context) {
   // context: 'login' | 'signup'
   const phoneId = context === 'login' ? 'loginPhone' : 'signupPhone';
@@ -4205,9 +4217,10 @@ function sendOtp(context) {
   otpStore[phone] = otp;
   writeOtpStore(otpStore);
 
-  hintEl.textContent = 'Demo OTP: ' + otp + ' (this is demo mode — real SMS will be added later)';
+  hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  showToast('OTP sent to +91 ' + phone);
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ OTP: ' + otp; });
+  showToast('OTP bheja ja raha hai...');
 }
 
 function submitLogin() {
@@ -4366,11 +4379,24 @@ function submitSignup() {
   }
   if (signupTermsErr) signupTermsErr.style.display = 'none';
 
-  // Success — save permanently in localStorage
+  // Success — save to Firebase Storage + Firestore
   const signupPhotoImg = document.getElementById('signupPhotoPreview') && document.getElementById('signupPhotoPreview').querySelector('img');
   const signupPhotoData = signupPhotoImg ? signupPhotoImg.src : '';
+  
+  // Save customer data immediately (with base64 photo as fallback)
   customers[phone] = { name, email, state, district, address, photo: signupPhotoData, createdAt: new Date().toISOString() };
   writeCustomers(customers);
+  
+  // Upload photo to Firebase Storage in background
+  const signupPhotoFile = document.getElementById('signupPhoto') ? document.getElementById('signupPhoto').files[0] : null;
+  if (signupPhotoFile && typeof window._fbUploadPhoto === 'function') {
+    window._fbUploadPhoto(signupPhotoFile, 'customer-photos/' + phone + '_' + Date.now() + '.jpg').then(url => {
+      if (url) {
+        const custs = readCustomers();
+        if (custs[phone]) { custs[phone].photo = url; writeCustomers(custs); }
+      }
+    }).catch(e => console.warn('Photo upload failed:', e));
+  }
   delete otpStore[phone];
   writeOtpStore(otpStore);
   setAuthToken(phone);
@@ -4441,8 +4467,7 @@ function submitBook() {
       fromWebsite: true
     };
     adminBooks.unshift(newBooking);
-    localStorage.setItem('ram_admin_bookings', JSON.stringify(adminBooks));
-    if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_bookings', adminBooks);
+    localStorage.setItem('ram_admin_bookings', JSON.stringify(adminBooks)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_bookings', adminBooks);
     // Also notify via old notification system
     notifyBooking({ customerName: cust.name||'Customer', phone: token, service: newBooking.service, city: newBooking.city, maidId: selectedMaidForBooking });
   } catch(e) {}
@@ -4672,9 +4697,10 @@ function sendMaidOtp() {
   const otpStore = readOtpStore();
   otpStore['maid_' + phone] = otp;
   writeOtpStore(otpStore);
-  hintEl.textContent = 'Demo OTP: ' + otp + ' (real SMS will be added later)';
+  hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  showToast('OTP sent to +91 ' + phone);
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ OTP: ' + otp; });
+  showToast('OTP bheja ja raha hai...');
 }
 
 // OTP for maid registration form (Step 1 phone verification + duplicate check)
@@ -4713,8 +4739,9 @@ function sendRegOtp() {
   otpStore['reg_' + phone] = otp;
   writeOtpStore(otpStore);
   otpRow.style.display = 'block';
-  hintEl.textContent = '✓ Demo OTP: ' + otp + ' (real SMS baad mein add hoga)';
+  hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '⚠️ OTP: ' + otp; });
   document.getElementById('regOtpInput').value = '';
   document.getElementById('regOtpError').style.display = 'none';
   showToast('OTP sent to +91 ' + phone);
@@ -4820,7 +4847,12 @@ function submitReg() {
       const alreadyExists = adminMaids.find(m => m.phone === phone);
       if (!alreadyExists) {
         const maxId = adminMaids.reduce((mx, m) => Math.max(mx, m.id||0), 0);
-        adminMaids.push({
+        // Get photo from preview
+        const regPhotoEl = document.getElementById('regPhotoPreview');
+        const regPhotoImg = regPhotoEl ? regPhotoEl.querySelector('img') : null;
+        const regPhotoBase64 = regPhotoImg ? regPhotoImg.src : '';
+        
+        const newMaid = {
           id: maxId + 1,
           name, phone,
           city: district, state,
@@ -4828,11 +4860,45 @@ function submitReg() {
           salary: salary ? '₹' + salary + '/month' : '',
           services: services.length ? services : ['General Help'],
           workType, rating: 0, reviewCount: 0,
+          photo: regPhotoBase64,
           available: false, verified: false,
           registeredAt: new Date().toISOString(),
           fromWebsite: true
-        });
+        };
+        adminMaids.push(newMaid);
         localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+        if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_maids', adminMaids); // already synced
+        
+        // Upload maid photo to Firebase Storage in background
+        const regPhotoFile = document.getElementById('regPhoto') ? document.getElementById('regPhoto').files[0] : null;
+        if (regPhotoFile && typeof window._fbUploadPhoto === 'function') {
+          window._fbUploadPhoto(regPhotoFile, 'maid-photos/' + phone + '_' + Date.now() + '.jpg').then(url => {
+            if (url) {
+              try {
+                let maids2 = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
+                const idx = maids2.findIndex(m => m.phone === phone);
+                if (idx !== -1) { maids2[idx].photo = url; localStorage.setItem('ram_admin_maids', JSON.stringify(maids2)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_maids', maids2); }
+              } catch(e) {}
+            }
+          }).catch(e => {});
+        }
+        
+        // Upload Aadhar to Firebase Storage
+        const aadharFrontFile = document.getElementById('aadharFront') ? document.getElementById('aadharFront').files[0] : null;
+        const aadharBackFile = document.getElementById('aadharBack') ? document.getElementById('aadharBack').files[0] : null;
+        const aadharNum = document.getElementById('regAadharNumber') ? document.getElementById('regAadharNumber').value.replace(/\s/g,'') : '';
+        if (aadharFrontFile && typeof window._fbUploadPhoto === 'function') {
+          window._fbUploadPhoto(aadharFrontFile, 'aadhar/' + phone + '_front_' + Date.now() + '.jpg').then(url => {
+            if (url && typeof window._fbSet === 'function') window._fbSet('siteData', 'aadhar_' + phone, { phone, aadharNum, frontUrl: url, status: 'pending', submittedAt: new Date().toISOString() });
+          }).catch(e => {});
+        }
+        if (aadharBackFile && typeof window._fbUploadPhoto === 'function') {
+          window._fbUploadPhoto(aadharBackFile, 'aadhar/' + phone + '_back_' + Date.now() + '.jpg').then(url => {
+            if (url) {
+              if (typeof window._fbSet === 'function') window._fbSet('siteData', 'aadhar_' + phone + '_back', { phone, backUrl: url });
+            }
+          }).catch(e => {});
+        }
       }
     } catch(e){}
   }
@@ -5080,6 +5146,7 @@ function sendRequestToMaid(maidId) {
     if (alreadyIdx >= 0) custReqs[alreadyIdx] = entry;
     else custReqs.unshift(entry);
     localStorage.setItem(custKey, JSON.stringify(custReqs));
+    if (typeof window._fbSet === "function") window._fbSet("siteData", custKey, custReqs);
   } catch(e) {}
 
   // Also save to admin booking list
@@ -5100,8 +5167,7 @@ function sendRequestToMaid(maidId) {
       createdAt: new Date().toISOString(),
       fromWebsite: true
     });
-    localStorage.setItem('ram_admin_bookings', JSON.stringify(adminBooks));
-    if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_bookings', adminBooks);
+    localStorage.setItem('ram_admin_bookings', JSON.stringify(adminBooks)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_bookings', adminBooks);
   } catch(e) {}
 
   showToast('✅ Request sent to ' + (maid ? maid.name : 'this maid') + '! Their number is now visible.');
@@ -5122,7 +5188,7 @@ function saveMaidRequest(maidPhone, req) {
     if (!exists) {
       list.unshift(req);
       localStorage.setItem(key, JSON.stringify(list));
-      if (typeof window._fbSet === 'function') window._fbSet('siteData', key.replace(/[^a-zA-Z0-9_-]/g,'_'), list);
+      if (typeof window._fbSet === "function") window._fbSet("siteData", key.replace(/[^a-zA-Z0-9_-]/g,"_"), list);
     }
   } catch(e) {}
 }
@@ -5138,7 +5204,7 @@ function markMaidRequestRead(maidPhone, reqId) {
     const list = JSON.parse(localStorage.getItem(key) || '[]');
     const updated = list.map(r => r.id === reqId ? {...r, read: true} : r);
     localStorage.setItem(key, JSON.stringify(updated));
-    if (typeof window._fbSet === 'function') window._fbSet('siteData', key.replace(/[^a-zA-Z0-9_-]/g,'_'), updated);
+    if (typeof window._fbSet === "function") window._fbSet("siteData", key.replace(/[^a-zA-Z0-9_-]/g,"_"), updated);
   } catch(e) {}
 }
 function updateMaidRequestStatus(maidPhone, reqId, status) {
@@ -5147,6 +5213,7 @@ function updateMaidRequestStatus(maidPhone, reqId, status) {
     const list = JSON.parse(localStorage.getItem(key) || '[]');
     const updated = list.map(r => r.id === reqId ? {...r, status, read: true, respondedAt: new Date().toISOString()} : r);
     localStorage.setItem(key, JSON.stringify(updated));
+    if (typeof window._fbSet === "function") window._fbSet("siteData", key.replace(/[^a-zA-Z0-9_-]/g,"_"), updated);
 
     // ── Also write to customer-readable key so customer dashboard can show status ──
     const req = updated.find(r => r.id === reqId);
@@ -5167,6 +5234,7 @@ function updateMaidRequestStatus(maidPhone, reqId, status) {
       if (existingIdx >= 0) custReqs[existingIdx] = entry;
       else custReqs.unshift(entry);
       localStorage.setItem(custKey, JSON.stringify(custReqs));
+      if (typeof window._fbSet === "function") window._fbSet("siteData", custKey, custReqs);
     }
   } catch(e) {}
 }
@@ -5882,12 +5950,23 @@ function handleProfilePhotoUpload(event) {
       if (!token) return;
       const customers = readCustomers();
       const cust = customers[token] || {};
+      // Save base64 immediately as fallback
       customers[token] = { ...cust, photo: dataUrl };
       writeCustomers(customers);
-
       showToast('✅ Profile photo updated!');
       initDashboard();
       dashTab('settings');
+      // Upload to Firebase Storage in background
+      const photoFileEl = document.getElementById('profilePhotoInput') || document.getElementById('custPhotoInput');
+      const photoFile = photoFileEl ? photoFileEl.files[0] : null;
+      if (photoFile && typeof window._fbUploadPhoto === 'function') {
+        window._fbUploadPhoto(photoFile, 'customer-photos/' + token + '_' + Date.now() + '.jpg').then(url => {
+          if (url) {
+            const custs = readCustomers();
+            if (custs[token]) { custs[token].photo = url; writeCustomers(custs); }
+          }
+        }).catch(e => {});
+      }
     };
     img.onerror = function() { showToast('Could not read that image. Please try another file.'); };
     img.src = e.target.result;
@@ -6393,9 +6472,9 @@ function rcSendOtp() {
   const store = JSON.parse(localStorage.getItem('ram_otps') || '{}');
   store[phone] = otp;
   localStorage.setItem('ram_otps', JSON.stringify(store));
-  if (typeof window._fbSet === 'function') window._fbSet('siteData', 'ram_otps', store);
-  hintEl.textContent = 'Demo OTP: ' + otp + ' (real SMS will be added later)';
+  hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
+  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '⚠️ OTP: ' + otp; });
 }
 function rcSubmitLogin() {
   const phone = document.getElementById('rcPhone').value.replace(/\D/g, '');
@@ -7742,7 +7821,7 @@ function setLS(key, val) {
     var coll = (key.startsWith("ram_admin_") || key === "registeredCustomers" || key === "ram_registered_maids") ? "adminData" : "siteData";
     window._fbSet(coll, key, val);
   }
-}
+}  // setLS already syncs Firebase
 
 function getCustomers() { return getLS('registeredCustomers', {}); }
 function setCustomers(v) { setLS('registeredCustomers', v); }
@@ -7752,6 +7831,7 @@ function getMaids() {
   if (!stored) {
     // First time: save DEFAULT_MAIDS to localStorage so new entries merge correctly
     localStorage.setItem('ram_admin_maids', JSON.stringify(DEFAULT_MAIDS));
+    if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_maids', DEFAULT_MAIDS);
     return DEFAULT_MAIDS.slice();
   }
   return stored;
@@ -8063,7 +8143,7 @@ function quickVerifyMaid(id) {
       const regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
       regMaids[approvedMaid.phone] = { name: approvedMaid.name, phone: approvedMaid.phone, verified: true };
       localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
-      if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_registered_maids', regMaids);
+      if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_registered_maids", regMaids);
     } catch(e) {}
   }
   // Website pe turant dikho: MAIDS array + maid cards refresh
@@ -8285,6 +8365,53 @@ function resetMaidFilter() {
 function viewMaid(id) {
   const m = getMaids().find(x => x.id === id);
   if (!m) return;
+
+  // Load aadhar data from Firebase/localStorage
+  let aadharData = null;
+  let aadharBack = null;
+  try { aadharData = JSON.parse(localStorage.getItem('aadhar_' + m.phone) || 'null'); } catch(e) {}
+  try { aadharBack = JSON.parse(localStorage.getItem('aadhar_' + m.phone + '_back') || 'null'); } catch(e) {}
+
+  // Aadhar section HTML
+  const aadharSection = `
+    <div style="margin-top:20px;padding:16px;background:var(--muted-bg);border-radius:12px;border:1px solid var(--border);">
+      <div style="font-size:14px;font-weight:700;color:var(--foreground);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-id-card" style="color:#f97316;"></i> Aadhar Card Verification
+        ${aadharData ? `<span class="badge ${aadharData.status==='verified'?'badge-green':'badge-yellow'}">${aadharData.status==='verified'?'✅ Verified':'⏳ Pending'}</span>` : '<span class="badge badge-gray">Not Submitted</span>'}
+      </div>
+      ${aadharData ? `
+        <div style="font-size:13px;color:var(--muted);margin-bottom:10px;">
+          Aadhar No: <strong>${aadharData.aadharNum||'N/A'}</strong> · 
+          Submitted: ${aadharData.submittedAt ? new Date(aadharData.submittedAt).toLocaleDateString('en-IN') : 'N/A'}
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          ${aadharData.frontUrl ? `
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;">FRONT</div>
+              <img src="${aadharData.frontUrl}" style="width:160px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="window.open('${aadharData.frontUrl}','_blank')"/>
+            </div>
+          ` : '<div style="font-size:13px;color:var(--muted);">Front photo not uploaded</div>'}
+          ${aadharBack && aadharBack.backUrl ? `
+            <div>
+              <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px;">BACK</div>
+              <img src="${aadharBack.backUrl}" style="width:160px;height:100px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer;" onclick="window.open('${aadharBack.backUrl}','_blank')"/>
+            </div>
+          ` : ''}
+        </div>
+        ${aadharData.status !== 'verified' ? `
+          <div style="display:flex;gap:8px;">
+            <button class="action-btn action-btn-success action-btn-sm" onclick="verifyAadharAdmin('${m.phone}',${m.id})">
+              <i class="fas fa-check"></i> Verify Aadhar
+            </button>
+            <button class="action-btn action-btn-danger action-btn-sm" onclick="rejectAadharAdmin('${m.phone}')">
+              <i class="fas fa-times"></i> Reject
+            </button>
+          </div>
+        ` : '<div style="color:#16a34a;font-size:13px;font-weight:600;"><i class="fas fa-circle-check"></i> Aadhar Verified</div>'}
+      ` : '<div style="font-size:13px;color:var(--muted);">Maid ne abhi Aadhar submit nahi kiya.</div>'}
+    </div>
+  `;
+
   document.getElementById('viewMaidBody').innerHTML = `
     <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;">
       <div style="text-align:center;">
@@ -8295,23 +8422,57 @@ function viewMaid(id) {
         <div class="profile-meta">${m.city}, ${m.state}</div>
         <div style="margin-top:10px;">
           <span class="badge ${m.available?'badge-green':'badge-gray'}">${m.available?'Available':'Busy'}</span>
-          <span class="badge ${m.verified?'badge-blue':'badge-yellow'}" style="margin-left:4px;">${m.verified?'Verified':'Unverified'}</span>
+          <span class="badge ${m.verified?'badge-blue':'badge-yellow'}" style="margin-left:4px;">${m.verified?'Verified':'Pending'}</span>
         </div>
         <div style="margin-top:12px;font-size:20px;color:#f59e0b;">${'★'.repeat(Math.round(m.rating))}</div>
         <div style="font-size:13px;color:var(--text2);">${m.rating}/5 · ${m.reviewCount} reviews</div>
       </div>
       <div>
-        ${[['Phone',m.phone||'N/A'],['City',m.city],['State',m.state],['Experience',m.experience+' years'],['Languages',m.languages?.join(', ')||'N/A'],['Services',m.services?.join(', ')||'N/A']].map(([k,v])=>`
+        ${[['Phone',m.phone||'N/A'],['City',m.city],['State',m.state],['Experience',m.experience+' years'],['Registered',m.registeredAt?new Date(m.registeredAt).toLocaleDateString('en-IN'):'N/A'],['Languages',m.languages?.join(', ')||'N/A'],['Services',m.services?.join(', ')||'N/A']].map(([k,v])=>`
           <div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>
         `).join('')}
-        <div style="margin-top:16px;display:flex;gap:8px;">
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
           <button class="action-btn action-btn-primary" onclick="closeModal('viewMaidModal');openEditMaidModal(${m.id})"><i class="fas fa-edit"></i> Edit</button>
-          <button class="action-btn action-btn-${m.verified?'outline':'success'}" onclick="toggleMaidVerified(${m.id});closeModal('viewMaidModal');renderMaids();">${m.verified?'Unverify':'Verify Maid'}</button>
+          <button class="action-btn action-btn-${m.verified?'outline':'success'}" onclick="toggleMaidVerified(${m.id});viewMaid(${m.id});">${m.verified?'Unverify':'✅ Verify Maid'}</button>
+          ${!m.verified ? `<button class="action-btn action-btn-success" onclick="quickVerifyMaid(${m.id});closeModal('viewMaidModal');"><i class="fas fa-bolt"></i> Quick Approve</button>` : ''}
         </div>
       </div>
     </div>
+    ${aadharSection}
   `;
   openModal('viewMaidModal');
+}
+
+// ── Admin: Verify Aadhar ──
+function verifyAadharAdmin(phone, maidId) {
+  if (typeof window._fbSet === 'function') {
+    const data = JSON.parse(localStorage.getItem('aadhar_' + phone) || '{}');
+    data.status = 'verified';
+    data.verifiedAt = new Date().toISOString();
+    localStorage.setItem('aadhar_' + phone, JSON.stringify(data));
+    window._fbSet('siteData', 'aadhar_' + phone, data);
+  }
+  // Auto verify maid profile too
+  const maids = getMaids().map(m => m.id === maidId ? {...m, verified: true, available: true} : m);
+  setMaids(maids);
+  showToast('✅ Aadhar verified! Maid profile bhi approve ho gayi.');
+  viewMaid(maidId);
+  renderMaids();
+  renderDashboard();
+}
+
+// ── Admin: Reject Aadhar ──
+function rejectAadharAdmin(phone) {
+  if (typeof window._fbSet === 'function') {
+    const data = JSON.parse(localStorage.getItem('aadhar_' + phone) || '{}');
+    data.status = 'rejected';
+    data.rejectedAt = new Date().toISOString();
+    localStorage.setItem('aadhar_' + phone, JSON.stringify(data));
+    window._fbSet('siteData', 'aadhar_' + phone, data);
+  }
+  showToast('❌ Aadhar rejected. Maid ko resubmit karna hoga.');
+  closeModal('viewMaidModal');
+  renderMaids();
 }
 function openAddMaidModal() {
   editingKey = null;
@@ -8375,7 +8536,7 @@ function saveMaid() {
         regMaids[phone].verified = false;
       }
       localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
-      if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_registered_maids', regMaids);
+      if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_registered_maids", regMaids);
     } catch(e) {}
   }
   // Website pe turant update
@@ -8399,7 +8560,7 @@ function toggleMaidVerified(id) {
         regMaids[toggled.phone].verified = false;
       }
       localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
-      if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_registered_maids', regMaids);
+      if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_registered_maids", regMaids);
     } catch(e) {}
   }
   // Website pe turant update
@@ -9258,8 +9419,7 @@ function saveAllPlans() {
     plans[key] = { name:name, price:price, requests:req, days:days, icon: PLAN_ICONS[key]||'⭐', desc:desc, popular:pop, perks:perks };
   });
   // Save to localStorage key used by website
-  localStorage.setItem('ram_website_plans', JSON.stringify(plans));
-  if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_website_plans', plans);
+  localStorage.setItem('ram_website_plans', JSON.stringify(plans)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_website_plans', plans);
   // Also sync in-memory PLANS object so same-page website reflects immediately
   if (typeof window.PLANS !== 'undefined') {
     PLAN_KEYS.forEach(function(k){ if(plans[k]) window.PLANS[k] = plans[k]; });
@@ -9576,6 +9736,16 @@ function liveDataPoll() {
   const custs = getCustomers();
   const maids = getMaids();
   const pendingMaids = maids.filter(m => !m.verified).length;
+  // Count pending aadhar verifications
+  let pendingAadhar = 0;
+  maids.forEach(m => {
+    if (m.phone) {
+      try {
+        const ad = JSON.parse(localStorage.getItem('aadhar_' + m.phone) || 'null');
+        if (ad && ad.status === 'pending') pendingAadhar++;
+      } catch(e) {}
+    }
+  });
   const newBookings = books.length - _lastBookingCount;
   const newCustomers = Object.keys(custs).length - _lastCustCount;
   const newMaids = maids.length - _lastMaidCount;
@@ -10357,8 +10527,7 @@ function applyTranslations(lang) {
 
 <script type="module">
 // ══════════════════════════════════════════════════════════════════
-// FIREBASE — Complete Cloud Storage + Photo Upload System
-// Sab kuch yahan se control hota hai — localStorage sirf backup hai
+// FIREBASE — Complete System: Database + Storage + Real-time + OTP
 // ══════════════════════════════════════════════════════════════════
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, doc, setDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
@@ -10377,22 +10546,17 @@ const _fbApp = initializeApp(firebaseConfig);
 const _db    = getFirestore(_fbApp);
 const _st    = getStorage(_fbApp);
 
-// ── Safe Firestore doc key (no special chars) ──
-function _fbKey(k) {
-  return String(k).replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 100);
-}
+function _fbKey(k) { return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100); }
 
-// ── Universal save to Firebase (background, non-blocking) ──
+// ── Universal Firestore save ──
 window._fbSet = function(coll, key, val) {
   try {
-    setDoc(doc(_db, coll, _fbKey(key)), {
-      data: val,
-      updatedAt: new Date().toISOString()
-    }).catch(e => console.warn('Firebase save failed:', key, e));
+    setDoc(doc(_db, coll, _fbKey(key)), { data: val, updatedAt: new Date().toISOString() })
+      .catch(e => console.warn('FB save failed:', key, e));
   } catch(e) {}
 };
 
-// ── Photo/File Upload to Firebase Storage ──
+// ── Firebase Storage photo upload ──
 window._fbUploadPhoto = async function(file, path) {
   try {
     const storageRef = ref(_st, path);
@@ -10405,92 +10569,127 @@ window._fbUploadPhoto = async function(file, path) {
   }
 };
 
-// ── Maid photo upload helper — call this when maid registers ──
-window.uploadMaidPhoto = async function(file, maidPhone) {
-  const path = 'maid-photos/' + maidPhone + '_' + Date.now() + '.' + (file.name.split('.').pop() || 'jpg');
-  return await window._fbUploadPhoto(file, path);
-};
-
-// ── Customer photo upload helper ──
-window.uploadCustomerPhoto = async function(file, customerPhone) {
-  const path = 'customer-photos/' + customerPhone + '_' + Date.now() + '.' + (file.name.split('.').pop() || 'jpg');
-  return await window._fbUploadPhoto(file, path);
-};
-
-// ── Load ALL data from Firebase on page start ──
+// ── Load ALL data from Firebase on startup ──
 async function loadFromFirebase() {
   try {
-    // Admin data: maids, bookings, cities, services, testimonials, subscribers, reviews, admins, plans
     const adminSnap = await getDocs(collection(_db, 'adminData'));
     adminSnap.forEach(d => {
-      if (d.data().data !== undefined) {
-        localStorage.setItem(d.id, JSON.stringify(d.data().data));
-      }
+      if (d.data().data !== undefined) localStorage.setItem(d.id, JSON.stringify(d.data().data));
     });
-
-    // Site data: customers, subscriptions, sent requests, notifications, maid inboxes, OTPs
     const siteSnap = await getDocs(collection(_db, 'siteData'));
     siteSnap.forEach(d => {
-      if (d.data().data !== undefined) {
-        localStorage.setItem(d.id, JSON.stringify(d.data().data));
-      }
+      if (d.data().data !== undefined) localStorage.setItem(d.id, JSON.stringify(d.data().data));
     });
-
-    console.log('✅ Firebase — poora data load!');
+    console.log('✅ Firebase data loaded!');
   } catch(e) {
-    console.warn('⚠️ Firebase load failed, localStorage fallback:', e);
+    console.warn('⚠️ Firebase load failed — localStorage fallback:', e);
   }
 }
 
-// ── Real-time listener — jab admin kuch change kare, website pe turant dikhe ──
+// ── Real-time sync — admin changes turant website pe ──
 function setupRealtimeSync() {
-  // Admin maids — real-time
-  onSnapshot(doc(_db, 'adminData', 'ram_admin_maids'), (snap) => {
+  onSnapshot(doc(_db, 'adminData', 'ram_admin_maids'), snap => {
     if (snap.exists()) {
-      const val = snap.data().data;
-      localStorage.setItem('ram_admin_maids', JSON.stringify(val));
+      localStorage.setItem('ram_admin_maids', JSON.stringify(snap.data().data));
       if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
       else if (typeof window.renderMaidCards === 'function') window.renderMaidCards();
     }
   });
-
-  // Customers — real-time
-  onSnapshot(doc(_db, 'siteData', 'registeredCustomers'), (snap) => {
-    if (snap.exists()) {
-      localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
-    }
+  onSnapshot(doc(_db, 'siteData', 'registeredCustomers'), snap => {
+    if (snap.exists()) localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
   });
-
-  // Bookings — real-time
-  onSnapshot(doc(_db, 'adminData', 'ram_admin_bookings'), (snap) => {
-    if (snap.exists()) {
-      localStorage.setItem('ram_admin_bookings', JSON.stringify(snap.data().data));
-    }
+  onSnapshot(doc(_db, 'adminData', 'ram_admin_bookings'), snap => {
+    if (snap.exists()) localStorage.setItem('ram_admin_bookings', JSON.stringify(snap.data().data));
   });
-
-  // Website plans — real-time update on website
-  onSnapshot(doc(_db, 'adminData', 'ram_website_plans'), (snap) => {
+  onSnapshot(doc(_db, 'adminData', 'ram_website_plans'), snap => {
     if (snap.exists()) {
       const plans = snap.data().data;
-      localStorage.setItem('ram_website_plans', JSON.stringify(plans));
-      if (typeof window.PLANS !== 'undefined' && plans) {
-        Object.assign(window.PLANS, plans);
-      }
+      localStorage.setItem('ram_website_plans', JSON.stringify(plans)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_website_plans', plans);
+      if (typeof window.PLANS !== 'undefined' && plans) Object.assign(window.PLANS, plans);
       if (typeof window.renderWebsitePlans === 'function') window.renderWebsitePlans();
     }
   });
-
-  // Registered maids — real-time (login sync)
-  onSnapshot(doc(_db, 'adminData', 'ram_registered_maids'), (snap) => {
-    if (snap.exists()) {
-      localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
-    }
+  onSnapshot(doc(_db, 'adminData', 'ram_registered_maids'), snap => {
+    if (snap.exists()) localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
   });
 }
 
-// ── Start: load data then setup real-time ──
+// ── Admin ke liye aadhar data bhi real-time load ──
+function setupAdminRealtimeSync() {
+  // Pending maids — real-time notification for admin
+  onSnapshot(doc(_db, 'adminData', 'ram_admin_maids'), snap => {
+    if (!snap.exists()) return;
+    const maids = snap.data().data || [];
+    localStorage.setItem('ram_admin_maids', JSON.stringify(maids));
+    // Update admin badges if admin panel is open
+    if (typeof window.updateNavBadges === 'function') window.updateNavBadges();
+    if (typeof window.renderMaids === 'function') {
+      try { window.renderMaids(); } catch(e) {}
+    }
+    if (typeof window.renderDashboard === 'function') {
+      try { window.renderDashboard(); } catch(e) {}
+    }
+  });
+
+  // Aadhar submissions — real-time
+  // We load all siteData keys starting with aadhar_ on demand
+  // Admin dashboard badge update
+  onSnapshot(doc(_db, 'adminData', 'ram_admin_bookings'), snap => {
+    if (!snap.exists()) return;
+    localStorage.setItem('ram_admin_bookings', JSON.stringify(snap.data().data));
+    if (typeof window.renderBookings === 'function') {
+      try { window.renderBookings(); } catch(e) {}
+    }
+    if (typeof window.renderDashboard === 'function') {
+      try { window.renderDashboard(); } catch(e) {}
+    }
+    if (typeof window.updateNavBadges === 'function') window.updateNavBadges();
+  });
+
+  // Customers real-time
+  onSnapshot(doc(_db, 'siteData', 'registeredCustomers'), snap => {
+    if (!snap.exists()) return;
+    localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
+    if (typeof window.renderCustomers === 'function') {
+      try { window.renderCustomers(); } catch(e) {}
+    }
+    if (typeof window.renderDashboard === 'function') {
+      try { window.renderDashboard(); } catch(e) {}
+    }
+  });
+
+  // Website plans
+  onSnapshot(doc(_db, 'adminData', 'ram_website_plans'), snap => {
+    if (!snap.exists()) return;
+    const plans = snap.data().data;
+    localStorage.setItem('ram_website_plans', JSON.stringify(plans));
+    if (typeof window.PLANS !== 'undefined' && plans) Object.assign(window.PLANS, plans);
+    if (typeof window.renderWebsitePlans === 'function') window.renderWebsitePlans();
+  });
+
+  // Registered maids
+  onSnapshot(doc(_db, 'adminData', 'ram_registered_maids'), snap => {
+    if (!snap.exists()) return;
+    localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
+  });
+}
+
+// ── Load aadhar data for all maids (admin panel use) ──
+window.loadAadharData = async function(phone) {
+  try {
+    const { getDoc } = await import("https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js");
+    const snap = await getDoc(doc(_db, 'siteData', 'aadhar_' + phone));
+    if (snap.exists()) {
+      localStorage.setItem('aadhar_' + phone, JSON.stringify(snap.data().data));
+      return snap.data().data;
+    }
+  } catch(e) {}
+  return null;
+};
+
 loadFromFirebase().then(() => {
   setupRealtimeSync();
+  setupAdminRealtimeSync();
 });
 </script>
 
