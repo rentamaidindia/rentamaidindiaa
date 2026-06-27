@@ -1,3 +1,4 @@
+// netlify/functions/send-otp.js
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: 'Method not allowed' }) };
@@ -13,12 +14,13 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid OTP' }) };
     }
 
-    const apiKey = process.env.FAST2SMS_API_KEY;
+    const apiKey = process.env.FAST2SMS_API_KEY; // key Netlify env var se aayegi, code me nahi
     const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=' + apiKey +
       '&route=otp&variables_values=' + otp + '&flash=0&numbers=' + phone;
 
     const resp = await fetch(url);
     const data = await resp.json();
+    console.log('FAST2SMS_RESPONSE:', JSON.stringify(data));
 
     return {
       statusCode: 200,
