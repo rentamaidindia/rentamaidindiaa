@@ -1401,7 +1401,7 @@ tr:hover td{background:#f8fafc;}
       <a href="#" onclick="showPage('about');return false;" data-i18n="nav_about">About</a>
       <a href="#" onclick="showPage('blog');return false;" data-i18n="nav_blog">Blog</a>
       <a href="#" onclick="showPage('register');return false;" data-i18n="nav_jobs">Jobs</a>
-      
+
     </div>
     <div class="nav-actions">
       <a href="tel:9530112346" class="nav-phone"><i class="fas fa-phone"></i> +91 9530112346</a>
@@ -1436,7 +1436,7 @@ tr:hover td{background:#f8fafc;}
       <a href="#" onclick="showPage('blog');document.getElementById('mobileMenu').classList.remove('open');return false;">Blog</a>
       <a href="#" onclick="showPage('register');document.getElementById('mobileMenu').classList.remove('open');return false;">Register as Maid</a>
       <a href="#" onclick="showPage('contact');document.getElementById('mobileMenu').classList.remove('open');return false;">Contact</a>
-      
+
     </div>
     <div class="mobile-btns">
       <a href="tel:9530112346" class="btn btn-outline"><i class="fas fa-phone"></i> +91 9530112346</a>
@@ -2264,6 +2264,22 @@ tr:hover td{background:#f8fafc;}
               <input type="text" id="regOtpInput" placeholder="Enter OTP" maxlength="6" />
               <div id="regOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
             </div>
+            <div class="form-group-v" id="regPasswordRow" style="display:none;">
+              <label>Password *</label>
+              <div style="position:relative;">
+                <input type="password" id="regPassword" placeholder="Min 8 characters" style="width:100%;padding-right:42px;" />
+                <button type="button" onclick="togglePwd('regPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
+              </div>
+              <div id="regPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+            </div>
+            <div class="form-group-v" id="regConfirmPasswordRow" style="display:none;">
+              <label>Confirm Password *</label>
+              <div style="position:relative;">
+                <input type="password" id="regConfirmPassword" placeholder="Password dobara enter karein" style="width:100%;padding-right:42px;" />
+                <button type="button" onclick="togglePwd('regConfirmPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
+              </div>
+              <div id="regConfirmPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+            </div>
             <div class="form-group-v"><label>Alternate Phone</label><input type="tel" id="regAltPhone" placeholder="Optional" /></div>
             <div class="form-group-v"><label>Email Address</label><input type="email" id="regEmail" placeholder="Optional" /></div>
           </div>
@@ -2909,17 +2925,19 @@ tr:hover td{background:#f8fafc;}
 
       <div class="form-group-v" style="margin-bottom:12px;">
         <label>Phone Number *</label>
-        <div style="display:flex;gap:8px;">
-          <input type="tel" placeholder="+91 9530112346" id="loginPhone" maxlength="10" style="flex:1;" />
-          <button type="button" class="btn btn-sm" style="white-space:nowrap;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;box-shadow:0 2px 8px rgba(249,115,22,.35);font-weight:700;" onclick="sendOtp('login')"><i class="fas fa-paper-plane"></i> Send OTP</button>
-        </div>
+        <input type="tel" placeholder="+91 9530112346" id="loginPhone" maxlength="10" onkeydown="if(event.key==='Enter')document.getElementById('loginPassword').focus()" />
         <div id="loginPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">Please enter a valid 10-digit mobile number.</div>
       </div>
       <div class="form-group-v" style="margin-bottom:8px;">
-        <label>OTP *</label>
-        <input type="text" placeholder="Enter OTP" maxlength="6" id="loginOtp" />
-        <div id="loginOtpHint" style="font-size:12px;color:var(--muted);margin-top:4px;display:none;"></div>
-        <div id="loginOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">Incorrect OTP. Please check and try again.</div>
+        <label>Password *</label>
+        <div style="position:relative;">
+          <input type="password" placeholder="Apna password enter karein" id="loginPassword" style="width:100%;padding-right:42px;" onkeydown="if(event.key='Enter')submitLogin()" />
+          <button type="button" onclick="togglePwd('loginPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="loginPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+      </div>
+      <div style="text-align:right;margin-bottom:10px;">
+        <a href="#" style="font-size:12px;color:var(--primary);font-weight:600;" onclick="showForgotPasswordView('customer');return false;"><i class="fas fa-key"></i> Forgot Password?</a>
       </div>
       <button class="btn btn-lg btn-primary w-full mt-4" onclick="submitLogin()">Login</button>
       <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted);">Don't have an account? <a href="#" style="color:var(--primary);font-weight:600;" onclick="showAuthView('signup');return false;">Register</a></div>
@@ -2959,11 +2977,27 @@ tr:hover td{background:#f8fafc;}
         </div>
         <div id="signupPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">Please enter a valid 10-digit mobile number.</div>
       </div>
-      <div class="form-group-v" style="margin-bottom:16px;">
-        <label>OTP *</label>
-        <input type="text" id="signupOtp" placeholder="Enter OTP sent to your mobile" maxlength="6" />
+      <div class="form-group-v" style="margin-bottom:12px;">
+        <label>OTP (Phone Verify) *</label>
+        <input type="text" id="signupOtp" placeholder="OTP enter karein" maxlength="6" />
         <div id="signupOtpHint" style="font-size:12px;color:var(--muted);margin-top:4px;display:none;"></div>
         <div id="signupOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">Incorrect OTP. Please check and try again.</div>
+      </div>
+      <div class="form-group-v" style="margin-bottom:12px;">
+        <label>Password *</label>
+        <div style="position:relative;">
+          <input type="password" placeholder="Min 8 characters" id="signupPassword" style="width:100%;padding-right:42px;" />
+          <button type="button" onclick="togglePwd('signupPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="signupPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+      </div>
+      <div class="form-group-v" style="margin-bottom:12px;">
+        <label>Confirm Password *</label>
+        <div style="position:relative;">
+          <input type="password" placeholder="Password dobara enter karein" id="signupConfirmPassword" style="width:100%;padding-right:42px;" />
+          <button type="button" onclick="togglePwd('signupConfirmPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="signupConfirmPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -3034,17 +3068,19 @@ tr:hover td{background:#f8fafc;}
       <div id="maidLoginView">
         <div class="form-group-v" style="margin-bottom:12px;">
           <label>Registered Mobile Number *</label>
-          <div style="display:flex;gap:8px;">
-            <input type="tel" id="maidLoginPhone" placeholder="98765 43210" maxlength="10" style="flex:1;" />
-            <button type="button" class="btn btn-sm" style="white-space:nowrap;background:linear-gradient(135deg,var(--secondary),#2a4a7f);color:#fff;border:none;box-shadow:0 2px 8px rgba(30,58,95,.35);font-weight:700;" onclick="sendMaidOtp()"><i class="fas fa-paper-plane"></i> Send OTP</button>
-          </div>
+          <input type="tel" id="maidLoginPhone" placeholder="98765 43210" maxlength="10" onkeydown="if(event.key==='Enter')document.getElementById('maidLoginPassword').focus()" />
           <div id="maidLoginPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
         </div>
-        <div class="form-group-v" style="margin-bottom:16px;">
-          <label>OTP *</label>
-          <input type="text" id="maidLoginOtp" placeholder="Enter OTP sent to your mobile" maxlength="6" />
-          <div id="maidLoginOtpHint" style="font-size:12px;color:var(--muted);margin-top:4px;display:none;"></div>
-          <div id="maidLoginOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+        <div class="form-group-v" style="margin-bottom:8px;">
+          <label>Password *</label>
+          <div style="position:relative;">
+            <input type="password" placeholder="Apna password enter karein" id="maidLoginPassword" style="width:100%;padding-right:42px;" onkeydown="if(event.key==='Enter')submitMaidLogin()" />
+            <button type="button" onclick="togglePwd('maidLoginPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
+          </div>
+          <div id="maidLoginPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+        </div>
+        <div style="text-align:right;margin-bottom:10px;">
+          <a href="#" style="font-size:12px;color:var(--primary);font-weight:600;" onclick="showForgotPasswordView('maid');return false;"><i class="fas fa-key"></i> Forgot Password?</a>
         </div>
         <button class="btn btn-lg btn-primary w-full" onclick="submitMaidLogin()">Login as Maid</button>
         <div style="text-align:center;margin-top:16px;font-size:14px;color:var(--muted);">New maid? <a href="#" style="color:var(--primary);font-weight:600;" onclick="switchMaidSubTab('register');return false;">Register here</a></div>
@@ -3065,6 +3101,55 @@ tr:hover td{background:#f8fafc;}
 </div>
 
 <!-- ══ TOAST ══ -->
+
+<!-- ══ FORGOT PASSWORD MODAL ══ -->
+<div id="forgotPasswordModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;overflow-y:auto;">
+  <div style="background:#fff;border-radius:20px;padding:32px 24px;width:90%;max-width:400px;margin:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.25);">
+    <button onclick="closeForgotModal()" style="position:absolute;top:14px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;">&times;</button>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f97316,#fb923c);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:24px;">🔑</div>
+      <h2 style="font-family:var(--serif);font-size:20px;font-weight:700;color:#111827;margin-bottom:4px;">Forgot Password?</h2>
+      <p style="color:#6b7280;font-size:13px;" id="forgotDesc">Apna registered mobile number enter karein. Hum OTP bhejenge.</p>
+    </div>
+    <!-- Step 1: Phone + Send OTP -->
+    <div id="forgotStep1">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#374151;margin-bottom:6px;">Mobile Number *</label>
+        <div style="display:flex;gap:8px;">
+          <input type="tel" id="forgotPhone" maxlength="10" placeholder="98765 43210" style="flex:1;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;" />
+          <button onclick="forgotSendOtp()" id="forgotSendBtn" style="white-space:nowrap;padding:10px 14px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send OTP</button>
+        </div>
+        <div id="forgotPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+        <div id="forgotOtpHint" style="color:#16a34a;font-size:12px;margin-top:4px;display:none;"></div>
+      </div>
+    </div>
+    <!-- Step 2: OTP + New Password (hidden initially) -->
+    <div id="forgotStep2" style="display:none;">
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#374151;margin-bottom:6px;">OTP *</label>
+        <input type="text" id="forgotOtp" maxlength="6" placeholder="OTP enter karein" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;" />
+        <div id="forgotOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#374151;margin-bottom:6px;">New Password *</label>
+        <div style="position:relative;">
+          <input type="password" id="forgotNewPass" placeholder="Min 8 characters" style="width:100%;padding:10px 12px;padding-right:42px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;" />
+          <button type="button" onclick="togglePwd('forgotNewPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#374151;margin-bottom:6px;">Confirm New Password *</label>
+        <div style="position:relative;">
+          <input type="password" id="forgotConfirmPass" placeholder="Password dobara enter karein" style="width:100%;padding:10px 12px;padding-right:42px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;" />
+          <button type="button" onclick="togglePwd('forgotConfirmPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="forgotPassError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
+      </div>
+      <button onclick="forgotResetPassword()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;">Reset Password</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:500;z-index:9999;display:none;box-shadow:0 4px 20px rgba(0,0,0,.3);">Message</div>
 
 <script>
@@ -4227,72 +4312,49 @@ function sendOtp(context) {
 
 function submitLogin() {
   const phone = document.getElementById('loginPhone').value.replace(/\D/g, '');
-  const otp = document.getElementById('loginOtp').value.trim();
+  const pass = document.getElementById('loginPassword').value;
   const phoneErr = document.getElementById('loginPhoneError');
-  const otpErr = document.getElementById('loginOtpError');
+  const passErr = document.getElementById('loginPasswordError');
   phoneErr.style.display = 'none';
-  otpErr.style.display = 'none';
+  passErr.style.display = 'none';
 
   if (!isValidIndianMobile(phone)) {
-    phoneErr.textContent = 'Please enter a valid 10-digit mobile number.';
-    phoneErr.style.display = 'block';
-    return;
+    phoneErr.textContent = 'Valid 10-digit mobile number enter karein.';
+    phoneErr.style.display = 'block'; return;
   }
   const customers = readCustomers();
   if (!customers[phone]) {
-    phoneErr.textContent = 'No account found with this number. Please register first.';
-    phoneErr.style.display = 'block';
-    return;
+    phoneErr.textContent = 'Is number par koi account nahi hai. Pehle register karein.';
+    phoneErr.style.display = 'block'; return;
   }
-  if (!otp) {
-    otpErr.textContent = 'Please enter the OTP sent to your mobile.';
-    otpErr.style.display = 'block';
-    return;
+  if (!pass) {
+    passErr.textContent = 'Password enter karein.';
+    passErr.style.display = 'block'; return;
   }
-  const otpStore = readOtpStore();
-  if (otpStore[phone] && otp !== otpStore[phone]) {
-    otpErr.textContent = 'Incorrect OTP.';
-    otpErr.style.display = 'block';
-    return;
-  }
-  if (!otpStore[phone]) {
-    otpErr.textContent = 'OTP expired or not requested. Please request a new OTP.';
-    otpErr.style.display = 'block';
-    return;
+  // Hash compare karo
+  const storedHash = customers[phone].passwordHash;
+  if (!storedHash || storedHash !== simpleHash(pass)) {
+    passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
+    passErr.style.display = 'block'; return;
   }
 
   // Success
-  delete otpStore[phone];
-  writeOtpStore(otpStore);
   setAuthToken(phone);
   localStorage.setItem('userRole', 'customer');
   const redirectTo = pendingPageAfterLogin;
   pendingPageAfterLogin = null;
-
-  // Consume the history entry added by showModal so popstate doesn't re-open the modal
   try { if (history.state && history.state.modalOpen) history.back(); } catch(e) {}
-
-  // Hide modal immediately
   const loginModal = document.getElementById('loginModal');
   if (loginModal) { loginModal.style.display = 'none'; loginModal.classList.remove('open-modal'); }
-
   showToast('Welcome back, ' + customers[phone].name + '!');
   document.getElementById('loginPhone').value = '';
-  document.getElementById('loginOtp').value = '';
-  document.getElementById('loginOtpHint').style.display = 'none';
+  document.getElementById('loginPassword').value = '';
   updateNavbarUI();
-
-  // If we're on a maid profile page, re-render it to show unlocked phone section
-  const profileContent = document.getElementById('maidProfileContent');
   const profilePage = document.getElementById('page-maid-profile');
-  if (profilePage && profilePage.classList.contains('active') && profileContent && window._currentMaidProfileId) {
-    setTimeout(() => showMaidProfile(window._currentMaidProfileId), 120);
-    return;
+  if (profilePage && profilePage.classList.contains('active') && window._currentMaidProfileId) {
+    setTimeout(() => showMaidProfile(window._currentMaidProfileId), 120); return;
   }
-
-  if (redirectTo) {
-    setTimeout(() => showPage(redirectTo), 100);
-  }
+  if (redirectTo) setTimeout(() => showPage(redirectTo), 100);
 }
 
 function previewSignupPhoto(event) {
@@ -4381,12 +4443,27 @@ function submitSignup() {
   }
   if (signupTermsErr) signupTermsErr.style.display = 'none';
 
+  // Password validation
+  const pass = document.getElementById('signupPassword').value;
+  const confirmPass = document.getElementById('signupConfirmPassword').value;
+  const passErr = document.getElementById('signupPasswordError');
+  const confirmPassErr = document.getElementById('signupConfirmPasswordError');
+  passErr.style.display = 'none'; confirmPassErr.style.display = 'none';
+  if (!pass || pass.length < 8) {
+    passErr.textContent = 'Password kam se kam 8 characters ka hona chahiye.';
+    passErr.style.display = 'block'; return;
+  }
+  if (pass !== confirmPass) {
+    confirmPassErr.textContent = 'Dono passwords match nahi kar rahe.';
+    confirmPassErr.style.display = 'block'; return;
+  }
+
   // Success — save to Firebase Storage + Firestore
   const signupPhotoImg = document.getElementById('signupPhotoPreview') && document.getElementById('signupPhotoPreview').querySelector('img');
   const signupPhotoData = signupPhotoImg ? signupPhotoImg.src : '';
   
-  // Save customer data immediately (with base64 photo as fallback)
-  customers[phone] = { name, email, state, district, address, photo: signupPhotoData, createdAt: new Date().toISOString() };
+  // Save customer data with password hash
+  customers[phone] = { name, email, state, district, address, photo: signupPhotoData, passwordHash: simpleHash(pass), createdAt: new Date().toISOString() };
   writeCustomers(customers);
   
   // Upload photo to Firebase Storage in background
@@ -4417,7 +4494,7 @@ function submitSignup() {
   updateNavbarUI();
 
   // Reset signup form
-  ['signupName','signupEmail','signupPhone','signupOtp','signupAddress'].forEach(id => document.getElementById(id).value = '');
+  ['signupName','signupEmail','signupPhone','signupOtp','signupPassword','signupConfirmPassword','signupAddress'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('signupState').value = '';
   document.getElementById('signupDistrict').innerHTML = '<option value="">Select District</option>';
   document.getElementById('signupOtpHint').style.display = 'none';
@@ -4593,6 +4670,11 @@ function regValidateStep(step) {
     // Clear OTP after successful verify
     delete otpStore['reg_' + phone];
     writeOtpStore(otpStore);
+    // Password validation
+    const regPass = (document.getElementById('regPassword').value || '');
+    const regConfPass = (document.getElementById('regConfirmPassword').value || '');
+    if (!regPass || regPass.length < 8) return 'Password kam se kam 8 characters ka hona chahiye.';
+    if (regPass !== regConfPass) return 'Dono passwords match nahi kar rahe.';
     if (aadhar && !/^\d{12}$/.test(aadhar)) return 'Please enter a valid 12-digit Aadhar number (or leave blank).';
     return null;
   }
@@ -4741,6 +4823,8 @@ function sendRegOtp() {
   otpStore['reg_' + phone] = otp;
   writeOtpStore(otpStore);
   otpRow.style.display = 'block';
+  document.getElementById('regPasswordRow').style.display = 'block';
+  document.getElementById('regConfirmPasswordRow').style.display = 'block';
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
   sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
@@ -4751,54 +4835,41 @@ function sendRegOtp() {
 
 function submitMaidLogin() {
   const phone = document.getElementById('maidLoginPhone').value.replace(/\D/g, '');
-  const otp = document.getElementById('maidLoginOtp').value.trim();
+  const pass = document.getElementById('maidLoginPassword').value;
   const phoneErr = document.getElementById('maidLoginPhoneError');
-  const otpErr = document.getElementById('maidLoginOtpError');
+  const passErr = document.getElementById('maidLoginPasswordError');
   phoneErr.style.display = 'none';
-  otpErr.style.display = 'none';
+  passErr.style.display = 'none';
 
   if (!isValidIndianMobile(phone)) {
-    phoneErr.textContent = 'Please enter a valid 10-digit mobile number.';
-    phoneErr.style.display = 'block';
-    return;
+    phoneErr.textContent = 'Valid 10-digit mobile number enter karein.';
+    phoneErr.style.display = 'block'; return;
   }
   const maids = readRegisteredMaids();
   if (!maids[phone]) {
-    phoneErr.textContent = 'No maid account found. Please register first.';
-    phoneErr.style.display = 'block';
-    return;
+    phoneErr.textContent = 'Is number par koi maid account nahi hai. Pehle register karein.';
+    phoneErr.style.display = 'block'; return;
   }
   if (!maids[phone].verified) {
     phoneErr.textContent = 'Aapka account admin approval ka wait kar raha hai. Approved hone ke baad login kar sakti hain.';
-    phoneErr.style.display = 'block';
-    return;
+    phoneErr.style.display = 'block'; return;
   }
-  if (!otp) {
-    otpErr.textContent = 'Please enter the OTP.';
-    otpErr.style.display = 'block';
-    return;
+  if (!pass) {
+    passErr.textContent = 'Password enter karein.';
+    passErr.style.display = 'block'; return;
   }
-  const otpStore = readOtpStore();
-  if (!otpStore['maid_' + phone]) {
-    otpErr.textContent = 'OTP expired or not requested. Please request a new OTP.';
-    otpErr.style.display = 'block';
-    return;
-  }
-  if (otp !== otpStore['maid_' + phone]) {
-    otpErr.textContent = 'Incorrect OTP. Please try again.';
-    otpErr.style.display = 'block';
-    return;
+  const storedHash = maids[phone].passwordHash;
+  if (!storedHash || storedHash !== simpleHash(pass)) {
+    passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
+    passErr.style.display = 'block'; return;
   }
 
-  // Success — set maid role and login
-  delete otpStore['maid_' + phone];
-  writeOtpStore(otpStore);
+  // Success
   setAuthToken(phone);
   localStorage.setItem('userRole', 'maid');
   closeLoginModal();
   document.getElementById('maidLoginPhone').value = '';
-  document.getElementById('maidLoginOtp').value = '';
-  document.getElementById('maidLoginOtpHint').style.display = 'none';
+  document.getElementById('maidLoginPassword').value = '';
   showToast('Welcome back, ' + maids[phone].name + '!');
   showPage('dashboard');
   if (typeof refreshNavUI === 'function') refreshNavUI();
@@ -4833,6 +4904,11 @@ function submitReg() {
   if (phone && name) {
     const maids = readRegisteredMaids();
     maids[phone] = { name, phone };
+    // Save password hash
+    const regPass = document.getElementById('regPassword').value;
+    if (regPass && regPass.length >= 8) {
+      maids[phone].passwordHash = simpleHash(regPass);
+    }
     writeRegisteredMaids(maids);
 
     // Also add to admin's maids list as UNVERIFIED so admin sees them in pending queue
@@ -6549,7 +6625,7 @@ function rcSubmitLogin() {
     </div>
     <button class="login-btn" onclick="adminLogin()"><i class="fas fa-shield-halved"></i>&nbsp; Sign In to Admin</button>
     <div class="login-err" id="loginErr">Invalid credentials. Try again.</div>
-    
+    <p class="login-hint">Default: admin / admin123</p>
   </div>
 </div>
 
@@ -7694,15 +7770,14 @@ function rcSubmitLogin() {
 
 <script>
 // Admin Panel Overlay Controls
+// ══ SECRET ADMIN URL ══
+const ADMIN_SECRET_HASH = 'admin/anurag/rent-a-maid-india';
+
 function openAdminPanel() {
-  // ── SECRET URL CHECK ──
-  const SECRET_HASH = '#admin/anurag/rent a maid india';
-  if (window.location.hash !== SECRET_HASH) {
-    return; // Silent fail - koi message nahi
-  }
   const overlay = document.getElementById('adminPanelOverlay');
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
+  history.replaceState(null, '', '#' + ADMIN_SECRET_HASH);
   setTimeout(function() {
     if (typeof adminCheckAuth === 'function') adminCheckAuth();
   }, 50);
@@ -7710,21 +7785,32 @@ function openAdminPanel() {
 function closeAdminPanel() {
   document.getElementById('adminPanelOverlay').classList.remove('open');
   document.body.style.overflow = '';
-  // Clear hash
-  history.pushState('', document.title, window.location.pathname);
+  history.replaceState(null, '', window.location.pathname);
 }
 
-// ── AUTO OPEN IF SECRET HASH IN URL ──
-window.addEventListener('hashchange', function() {
-  if (window.location.hash === '#admin/anurag/rent a maid india') {
-    openAdminPanel();
+(function() {
+  function _checkSecretHash() {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === ADMIN_SECRET_HASH) {
+      var tryOpen = function() {
+        var overlay = document.getElementById('adminPanelOverlay');
+        if (overlay) {
+          overlay.classList.add('open');
+          document.body.style.overflow = 'hidden';
+          setTimeout(function() { if (typeof adminCheckAuth === 'function') adminCheckAuth(); }, 100);
+        } else { setTimeout(tryOpen, 100); }
+      };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryOpen);
+      else tryOpen();
+    }
   }
-});
-window.addEventListener('load', function() {
-  if (window.location.hash === '#admin/anurag/rent a maid india') {
-    setTimeout(openAdminPanel, 500);
-  }
-});
+  _checkSecretHash();
+  window.addEventListener('hashchange', function() {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === ADMIN_SECRET_HASH) { openAdminPanel(); }
+    else { var o = document.getElementById('adminPanelOverlay'); if (o && o.classList.contains('open')) closeAdminPanel(); }
+  });
+})();
 </script>
 
 <script>
@@ -7889,50 +7975,18 @@ function getAdmins() { return getLS('ram_admin_users', DEFAULT_ADMINS); }
 function setAdmins(v) { setLS('ram_admin_users', v); }
 
 // ══════════════════════════════════════
-// AUTH — Firebase Password Verification
+// AUTH
 // ══════════════════════════════════════
-async function adminLogin() {
+function adminLogin() {
   const user = document.getElementById('adminUser').value.trim();
   const pass = document.getElementById('adminPass').value;
+  const loginBtn = document.querySelector('#loginScreen .login-btn');
   const errEl = document.getElementById('loginErr');
-  const loginBtn = document.querySelector('.login-btn');
-
-  if (!user || !pass) { errEl.style.display = 'block'; errEl.textContent = 'Username aur password dono zaroori hain.'; return; }
-
-  // Show loading
-  loginBtn.textContent = '⏳ Verifying...';
-  loginBtn.disabled = true;
   errEl.style.display = 'none';
-
-  try {
-    // ── Firebase se password verify karo ──
-    const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-    const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-
-    let app;
-    if (!getApps().length) {
-      app = initializeApp({
-        apiKey: "AIzaSyC4zkeAfKLHeSaj3b3vxEKxvQCrQT56THU",
-        authDomain: "rent-a-maid-india.firebaseapp.com",
-        projectId: "rent-a-maid-india",
-        storageBucket: "rent-a-maid-india.firebasestorage.app",
-        messagingSenderId: "193330848536",
-        appId: "1:193330848536:web:acf0f8071f5a8758e7346d"
-      });
-    } else {
-      app = getApps()[0];
-    }
-
-    const db = getFirestore(app);
-    const docSnap = await getDoc(doc(db, 'adminData', 'adminConfig'));
-    
-    let correctPassword = null;
-    if (docSnap.exists()) {
-      correctPassword = docSnap.data().password;
-    }
-
-    if (correctPassword && pass === correctPassword) {
-      // ✅ Password sahi
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Verifying...'; }
+  _verifyAdminPassword(user, pass).then(function(valid) {
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = '<i class="fas fa-shield-halved"></i>&nbsp; Sign In to Admin'; }
+    if (valid) {
       sessionStorage.setItem('ram_admin_auth', user);
       const admins = getAdmins();
       const found = admins.find(a => a.username === user);
@@ -7941,17 +7995,29 @@ async function adminLogin() {
       document.getElementById('appShell').style.display = 'block';
       document.getElementById('loggedAdminName').textContent = user;
       initApp();
-    } else {
-      errEl.textContent = '❌ Galat password! Dobara try karein.';
-      errEl.style.display = 'block';
-    }
-  } catch(e) {
-    errEl.textContent = '❌ Connection error. Check internet aur retry karein.';
+    } else { errEl.style.display = 'block'; }
+  }).catch(function() {
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.innerHTML = '<i class="fas fa-shield-halved"></i>&nbsp; Sign In to Admin'; }
     errEl.style.display = 'block';
-  } finally {
-    loginBtn.innerHTML = '<i class="fas fa-shield-halved"></i>&nbsp; Sign In to Admin';
-    loginBtn.disabled = false;
-  }
+  });
+}
+async function _verifyAdminPassword(user, pass) {
+  try {
+    const { getDoc, doc: fbDoc } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+    const snap = await getDoc(fbDoc(_db, 'adminData', 'adminConfig'));
+    if (snap.exists()) {
+      const fbPass = snap.data().password;
+      if (fbPass !== undefined) {
+        const admins = getAdmins();
+        const found = admins.find(a => a.username === user);
+        return !!(found && fbPass === pass);
+      }
+    }
+  } catch(e) { console.warn('Firebase admin password check failed:', e); }
+  const admins = getAdmins();
+  const found = admins.find(a => a.username === user);
+  const storedPasses = getLS('ram_admin_passwords', {admin:'admin123'});
+  return !!(found && (storedPasses[user] || 'admin123') === pass);
 }
 function adminLogout() {
   sessionStorage.removeItem('ram_admin_auth');
@@ -10755,6 +10821,187 @@ loadFromFirebase().then(() => {
   setupRealtimeSync();
   setupAdminRealtimeSync();
 });
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+// AUTH UTILITY FUNCTIONS — Password Hash, Toggle, Forgot Password
+// ══════════════════════════════════════════════════════════════════
+
+// Simple deterministic hash (NOT cryptographic — good enough for demo)
+// Production mein Firebase Auth ya bcrypt use karo
+function simpleHash(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) ^ str.charCodeAt(i);
+    hash = hash & hash; // Convert to 32bit int
+  }
+  return 'h' + Math.abs(hash).toString(36);
+}
+
+// Password show/hide toggle
+function togglePwd(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  } else {
+    inp.type = 'password';
+    btn.innerHTML = '<i class="fas fa-eye"></i>';
+  }
+}
+
+// ── FORGOT PASSWORD ──
+let _forgotRole = 'customer'; // 'customer' | 'maid'
+
+function showForgotPasswordView(role) {
+  _forgotRole = role;
+  // Reset modal state
+  document.getElementById('forgotStep1').style.display = 'block';
+  document.getElementById('forgotStep2').style.display = 'none';
+  document.getElementById('forgotPhone').value = '';
+  document.getElementById('forgotOtp').value = '';
+  document.getElementById('forgotNewPass').value = '';
+  document.getElementById('forgotConfirmPass').value = '';
+  document.getElementById('forgotPhoneError').style.display = 'none';
+  document.getElementById('forgotOtpError').style.display = 'none';
+  document.getElementById('forgotPassError').style.display = 'none';
+  document.getElementById('forgotOtpHint').style.display = 'none';
+  document.getElementById('forgotDesc').textContent = role === 'maid'
+    ? 'Apna registered mobile number enter karein (jisse maid registration ki hai).'
+    : 'Apna registered mobile number enter karein. Hum OTP bhejenge.';
+  // Show forgot modal, hide login modal
+  const loginModal = document.getElementById('loginModal');
+  if (loginModal) { loginModal.style.display = 'none'; }
+  const modal = document.getElementById('forgotPasswordModal');
+  modal.style.display = 'flex';
+  setTimeout(() => document.getElementById('forgotPhone').focus(), 100);
+}
+
+function closeForgotModal() {
+  document.getElementById('forgotPasswordModal').style.display = 'none';
+}
+
+function forgotSendOtp() {
+  const phone = document.getElementById('forgotPhone').value.replace(/\D/g, '');
+  const phoneErr = document.getElementById('forgotPhoneError');
+  const hint = document.getElementById('forgotOtpHint');
+  const btn = document.getElementById('forgotSendBtn');
+  phoneErr.style.display = 'none';
+  hint.style.display = 'none';
+
+  if (!isValidIndianMobile(phone)) {
+    phoneErr.textContent = 'Valid 10-digit mobile number enter karein.';
+    phoneErr.style.display = 'block'; return;
+  }
+
+  // Check account exists
+  if (_forgotRole === 'customer') {
+    const customers = readCustomers();
+    if (!customers[phone]) {
+      phoneErr.textContent = 'Is number par koi customer account nahi hai.';
+      phoneErr.style.display = 'block'; return;
+    }
+  } else {
+    const maids = readRegisteredMaids();
+    if (!maids[phone]) {
+      phoneErr.textContent = 'Is number par koi maid account nahi hai.';
+      phoneErr.style.display = 'block'; return;
+    }
+  }
+
+  // Send OTP
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  const otpStore = readOtpStore();
+  otpStore['forgot_' + phone] = otp;
+  writeOtpStore(otpStore);
+
+  btn.disabled = true; btn.textContent = 'Sending...';
+  hint.textContent = 'OTP bheja ja raha hai...';
+  hint.style.display = 'block';
+
+  sendRealOtpSms(phone, otp).then(ok => {
+    btn.disabled = false; btn.textContent = 'Resend OTP';
+    hint.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ SMS fail — demo OTP: ' + otp;
+    hint.style.display = 'block';
+    // Show Step 2
+    document.getElementById('forgotStep2').style.display = 'block';
+    setTimeout(() => document.getElementById('forgotOtp').focus(), 100);
+  });
+}
+
+function forgotResetPassword() {
+  const phone = document.getElementById('forgotPhone').value.replace(/\D/g, '');
+  const otp = document.getElementById('forgotOtp').value.trim();
+  const newPass = document.getElementById('forgotNewPass').value;
+  const confirmPass = document.getElementById('forgotConfirmPass').value;
+  const otpErr = document.getElementById('forgotOtpError');
+  const passErr = document.getElementById('forgotPassError');
+  otpErr.style.display = 'none';
+  passErr.style.display = 'none';
+
+  // OTP verify
+  const otpStore = readOtpStore();
+  if (!otpStore['forgot_' + phone]) {
+    otpErr.textContent = 'OTP expire ho gaya. Please "Send OTP" dobara dabao.';
+    otpErr.style.display = 'block'; return;
+  }
+  if (otp !== otpStore['forgot_' + phone]) {
+    otpErr.textContent = 'Galat OTP. Dobara check karein.';
+    otpErr.style.display = 'block'; return;
+  }
+  // Password validation
+  if (!newPass || newPass.length < 8) {
+    passErr.textContent = 'Password kam se kam 8 characters ka hona chahiye.';
+    passErr.style.display = 'block'; return;
+  }
+  if (newPass !== confirmPass) {
+    passErr.textContent = 'Dono passwords match nahi kar rahe.';
+    passErr.style.display = 'block'; return;
+  }
+
+  // Update password hash in database
+  const newHash = simpleHash(newPass);
+  if (_forgotRole === 'customer') {
+    const customers = readCustomers();
+    if (customers[phone]) {
+      customers[phone].passwordHash = newHash;
+      writeCustomers(customers);
+    }
+  } else {
+    const maids = readRegisteredMaids();
+    if (maids[phone]) {
+      maids[phone].passwordHash = newHash;
+      writeRegisteredMaids(maids);
+    }
+  }
+
+  // Clear OTP
+  delete otpStore['forgot_' + phone];
+  writeOtpStore(otpStore);
+
+  // Success
+  closeForgotModal();
+  showToast('✅ Password successfully reset! Ab naye password se login karein.');
+  // Reopen login modal
+  setTimeout(() => {
+    openAuthModal(_forgotRole === 'maid' ? 'login' : 'login');
+    if (_forgotRole === 'maid') switchLoginTab('maid');
+  }, 500);
+}
+
+// clearAuthErrors mein naye fields bhi add karo
+const _origClearAuthErrors = clearAuthErrors;
+clearAuthErrors = function() {
+  _origClearAuthErrors();
+  ['loginPasswordError','signupPasswordError','signupConfirmPasswordError',
+   'maidLoginPasswordError','regPasswordError','regConfirmPasswordError'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+};
 </script>
 
 </body>
