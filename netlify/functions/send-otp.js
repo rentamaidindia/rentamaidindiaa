@@ -14,9 +14,15 @@ exports.handler = async function (event) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Invalid OTP' }) };
     }
 
-    const apiKey = process.env.FAST2SMS_API_KEY; // key Netlify env var se aayegi, code me nahi
+    const apiKey = process.env.FAST2SMS_API_KEY;
+
+    // ✅ Quick SMS route — no DLT needed, free credit se bhi kaam karta hai
     const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=' + apiKey +
-      '&route=otp&variables_values=' + otp + '&flash=0&numbers=' + phone;
+      '&route=q' +
+      '&message=Your OTP for Rent a Maid India is ' + otp + '. Valid for 10 minutes. Do not share.' +
+      '&language=english' +
+      '&flash=0' +
+      '&numbers=' + phone;
 
     const resp = await fetch(url);
     const data = await resp.json();
