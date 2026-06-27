@@ -2940,7 +2940,7 @@ tr:hover td{background:#f8fafc;}
       <div class="form-group-v" style="margin-bottom:8px;">
         <label>Password *</label>
         <div style="position:relative;">
-          <input type="password" placeholder="Apna password enter karein" id="loginPassword" style="width:100%;padding-right:42px;" onkeydown="if(event.key='Enter')submitLogin()" />
+          <input type="password" placeholder="Apna password enter karein" id="loginPassword" style="width:100%;padding-right:42px;" onkeydown="if(event.key==='Enter')submitLogin()" />
           <button type="button" onclick="togglePwd('loginPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:15px;"><i class="fas fa-eye"></i></button>
         </div>
         <div id="loginPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
@@ -4169,12 +4169,32 @@ function writeCustomers(data) {
   if (typeof window._fbSet === "function") return window._fbSet("siteData", "registeredCustomers", data);
   return Promise.resolve();
 }
+// OTP store is kept in localStorage (not sessionStorage) so it survives
+// page reloads / new tabs on the same device — sessionStorage was getting
+// wiped any time the page reloaded or a new tab was opened, which made
+// freshly-sent OTPs look "expired" even though they were just sent.
+const OTP_VALID_MS = 10 * 60 * 1000; // OTP valid for 10 minutes
 function readOtpStore() {
-  try { return JSON.parse(sessionStorage.getItem('otpStore') || '{}'); }
+  try { return JSON.parse(localStorage.getItem('otpStore') || '{}'); }
   catch (e) { return {}; }
 }
 function writeOtpStore(data) {
-  sessionStorage.setItem('otpStore', JSON.stringify(data));
+  localStorage.setItem('otpStore', JSON.stringify(data));
+}
+// Store an OTP with a timestamp so we can tell "expired" apart from "wrong".
+function setOtpEntry(store, key, code) {
+  store[key] = { code: String(code), ts: Date.now() };
+}
+// Returns 'missing' | 'expired' | 'ok'. On 'ok' it does NOT delete the entry
+// (callers delete it themselves once the whole flow succeeds).
+function checkOtpEntry(store, key, inputVal) {
+  const entry = store[key];
+  if (!entry) return 'missing';
+  // Support legacy plain-string entries too, just in case.
+  const code = (typeof entry === 'object') ? entry.code : entry;
+  const ts = (typeof entry === 'object') ? entry.ts : Date.now();
+  if (Date.now() - ts > OTP_VALID_MS) return 'expired';
+  return (String(inputVal).trim() === String(code)) ? 'ok' : 'wrong';
 }
 function getAuthToken() { return localStorage.getItem('authToken'); }
 function setAuthToken(phone) { localStorage.setItem('authToken', phone); }
@@ -4312,7 +4332,7 @@ function sendOtp(context) {
   // DEMO OTP — replace this block with a real SMS API call when ready.
   const otp = String(Math.floor(1000 + Math.random() * 9000));
   const otpStore = readOtpStore();
-  otpStore[phone] = otp;
+  setOtpEntry(otpStore, phone, otp);
   writeOtpStore(otpStore);
 
   hintEl.textContent = 'OTP bheja ja raha hai...';
@@ -4430,12 +4450,18 @@ function submitSignup() {
     return;
   }
   const otpStore = readOtpStore();
-  if (!otpStore[phone]) {
+  const otpResult = checkOtpEntry(otpStore, phone, otp);
+  if (otpResult === 'missing') {
     otpErr.textContent = 'OTP expired or not requested. Please request a new OTP.';
     otpErr.style.display = 'block';
     return;
   }
-  if (otp !== otpStore[phone]) {
+  if (otpResult === 'expired') {
+    otpErr.textContent = 'OTP expire ho gaya. Please request a new OTP.';
+    otpErr.style.display = 'block';
+    return;
+  }
+  if (otpResult === 'wrong') {
     otpErr.textContent = 'Incorrect OTP.';
     otpErr.style.display = 'block';
     return;
@@ -4672,8 +4698,14 @@ function regValidateStep(step) {
     // OTP verification
     const otpVal = (document.getElementById('regOtpInput').value || '').trim();
     const otpStore = readOtpStore();
-    if (!otpStore['reg_' + phone]) return 'Pehle "Send OTP" button dabao aur OTP enter karein.';
-    if (otpVal !== otpStore['reg_' + phone]) {
+    const regOtpResult = checkOtpEntry(otpStore, 'reg_' + phone, otpVal);
+    if (regOtpResult === 'missing') return 'Pehle "Send OTP" button dabao aur OTP enter karein.';
+    if (regOtpResult === 'expired') {
+      const otpErrEl = document.getElementById('regOtpError');
+      if (otpErrEl) { otpErrEl.textContent = 'OTP expire ho gaya. "Send OTP" dobara dabao.'; otpErrEl.style.display = 'block'; }
+      return 'OTP expire ho gaya. "Send OTP" dobara dabao.';
+    }
+    if (regOtpResult === 'wrong') {
       const otpErrEl = document.getElementById('regOtpError');
       if (otpErrEl) { otpErrEl.textContent = 'Galat OTP. Dobara try karein.'; otpErrEl.style.display = 'block'; }
       return 'Galat OTP. Dobara try karein.';
@@ -4790,7 +4822,7 @@ function sendMaidOtp() {
   }
   const otp = String(Math.floor(1000 + Math.random() * 9000));
   const otpStore = readOtpStore();
-  otpStore['maid_' + phone] = otp;
+  setOtpEntry(otpStore, 'maid_' + phone, otp);
   writeOtpStore(otpStore);
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
@@ -4831,7 +4863,7 @@ function sendRegOtp() {
 
   const otp = String(Math.floor(1000 + Math.random() * 9000));
   const otpStore = readOtpStore();
-  otpStore['reg_' + phone] = otp;
+  setOtpEntry(otpStore, 'reg_' + phone, otp);
   writeOtpStore(otpStore);
   otpRow.style.display = 'block';
   document.getElementById('regPasswordRow').style.display = 'block';
@@ -10766,6 +10798,8 @@ function setupRealtimeSync() {
     // avoids a delayed/stale snapshot wiping out a just-changed password.
     if (lastLocalSave && incomingTime && new Date(lastLocalSave) > new Date(incomingTime)) return;
     localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
+    if (typeof window.renderCustomers === 'function') { try { window.renderCustomers(); } catch(e) {} }
+    if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
   });
   onSnapshot(doc(_db, 'adminData', 'ram_admin_bookings'), snap => {
     if (snap.exists()) localStorage.setItem('ram_admin_bookings', JSON.stringify(snap.data().data));
@@ -10784,6 +10818,8 @@ function setupRealtimeSync() {
     const lastLocalSave = localStorage.getItem('ram_registered_maids_savedAt');
     if (lastLocalSave && incomingTime && new Date(lastLocalSave) > new Date(incomingTime)) return;
     localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
+    if (typeof window.renderMaids === 'function') { try { window.renderMaids(); } catch(e) {} }
+    if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
   });
 }
 
@@ -10819,17 +10855,11 @@ function setupAdminRealtimeSync() {
     if (typeof window.updateNavBadges === 'function') window.updateNavBadges();
   });
 
-  // Customers real-time
-  onSnapshot(doc(_db, 'siteData', 'registeredCustomers'), snap => {
-    if (!snap.exists()) return;
-    localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
-    if (typeof window.renderCustomers === 'function') {
-      try { window.renderCustomers(); } catch(e) {}
-    }
-    if (typeof window.renderDashboard === 'function') {
-      try { window.renderDashboard(); } catch(e) {}
-    }
-  });
+  // NOTE: customers + maids real-time sync (with stale-data protection so a
+  // delayed snapshot can never overwrite a just-changed password) is handled
+  // once in setupRealtimeSync() above. We still re-run renderCustomers() /
+  // renderDashboard() here so the admin panel UI refreshes when this
+  // function's listeners are active.
 
   // Website plans
   onSnapshot(doc(_db, 'adminData', 'ram_website_plans'), snap => {
@@ -10840,11 +10870,8 @@ function setupAdminRealtimeSync() {
     if (typeof window.renderWebsitePlans === 'function') window.renderWebsitePlans();
   });
 
-  // Registered maids
-  onSnapshot(doc(_db, 'adminData', 'ram_registered_maids'), snap => {
-    if (!snap.exists()) return;
-    localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
-  });
+  // Registered maids real-time sync is handled once in setupRealtimeSync()
+  // above (with stale-data protection for password changes).
 }
 
 // ── Load aadhar data for all maids (admin panel use) ──
@@ -10958,7 +10985,7 @@ function forgotSendOtp() {
   // Send OTP
   const otp = String(Math.floor(100000 + Math.random() * 900000));
   const otpStore = readOtpStore();
-  otpStore['forgot_' + phone] = otp;
+  setOtpEntry(otpStore, 'forgot_' + phone, otp);
   writeOtpStore(otpStore);
 
   btn.disabled = true; btn.textContent = 'Sending...';
@@ -10987,11 +11014,16 @@ function forgotResetPassword() {
 
   // OTP verify
   const otpStore = readOtpStore();
-  if (!otpStore['forgot_' + phone]) {
+  const fpOtpResult = checkOtpEntry(otpStore, 'forgot_' + phone, otp);
+  if (fpOtpResult === 'missing') {
+    otpErr.textContent = 'Pehle "Send OTP" dabao aur OTP enter karein.';
+    otpErr.style.display = 'block'; return;
+  }
+  if (fpOtpResult === 'expired') {
     otpErr.textContent = 'OTP expire ho gaya. Please "Send OTP" dobara dabao.';
     otpErr.style.display = 'block'; return;
   }
-  if (otp !== otpStore['forgot_' + phone]) {
+  if (fpOtpResult === 'wrong') {
     otpErr.textContent = 'Galat OTP. Dobara check karein.';
     otpErr.style.display = 'block'; return;
   }
