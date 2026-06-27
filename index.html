@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<!-- ══ GOOGLE ANALYTICS (GA4) ══ -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9MR2W5C303"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-9MR2W5C303');
+</script>
 <!-- ══ PERFORMANCE / CORE WEB VITALS (Google ranking factor) ══ -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -4157,7 +4165,9 @@ function readCustomers() {
 }
 function writeCustomers(data) {
   localStorage.setItem('registeredCustomers', JSON.stringify(data));
-  if (typeof window._fbSet === "function") window._fbSet("siteData", "registeredCustomers", data);
+  localStorage.setItem('registeredCustomers_savedAt', new Date().toISOString());
+  if (typeof window._fbSet === "function") return window._fbSet("siteData", "registeredCustomers", data);
+  return Promise.resolve();
 }
 function readOtpStore() {
   try { return JSON.parse(sessionStorage.getItem('otpStore') || '{}'); }
@@ -4881,7 +4891,9 @@ function readRegisteredMaids() {
 }
 function writeRegisteredMaids(data) {
   localStorage.setItem('ram_registered_maids', JSON.stringify(data));
-  if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_registered_maids", data);
+  localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
+  if (typeof window._fbSet === "function") return window._fbSet("adminData", "ram_registered_maids", data);
+  return Promise.resolve();
 }
 
 function submitReg() {
@@ -8497,6 +8509,26 @@ function viewMaid(id) {
   const m = getMaids().find(x => x.id === id);
   if (!m) return;
 
+  // Fetch latest aadhar data (front + back) from Firebase first, then re-render
+  // this view so admin always sees the maid's actual uploaded photos, even if
+  // the maid registered/uploaded from a different device/browser.
+  if (typeof window.loadAadharData === 'function' && m.phone) {
+    Promise.all([
+      window.loadAadharData(m.phone),
+      window.loadAadharData(m.phone + '_back')
+    ]).then(() => {
+      // Only re-render if this maid's modal is still the one being viewed
+      const modalEl = document.getElementById('viewMaidModal');
+      if (modalEl && modalEl.style.display !== 'none') {
+        renderViewMaidBody(m, id);
+      }
+    }).catch(() => {});
+  }
+
+  renderViewMaidBody(m, id);
+}
+
+function renderViewMaidBody(m, id) {
   // Load aadhar data from Firebase/localStorage
   let aadharData = null;
   let aadharBack = null;
@@ -10682,9 +10714,9 @@ function _fbKey(k) { return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100
 // ── Universal Firestore save ──
 window._fbSet = function(coll, key, val) {
   try {
-    setDoc(doc(_db, coll, _fbKey(key)), { data: val, updatedAt: new Date().toISOString() })
-      .catch(e => console.warn('FB save failed:', key, e));
-  } catch(e) {}
+    return setDoc(doc(_db, coll, _fbKey(key)), { data: val, updatedAt: new Date().toISOString() })
+      .catch(e => { console.warn('FB save failed:', key, e); throw e; });
+  } catch(e) { return Promise.reject(e); }
 };
 
 // ── Firebase Storage photo upload ──
@@ -10727,7 +10759,13 @@ function setupRealtimeSync() {
     }
   });
   onSnapshot(doc(_db, 'siteData', 'registeredCustomers'), snap => {
-    if (snap.exists()) localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
+    if (!snap.exists()) return;
+    const incomingTime = snap.data().updatedAt;
+    const lastLocalSave = localStorage.getItem('registeredCustomers_savedAt');
+    // Skip if this device just saved something newer than what's coming in —
+    // avoids a delayed/stale snapshot wiping out a just-changed password.
+    if (lastLocalSave && incomingTime && new Date(lastLocalSave) > new Date(incomingTime)) return;
+    localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
   });
   onSnapshot(doc(_db, 'adminData', 'ram_admin_bookings'), snap => {
     if (snap.exists()) localStorage.setItem('ram_admin_bookings', JSON.stringify(snap.data().data));
@@ -10741,7 +10779,11 @@ function setupRealtimeSync() {
     }
   });
   onSnapshot(doc(_db, 'adminData', 'ram_registered_maids'), snap => {
-    if (snap.exists()) localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
+    if (!snap.exists()) return;
+    const incomingTime = snap.data().updatedAt;
+    const lastLocalSave = localStorage.getItem('ram_registered_maids_savedAt');
+    if (lastLocalSave && incomingTime && new Date(lastLocalSave) > new Date(incomingTime)) return;
+    localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
   });
 }
 
@@ -10965,32 +11007,47 @@ function forgotResetPassword() {
 
   // Update password hash in database
   const newHash = simpleHash(newPass);
+  let savePromise;
   if (_forgotRole === 'customer') {
     const customers = readCustomers();
-    if (customers[phone]) {
-      customers[phone].passwordHash = newHash;
-      writeCustomers(customers);
+    if (!customers[phone]) {
+      passErr.textContent = 'Account nahi mila. Dobara try karein.';
+      passErr.style.display = 'block'; return;
     }
+    customers[phone].passwordHash = newHash;
+    savePromise = writeCustomers(customers);
   } else {
     const maids = readRegisteredMaids();
-    if (maids[phone]) {
-      maids[phone].passwordHash = newHash;
-      writeRegisteredMaids(maids);
+    if (!maids[phone]) {
+      passErr.textContent = 'Account nahi mila. Dobara try karein.';
+      passErr.style.display = 'block'; return;
     }
+    maids[phone].passwordHash = newHash;
+    savePromise = writeRegisteredMaids(maids);
   }
 
   // Clear OTP
   delete otpStore['forgot_' + phone];
   writeOtpStore(otpStore);
 
-  // Success
-  closeForgotModal();
-  showToast('✅ Password successfully reset! Ab naye password se login karein.');
-  // Reopen login modal
-  setTimeout(() => {
-    openAuthModal(_forgotRole === 'maid' ? 'login' : 'login');
-    if (_forgotRole === 'maid') switchLoginTab('maid');
-  }, 500);
+  const finishSuccess = () => {
+    closeForgotModal();
+    showToast('✅ Password successfully reset! Ab naye password se login karein.');
+    setTimeout(() => {
+      openAuthModal(_forgotRole === 'maid' ? 'login' : 'login');
+      if (_forgotRole === 'maid') switchLoginTab('maid');
+    }, 500);
+  };
+
+  // Wait for the Firebase save to actually finish before declaring success —
+  // this prevents a real-time listener from re-syncing stale data over the
+  // new password in the small window right after the local save.
+  savePromise.then(finishSuccess).catch(() => {
+    // Firebase save failed (e.g. offline) — password is still updated locally
+    // on this device, so login will still work here, but warn the user.
+    showToast('⚠️ Password is updated on this device, but online sync failed. Try again with internet on.');
+    finishSuccess();
+  });
 }
 
 // clearAuthErrors mein naye fields bhi add karo
