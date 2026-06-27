@@ -14,9 +14,8 @@ exports.handler = async function (event) {
     }
 
     const apiKey = process.env.FAST2SMS_API_KEY;
-    const msg = 'Your OTP for Rent a Maid India is ' + otp + '. Valid for 10 minutes. Do not share.';
     const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=' + apiKey +
-      '&route=q&message=' + encodeURIComponent(msg) + '&numbers=' + phone;
+      '&route=otp&variables_values=' + otp + '&flash=0&numbers=' + phone;
 
     const resp = await fetch(url);
     const data = await resp.json();
