@@ -16,12 +16,12 @@ exports.handler = async function (event) {
 
     const apiKey = process.env.FAST2SMS_API_KEY;
 
-    // ✅ OTP route — uses Fast2SMS's own pre-approved OTP template
-    // ("Your OTP: {#var#}"), no DLT/Sender ID registration needed, and costs
-    // far less per SMS than the Quick SMS route (route=q) used before.
+    // ✅ Quick SMS route — no DLT needed, free credit se bhi kaam karta hai
     const url = 'https://www.fast2sms.com/dev/bulkV2?authorization=' + apiKey +
-      '&route=otp' +
-      '&variables_values=' + otp +
+      '&route=q' +
+      '&message=Your OTP for Rent a Maid India is ' + otp + '. Valid for 10 minutes. Do not share.' +
+      '&language=english' +
+      '&flash=0' +
       '&numbers=' + phone;
 
     const resp = await fetch(url);
