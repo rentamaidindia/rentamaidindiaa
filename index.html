@@ -2261,19 +2261,10 @@ tr:hover td{background:#f8fafc;}
             </div>
             <div class="form-group-v">
               <label>Phone Number *</label>
-              <div style="display:flex;gap:8px;">
-                <input type="tel" id="regPhone" placeholder="9876543210" maxlength="10" style="flex:1;" oninput="document.getElementById('regOtpRow').style.display='none';document.getElementById('regOtpSentHint').style.display='none';" />
-                <button type="button" onclick="sendRegOtp()" style="white-space:nowrap;padding:8px 14px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(249,115,22,.35);transition:all .2s;" onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'"><i class="fas fa-paper-plane"></i> Send OTP</button>
-              </div>
+              <input type="tel" id="regPhone" placeholder="9876543210" maxlength="10" style="width:100%;" />
               <div id="regPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
-              <div id="regOtpSentHint" style="font-size:12px;color:var(--green);margin-top:4px;font-weight:600;display:none;"></div>
             </div>
-            <div class="form-group-v" id="regOtpRow" style="display:none;">
-              <label>Enter OTP *</label>
-              <input type="text" id="regOtpInput" placeholder="Enter OTP" maxlength="6" />
-              <div id="regOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
-            </div>
-            <div class="form-group-v" id="regPasswordRow" style="display:none;">
+            <div class="form-group-v">
               <label>Password *</label>
               <div style="position:relative;">
                 <input type="password" id="regPassword" placeholder="Min 8 characters" style="width:100%;padding-right:42px;" />
@@ -2281,7 +2272,7 @@ tr:hover td{background:#f8fafc;}
               </div>
               <div id="regPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
             </div>
-            <div class="form-group-v" id="regConfirmPasswordRow" style="display:none;">
+            <div class="form-group-v">
               <label>Confirm Password *</label>
               <div style="position:relative;">
                 <input type="password" id="regConfirmPassword" placeholder="Password dobara enter karein" style="width:100%;padding-right:42px;" />
@@ -4333,62 +4324,8 @@ async function sendRealOtpSms(phone, otp) {
 }
 
 
-async function sendOtp(context) {
-  // context: 'login' | 'signup'
-  const phoneId = context === 'login' ? 'loginPhone' : 'signupPhone';
-  const errorId = context === 'login' ? 'loginPhoneError' : 'signupPhoneError';
-  const hintId = context === 'login' ? 'loginOtpHint' : 'signupOtpHint';
-  const phone = document.getElementById(phoneId).value.replace(/\D/g, '');
-  const errEl = document.getElementById(errorId);
-  const hintEl = document.getElementById(hintId);
-
-  if (!isValidIndianMobile(phone)) {
-    errEl.textContent = 'Please enter a valid 10-digit mobile number.';
-    errEl.style.display = 'block';
-    return;
-  }
-  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
-  if (!otpSendGuardStart('sendOtp_' + context + '_' + phone)) return;
-  errEl.style.display = 'none';
-  hintEl.textContent = 'Data check ho raha hai...';
-  hintEl.style.display = 'block';
-
-  // Firebase se latest customer data sync karo pehle
-  if (typeof window._fbGet === 'function') {
-    try {
-      const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
-      if (fbCustomers && typeof fbCustomers === 'object') {
-        const local = readCustomers();
-        const merged = Object.assign({}, local, fbCustomers);
-        localStorage.setItem('registeredCustomers', JSON.stringify(merged));
-      }
-    } catch(e) {}
-  }
-
-  const customers = readCustomers();
-  if (context === 'login' && !customers[phone]) {
-    errEl.textContent = 'No account found with this number. Please register first.';
-    errEl.style.display = 'block';
-    hintEl.style.display = 'none';
-    return;
-  }
-  if (context === 'signup' && customers[phone]) {
-    errEl.textContent = 'An account with this number already exists. Please login instead.';
-    errEl.style.display = 'block';
-    hintEl.style.display = 'none';
-    return;
-  }
-
-  const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit OTP
-  const otpStore = readOtpStore();
-  setOtpEntry(otpStore, phone, otp);
-  writeOtpStore(otpStore); // saves to localStorage + Firebase
-
-  hintEl.textContent = 'OTP bheja ja raha hai...';
-  hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
-  showToast('OTP bheja ja raha hai...');
-}
+// Note: sendOtp(context) (old signup/login OTP sender) removed — dead code,
+// no longer called from any button since signup/login became password-based.
 
 async function submitLogin() {
   // Double-click guard
@@ -4591,7 +4528,7 @@ async function submitSignup() {
   try { await writeCustomers(customers); } catch(e) { writeCustomers(customers); }
   
   // Upload photo to Firebase Storage in background
-  const signupPhotoFile = document.getElementById('signupPhoto') ? document.getElementById('signupPhoto').files[0] : null;
+  const signupPhotoFile = document.getElementById('signupPhotoInput') ? document.getElementById('signupPhotoInput').files[0] : null;
   if (signupPhotoFile && typeof window._fbUploadPhoto === 'function') {
     window._fbUploadPhoto(signupPhotoFile, 'customer-photos/' + phone + '_' + Date.now() + '.jpg').then(url => {
       if (url) {
@@ -4613,6 +4550,7 @@ async function submitSignup() {
   if (loginModal2) { loginModal2.style.display = 'none'; loginModal2.classList.remove('open-modal'); }
 
   showToast('Account created! Welcome, ' + name + '.');
+  if (submitBtn) submitBtn._processing = false;
   updateNavbarUI();
 
   // Reset signup form
@@ -4779,25 +4717,6 @@ async function regValidateStep(step) {
       const adminMaidsCheck = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
       if (adminMaidsCheck.find(m => String(m.phone) === phone)) return 'Is number se pehle se registration ho chuki hai. Maid login se login karein.';
     } catch(e) {}
-    // OTP verification — Firebase se sync karo pehle
-    const otpVal = (document.getElementById('regOtpInput').value || '').trim();
-    await syncOtpFromFirebase().catch(()=>{});
-    const otpStore = readOtpStore();
-    const regOtpResult = checkOtpEntry(otpStore, 'reg_' + phone, otpVal);
-    if (regOtpResult === 'missing') return 'Pehle "Send OTP" button dabao aur OTP enter karein.';
-    if (regOtpResult === 'expired') {
-      const otpErrEl = document.getElementById('regOtpError');
-      if (otpErrEl) { otpErrEl.textContent = 'OTP expire ho gaya. "Send OTP" dobara dabao.'; otpErrEl.style.display = 'block'; }
-      return 'OTP expire ho gaya. "Send OTP" dobara dabao.';
-    }
-    if (regOtpResult === 'wrong') {
-      const otpErrEl = document.getElementById('regOtpError');
-      if (otpErrEl) { otpErrEl.textContent = 'Galat OTP. Dobara try karein.'; otpErrEl.style.display = 'block'; }
-      return 'Galat OTP. Dobara try karein.';
-    }
-    // Clear OTP after successful verify
-    delete otpStore['reg_' + phone];
-    writeOtpStore(otpStore);
     // Password validation
     const regPass = (document.getElementById('regPassword').value || '');
     const regConfPass = (document.getElementById('regConfirmPassword').value || '');
@@ -4883,86 +4802,11 @@ function switchMaidSubTab(tab) {
   }
 }
 
-function sendMaidOtp() {
-  const phone = document.getElementById('maidLoginPhone').value.replace(/\D/g, '');
-  const errEl = document.getElementById('maidLoginPhoneError');
-  const hintEl = document.getElementById('maidLoginOtpHint');
-  errEl.style.display = 'none';
+// Note: sendMaidOtp() (old maid-login OTP sender) removed — dead code, no
+// longer called from any button since maid login became password-based,
+// and it referenced a 'maidLoginOtpHint' element that no longer exists.
 
-  if (!isValidIndianMobile(phone)) {
-    errEl.textContent = 'Please enter a valid 10-digit mobile number.';
-    errEl.style.display = 'block';
-    return;
-  }
-  const maids = readRegisteredMaids();
-  if (!maids[phone]) {
-    errEl.textContent = 'No maid account found with this number. Please register first.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (!maids[phone].verified) {
-    errEl.textContent = 'Aapka account abhi admin approval ka wait kar raha hai. Approve hone ke baad login kar sakti hain.';
-    errEl.style.display = 'block';
-    return;
-  }
-  const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
-  const otpStore = readOtpStore();
-  setOtpEntry(otpStore, 'maid_' + phone, otp);
-  writeOtpStore(otpStore); // saves to localStorage + Firebase
-  hintEl.textContent = 'OTP bheja ja raha hai...';
-  hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
-  showToast('OTP bheja ja raha hai...');
-}
-
-// OTP for maid registration form (Step 1 phone verification + duplicate check)
-function sendRegOtp() {
-  const phone = document.getElementById('regPhone').value.replace(/\D/g, '');
-  const phoneErrEl = document.getElementById('regPhoneError');
-  const hintEl = document.getElementById('regOtpSentHint');
-  const otpRow = document.getElementById('regOtpRow');
-  phoneErrEl.style.display = 'none';
-  hintEl.style.display = 'none';
-
-  if (!isValidIndianMobile(phone)) {
-    phoneErrEl.textContent = 'Please enter a valid 10-digit mobile number.';
-    phoneErrEl.style.display = 'block';
-    return;
-  }
-  // Duplicate check — same number se already registered maid?
-  const registeredMaids = readRegisteredMaids();
-  if (registeredMaids[phone]) {
-    phoneErrEl.textContent = 'Is number se pehle se registration ho chuki hai. Maid login se login karein.';
-    phoneErrEl.style.display = 'block';
-    return;
-  }
-  // Also check admin maids list
-  try {
-    const adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
-    if (adminMaids.find(m => String(m.phone) === phone)) {
-      phoneErrEl.textContent = 'Is number se pehle se registration ho chuki hai. Maid login se login karein.';
-      phoneErrEl.style.display = 'block';
-      return;
-    }
-  } catch(e) {}
-
-  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
-  if (!otpSendGuardStart('sendRegOtp_' + phone)) return;
-
-  const otp = String(Math.floor(100000 + Math.random() * 900000)); // 6-digit
-  const otpStore = readOtpStore();
-  setOtpEntry(otpStore, 'reg_' + phone, otp);
-  writeOtpStore(otpStore); // saves to localStorage + Firebase
-  otpRow.style.display = 'block';
-  document.getElementById('regPasswordRow').style.display = 'block';
-  document.getElementById('regConfirmPasswordRow').style.display = 'block';
-  hintEl.textContent = 'OTP bheja ja raha hai...';
-  hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
-  document.getElementById('regOtpInput').value = '';
-  document.getElementById('regOtpError').style.display = 'none';
-  showToast('OTP sent to +91 ' + phone);
-}
+// sendRegOtp removed — Maid registration ab OTP-free hai (Password-based)
 
 function submitMaidLogin() {
   // Double-click guard
@@ -5173,12 +5017,12 @@ async function submitReg() {
       + '<div style="width:80px;height:80px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px;">✅</div>'
       + '<h2 style="font-family:var(--serif);font-size:28px;font-weight:700;color:var(--secondary);margin-bottom:12px;">Application Submitted!</h2>'
       + '<p style="color:var(--muted);font-size:15px;line-height:1.7;margin-bottom:8px;">Aapki registration <strong style="color:var(--foreground);">' + name + '</strong> ke naam se submit ho gayi hai.</p>'
-      + '<p style="color:var(--muted);font-size:14px;margin-bottom:28px;">Admin 24 ghante mein aapko verify karega. Verify hone ke baad aap OTP se login kar sakti hain.</p>'
+      + '<p style="color:var(--muted);font-size:14px;margin-bottom:28px;">Admin 24 ghante mein aapko verify karega. Verify hone ke baad aap Password se login kar sakti hain.</p>'
       + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:24px;text-align:left;">'
       + '<div style="font-size:13px;font-weight:700;color:#15803d;margin-bottom:8px;"><i class="fas fa-circle-info"></i> Aage kya hoga?</div>'
       + '<ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:6px;font-size:13px;color:#166534;">'
       + '<li>📋 Admin aapki profile review karega</li>'
-      + '<li>✅ Approve hone par aapko SMS/OTP milega</li>'
+      + '<li>✅ Approve hone par aap login kar sakti hain</li>'
       + '<li>📱 Phir aap "Login as Maid" se login kar sakti hain</li>'
       + '</ul></div>'
       + '<button class="btn btn-lg btn-primary" onclick="showPage(&quot;home&quot;)"><i class="fas fa-home"></i> Home Jaao</button>'
@@ -6645,9 +6489,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <label style="display:block;font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:6px;">Phone Number *</label>
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <input id="rcPhone" type="tel" placeholder="+91 9530112346" maxlength="10" style="flex:1;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;transition:border-color .2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e5e7eb'">
-        <button onclick="rcSendOtp()" style="padding:12px 18px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;color:#111827;transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='#e5e7eb';this.style.color='#111827'">Send OTP</button>
+        <button id="rcSendBtn" onclick="rcSendOtp()" style="padding:12px 18px;background:#fff;border:1.5px solid #e5e7eb;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;color:#111827;transition:all .2s;" onmouseover="this.style.borderColor='var(--primary)';this.style.color='var(--primary)'" onmouseout="this.style.borderColor='#e5e7eb';this.style.color='#111827'">Send OTP</button>
       </div>
       <div id="rcOtpHint" style="display:none;font-size:12px;color:var(--primary);margin-bottom:10px;background:#fff7ed;padding:8px 12px;border-radius:8px;"></div>
+      <div id="recaptcha-container-rc" style="margin-bottom:8px;"></div>
 
       <label style="display:block;font-size:13px;font-weight:700;color:#1e3a5f;margin-bottom:6px;">OTP *</label>
       <input id="rcOtp" type="text" placeholder="Enter OTP" maxlength="6" style="width:100%;padding:13px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;margin-bottom:6px;box-sizing:border-box;transition:border-color .2s;" onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#e5e7eb'">
@@ -6722,26 +6567,74 @@ function switchRCTab(tab) {
     maidPanel.style.display = 'block'; custPanel.style.display = 'none';
   }
 }
-function rcSendOtp() {
+async function rcSendOtp() {
   const phone = document.getElementById('rcPhone').value.replace(/\D/g, '');
   const errEl = document.getElementById('rcError');
   const hintEl = document.getElementById('rcOtpHint');
+  const btn = document.getElementById('rcSendBtn');
   errEl.style.display = 'none';
+  hintEl.style.display = 'none';
   if (!/^[6-9]\d{9}$/.test(phone)) {
     errEl.textContent = 'Please enter a valid 10-digit mobile number.';
     errEl.style.display = 'block'; return;
   }
-  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
+  // Stop a double-click / double-tap from sending two real OTP SMS
   if (!otpSendGuardStart('rcSendOtp_' + phone)) return;
-  const otp = String(Math.floor(1000 + Math.random() * 9000));
-  const store = JSON.parse(localStorage.getItem('ram_otps') || '{}');
-  store[phone] = otp;
-  localStorage.setItem('ram_otps', JSON.stringify(store));
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking...'; }
+
+  // Firebase se latest customer data sync karo pehle
+  if (typeof window._fbGet === 'function') {
+    try {
+      const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
+      if (fbCustomers && typeof fbCustomers === 'object') {
+        const merged = Object.assign({}, readCustomers(), fbCustomers);
+        localStorage.setItem('registeredCustomers', JSON.stringify(merged));
+      }
+    } catch(e) {}
+  }
+
+  const customers = readCustomers();
+  if (!customers[phone]) {
+    errEl.textContent = 'Is number par koi account nahi hai. Pehle register karein.';
+    errEl.style.display = 'block';
+    if (btn) { btn.disabled = false; btn.textContent = 'Send OTP'; }
+    return;
+  }
+
+  if (btn) btn.textContent = 'Sending...';
   hintEl.textContent = 'OTP bheja ja raha hai...';
   hintEl.style.display = 'block';
-  sendRealOtpSms(phone, otp).then(ok => { hintEl.textContent = ok ? '✅ OTP bheja gaya!' : '❌ OTP nahi bhej paye. Dobara try karein.'; });
+
+  try {
+    // Firebase Phone Auth — Invisible reCAPTCHA (separate verifier from forgot-password flow)
+    if (window._rcRecaptchaVerifier) { try { window._rcRecaptchaVerifier.clear(); } catch(e) {} window._rcRecaptchaVerifier = null; }
+    const rcEl = document.getElementById('recaptcha-container-rc');
+    if (rcEl) rcEl.innerHTML = '';
+    window._rcRecaptchaVerifier = new window.RecaptchaVerifier(window._auth, 'recaptcha-container-rc', { size: 'invisible', callback: () => {}, 'expired-callback': () => { window._rcRecaptchaVerifier = null; } });
+    await window._rcRecaptchaVerifier.render();
+
+    const phoneWithCode = '+91' + phone;
+    window._rcConfirmationResult = await window.signInWithPhoneNumber(window._auth, phoneWithCode, window._rcRecaptchaVerifier);
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Resend OTP'; }
+    hintEl.textContent = '✅ OTP +91' + phone + ' par bheja gaya!';
+    hintEl.style.display = 'block';
+    hintEl.style.color = 'var(--primary)';
+    setTimeout(() => document.getElementById('rcOtp').focus(), 100);
+  } catch(err) {
+    console.error('Firebase OTP error (rc login):', err);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send OTP'; }
+    let errMsg = 'OTP bhejne mein error. Dobara try karein.';
+    if (err.code === 'auth/invalid-phone-number') errMsg = 'Phone number format galat hai.';
+    else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Kuch der baad try karein.';
+    else if (err.code === 'auth/quota-exceeded') errMsg = 'OTP limit exceed ho gayi. Kal try karein.';
+    hintEl.textContent = '⚠️ ' + errMsg;
+    hintEl.style.display = 'block';
+    hintEl.style.color = '#dc2626';
+  }
 }
-function rcSubmitLogin() {
+async function rcSubmitLogin() {
   const phone = document.getElementById('rcPhone').value.replace(/\D/g, '');
   const otp = document.getElementById('rcOtp').value.trim();
   const errEl = document.getElementById('rcError');
@@ -6749,14 +6642,47 @@ function rcSubmitLogin() {
   if (!/^[6-9]\d{9}$/.test(phone)) {
     errEl.textContent = 'Valid phone number required.'; errEl.style.display = 'block'; return;
   }
-  const store = JSON.parse(localStorage.getItem('ram_otps') || '{}');
-  if (!otp || store[phone] !== otp) {
-    errEl.textContent = 'Invalid OTP. Please try again.'; errEl.style.display = 'block'; return;
+  if (!otp) {
+    errEl.textContent = 'OTP enter karein.'; errEl.style.display = 'block'; return;
   }
-  // Use existing login flow
-  document.getElementById('loginPhone').value = phone;
+  if (!window._rcConfirmationResult) {
+    errEl.textContent = 'Pehle "Send OTP" dabao.'; errEl.style.display = 'block'; return;
+  }
+
+  try {
+    // Firebase OTP verify karo
+    await window._rcConfirmationResult.confirm(otp);
+  } catch(err) {
+    console.error('OTP verify error (rc login):', err);
+    let msg = 'Galat OTP. Dobara check karein.';
+    if (err.code === 'auth/code-expired') msg = 'OTP expire ho gaya. "Send OTP" dobara dabao.';
+    errEl.textContent = msg;
+    errEl.style.display = 'block'; return;
+  }
+
+  // OTP verified — customer ko seedha login karwao (passwordless flow,
+  // isliye submitLogin() use nahi karte kyunki usse password chahiye)
+  const customers = readCustomers();
+  if (!customers[phone]) {
+    errEl.textContent = 'Account nahi mila. Dobara try karein.';
+    errEl.style.display = 'block'; return;
+  }
+  window._rcConfirmationResult = null;
+  setAuthToken(phone);
+  localStorage.setItem('userRole', 'customer');
+  const redirectTo = pendingPageAfterLogin;
+  pendingPageAfterLogin = null;
   closeRegisterChoiceModal();
-  submitLogin();
+  showToast('Welcome back, ' + customers[phone].name + '!');
+  document.getElementById('rcPhone').value = '';
+  document.getElementById('rcOtp').value = '';
+  document.getElementById('rcOtpHint').style.display = 'none';
+  updateNavbarUI();
+  const profilePage = document.getElementById('page-maid-profile');
+  if (profilePage && profilePage.classList.contains('active') && window._currentMaidProfileId) {
+    setTimeout(() => showMaidProfile(window._currentMaidProfileId), 120); return;
+  }
+  if (redirectTo) setTimeout(() => showPage(redirectTo), 100);
 }
 </script>
 
@@ -11041,6 +10967,25 @@ const _st    = getStorage(_fbApp);
 const _auth  = getAuth(_fbApp);
 let _recaptchaVerifier = null;
 let _confirmationResult = null;
+// Separate verifier/result for the "recurring customer" quick-login widget
+// (registerChoiceModal) so it never clashes with the Forgot Password flow
+// if a person somehow has both open/used back-to-back.
+// These live on `window` (not module-scoped let) because rcSendOtp()/
+// rcSubmitLogin() are defined in an earlier *regular* <script> block and
+// need to read AND write this same state across two separate function calls.
+window._rcRecaptchaVerifier = null;
+window._rcConfirmationResult = null;
+
+// IMPORTANT: this is an ES module (<script type="module">), which has its own
+// scope — variables declared with const/let here do NOT become global/window
+// variables automatically, unlike a regular <script>. rcSendOtp() and
+// rcSubmitLogin() live in an earlier *regular* <script> block (the
+// registerChoiceModal quick-login widget), so without these explicit
+// window assignments they would throw "RecaptchaVerifier is not defined"
+// the moment a person clicked "Send OTP" there.
+window._auth = _auth;
+window.RecaptchaVerifier = RecaptchaVerifier;
+window.signInWithPhoneNumber = signInWithPhoneNumber;
 
 function _fbKey(k) { return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100); }
 
@@ -11079,7 +11024,7 @@ window._fbUploadPhoto = async function(file, path) {
 window._fbDataReady = false;
 function _setFbLoadingState(loading) {
   // Auth modal ke submit/send buttons disable/enable karo
-  const btnIds = ['loginSubmitBtn','signupSubmitBtn','maidLoginSubmitBtn','forgotSendBtn','regSendOtpBtn'];
+  const btnIds = ['loginSubmitBtn','signupSubmitBtn','maidLoginSubmitBtn','forgotSendBtn','regSendOtpBtn','rcSendBtn'];
   btnIds.forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -11388,7 +11333,11 @@ async function forgotSendOtp() {
     if (_recaptchaVerifier) {
       try { _recaptchaVerifier.clear(); } catch(e) {}
     }
-    _recaptchaVerifier = new RecaptchaVerifier(_auth, 'recaptcha-container', { size: 'invisible' });
+    if (_recaptchaVerifier) { try { _recaptchaVerifier.clear(); } catch(e) {} _recaptchaVerifier = null; }
+    const rcEl = document.getElementById('recaptcha-container');
+    if (rcEl) rcEl.innerHTML = '';
+    _recaptchaVerifier = new RecaptchaVerifier(_auth, 'recaptcha-container', { size: 'invisible', callback: () => {}, 'expired-callback': () => { _recaptchaVerifier = null; } });
+    await _recaptchaVerifier.render();
 
     const phoneWithCode = '+91' + phone;
     _confirmationResult = await signInWithPhoneNumber(_auth, phoneWithCode, _recaptchaVerifier);
