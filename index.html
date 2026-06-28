@@ -2980,17 +2980,8 @@ tr:hover td{background:#f8fafc;}
 
       <div class="form-group-v" style="margin-bottom:12px;">
         <label>Mobile Number *</label>
-        <div style="display:flex;gap:8px;">
-          <input type="tel" id="signupPhone" placeholder="98765 43210" maxlength="10" style="flex:1;" />
-          <button type="button" class="btn btn-sm" style="white-space:nowrap;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;box-shadow:0 2px 8px rgba(249,115,22,.35);font-weight:700;" onclick="sendOtp('signup')"><i class="fas fa-paper-plane"></i> Send OTP</button>
-        </div>
+        <input type="tel" id="signupPhone" placeholder="98765 43210" maxlength="10" style="width:100%;" />
         <div id="signupPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">Please enter a valid 10-digit mobile number.</div>
-      </div>
-      <div class="form-group-v" style="margin-bottom:12px;">
-        <label>OTP (Phone Verify) *</label>
-        <input type="text" id="signupOtp" placeholder="OTP enter karein" maxlength="6" />
-        <div id="signupOtpHint" style="font-size:12px;color:var(--muted);margin-top:4px;display:none;"></div>
-        <div id="signupOtpError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;">Incorrect OTP. Please check and try again.</div>
       </div>
       <div class="form-group-v" style="margin-bottom:12px;">
         <label>Password *</label>
@@ -3130,6 +3121,8 @@ tr:hover td{background:#f8fafc;}
         </div>
         <div id="forgotPhoneError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
         <div id="forgotOtpHint" style="color:#16a34a;font-size:12px;margin-top:4px;display:none;"></div>
+        <!-- Firebase Recaptcha container (invisible) -->
+        <div id="recaptcha-container" style="margin-top:8px;"></div>
       </div>
     </div>
     <!-- Step 2: OTP + New Password (hidden initially) -->
@@ -4278,7 +4271,7 @@ function showAuthView(view) {
 }
 
 function clearAuthErrors() {
-  ['loginPhoneError','loginOtpError','signupPhoneError','signupOtpError'].forEach(id => {
+  ['loginPhoneError','signupPhoneError'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -4366,7 +4359,7 @@ async function sendOtp(context) {
       const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
       if (fbCustomers && typeof fbCustomers === 'object') {
         const local = readCustomers();
-        const merged = Object.assign({}, fbCustomers, local);
+        const merged = Object.assign({}, local, fbCustomers);
         localStorage.setItem('registeredCustomers', JSON.stringify(merged));
       }
     } catch(e) {}
@@ -4423,19 +4416,30 @@ async function submitLogin() {
 
   // Firebase se latest data sync karo pehle (async)
   (async () => {
+    // Pehle Firebase se fresh data fetch karo
     if (typeof window._fbGet === 'function') {
       try {
         const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
         if (fbCustomers && typeof fbCustomers === 'object') {
           const local = readCustomers();
-          const merged = Object.assign({}, fbCustomers, local);
-          // Firebase wala passwordHash fresh hai to usse prefer karo
-          Object.keys(fbCustomers).forEach(ph => {
-            if (!local[ph]) merged[ph] = fbCustomers[ph];
+          // Firebase data authoritative hai — per-user merge karo
+          // taaki ek user ka naya data doosre ko overwrite na kare
+          const merged = Object.assign({}, local);
+          Object.keys(fbCustomers).forEach(k => {
+            // Firebase ka record fresh hai agar uski createdAt ya passwordHash
+            // local se alag hai — dono mein se latest lo
+            const fbRec = fbCustomers[k];
+            const localRec = local[k];
+            if (!localRec) {
+              merged[k] = fbRec;
+            } else {
+              // Firebase wala passwordHash always authoritative — reset/update ke baad
+              merged[k] = Object.assign({}, localRec, fbRec);
+            }
           });
           localStorage.setItem('registeredCustomers', JSON.stringify(merged));
         }
-      } catch(e) {}
+      } catch(e) { console.warn('Firebase customer sync failed:', e); }
     }
 
     const customers = readCustomers();
@@ -4445,13 +4449,27 @@ async function submitLogin() {
       if (submitBtn) submitBtn._processing = false;
       return;
     }
-    // Hash compare karo
+
+    // Hash compare karo — 3 cases handle karo:
+    // 1. Normal: storedHash === simpleHash(pass)
+    // 2. Legacy: kisi purane version mein plain text save hua ho
+    // 3. Admin ne manually reset kiya ho toh Firebase se fresh hash aayega
     const storedHash = customers[phone].passwordHash;
-    if (!storedHash || storedHash !== simpleHash(pass)) {
+    const passHash = simpleHash(pass);
+    const passwordMatch = storedHash && (
+      storedHash === passHash ||         // Normal hashed match
+      storedHash === pass                // Legacy plain text fallback
+    );
+    if (!passwordMatch) {
       passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
       passErr.style.display = 'block';
       if (submitBtn) submitBtn._processing = false;
       return;
+    }
+    // Agar legacy plain text tha toh is login par hash upgrade kar do
+    if (storedHash === pass) {
+      customers[phone].passwordHash = passHash;
+      writeCustomers(customers);
     }
 
     // Success
@@ -4501,14 +4519,11 @@ async function submitSignup() {
   const name = document.getElementById('signupName').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const phone = document.getElementById('signupPhone').value.replace(/\D/g, '');
-  const otp = document.getElementById('signupOtp').value.trim();
   const state = document.getElementById('signupState').value;
   const district = document.getElementById('signupDistrict').value;
   const address = document.getElementById('signupAddress').value.trim();
   const phoneErr = document.getElementById('signupPhoneError');
-  const otpErr = document.getElementById('signupOtpError');
   phoneErr.style.display = 'none';
-  otpErr.style.display = 'none';
 
   if (!name) { showToast('Please enter your full name.'); document.getElementById('signupName').focus(); return; }
   // Photo compulsory check
@@ -4526,44 +4541,18 @@ async function submitSignup() {
   if (!isValidIndianMobile(phone)) {
     phoneErr.textContent = 'Please enter a valid 10-digit mobile number.';
     phoneErr.style.display = 'block';
+    if (submitBtn) submitBtn._processing = false;
     return;
   }
   const customers = readCustomers();
   if (customers[phone]) {
     phoneErr.textContent = 'An account with this number already exists. Please login instead.';
     phoneErr.style.display = 'block';
-    return;
-  }
-  if (!otp) {
-    otpErr.textContent = 'Please request and enter the OTP sent to your mobile.';
-    otpErr.style.display = 'block';
-    if (submitBtn) submitBtn._processing = false;
-    return;
-  }
-  // Firebase se OTP sync karo taaki cross-device OTP kaam kare
-  await syncOtpFromFirebase().catch(()=>{});
-  const otpStore = readOtpStore();
-  const otpResult = checkOtpEntry(otpStore, phone, otp);
-  if (otpResult === 'missing') {
-    otpErr.textContent = 'OTP expired or not requested. Please request a new OTP.';
-    otpErr.style.display = 'block';
-    if (submitBtn) submitBtn._processing = false;
-    return;
-  }
-  if (otpResult === 'expired') {
-    otpErr.textContent = 'OTP expire ho gaya. Please request a new OTP.';
-    otpErr.style.display = 'block';
-    if (submitBtn) submitBtn._processing = false;
-    return;
-  }
-  if (otpResult === 'wrong') {
-    otpErr.textContent = 'Incorrect OTP. Dobara check karein.';
-    otpErr.style.display = 'block';
     if (submitBtn) submitBtn._processing = false;
     return;
   }
   if (!state) { showToast('Please select your state.'); document.getElementById('signupState').focus(); if (submitBtn) submitBtn._processing = false; return; }
-  if (!district) { showToast('Please select your district / city.'); document.getElementById('signupDistrict').focus(); return; }
+  if (!district) { showToast('Please select your district / city.'); document.getElementById('signupDistrict').focus(); if (submitBtn) submitBtn._processing = false; return; }
   if (!address) { showToast('Please enter your complete address.'); document.getElementById('signupAddress').focus(); return; }
 
   // Terms & Conditions compulsory check
@@ -4596,8 +4585,10 @@ async function submitSignup() {
   const signupPhotoData = signupPhotoImg ? signupPhotoImg.src : '';
   
   // Save customer data with password hash
-  customers[phone] = { name, email, state, district, address, photo: signupPhotoData, passwordHash: simpleHash(pass), createdAt: new Date().toISOString() };
-  writeCustomers(customers);
+  const passHash = simpleHash(pass);
+  customers[phone] = { name, email, state, district, address, photo: signupPhotoData, passwordHash: passHash, createdAt: new Date().toISOString() };
+  // Firebase pe await karo taaki login ke time fresh data mile
+  try { await writeCustomers(customers); } catch(e) { writeCustomers(customers); }
   
   // Upload photo to Firebase Storage in background
   const signupPhotoFile = document.getElementById('signupPhoto') ? document.getElementById('signupPhoto').files[0] : null;
@@ -4609,8 +4600,6 @@ async function submitSignup() {
       }
     }).catch(e => console.warn('Photo upload failed:', e));
   }
-  delete otpStore[phone];
-  writeOtpStore(otpStore);
   setAuthToken(phone);
   localStorage.setItem('userRole', 'customer');
   const redirectTo = pendingPageAfterLogin;
@@ -4627,10 +4616,9 @@ async function submitSignup() {
   updateNavbarUI();
 
   // Reset signup form
-  ['signupName','signupEmail','signupPhone','signupOtp','signupPassword','signupConfirmPassword','signupAddress'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['signupName','signupEmail','signupPhone','signupPassword','signupConfirmPassword','signupAddress'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('signupState').value = '';
   document.getElementById('signupDistrict').innerHTML = '<option value="">Select District</option>';
-  document.getElementById('signupOtpHint').style.display = 'none';
   document.getElementById('signupPhotoPreview').innerHTML = '<i class="fas fa-user" style="font-size:26px;color:var(--muted);"></i>';
 
   // If on maid profile page, re-render to unlock phone section
@@ -5007,10 +4995,20 @@ function submitMaidLogin() {
         const fbMaids = await window._fbGet('adminData', 'ram_registered_maids');
         if (fbMaids && typeof fbMaids === 'object') {
           const local = readRegisteredMaids();
-          const merged = Object.assign({}, fbMaids, local);
+          // Per-user merge — Firebase ka passwordHash always authoritative
+          const merged = Object.assign({}, local);
+          Object.keys(fbMaids).forEach(k => {
+            const fbRec = fbMaids[k];
+            const localRec = local[k];
+            if (!localRec) {
+              merged[k] = fbRec;
+            } else {
+              merged[k] = Object.assign({}, localRec, fbRec);
+            }
+          });
           localStorage.setItem('ram_registered_maids', JSON.stringify(merged));
         }
-      } catch(e) {}
+      } catch(e) { console.warn('Firebase maid sync failed:', e); }
     }
 
     const maids = readRegisteredMaids();
@@ -5026,12 +5024,24 @@ function submitMaidLogin() {
       if (submitBtn) submitBtn._processing = false;
       return;
     }
+
+    // Hash compare — normal + legacy plain text fallback
     const storedHash = maids[phone].passwordHash;
-    if (!storedHash || storedHash !== simpleHash(pass)) {
+    const passHash = simpleHash(pass);
+    const passwordMatch = storedHash && (
+      storedHash === passHash ||
+      storedHash === pass
+    );
+    if (!passwordMatch) {
       passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
       passErr.style.display = 'block';
       if (submitBtn) submitBtn._processing = false;
       return;
+    }
+    // Legacy plain text upgrade
+    if (storedHash === pass) {
+      maids[phone].passwordHash = passHash;
+      writeRegisteredMaids(maids);
     }
 
     // Success
@@ -5083,7 +5093,8 @@ async function submitReg() {
     if (regPass && regPass.length >= 8) {
       maids[phone].passwordHash = simpleHash(regPass);
     }
-    writeRegisteredMaids(maids);
+    // Firebase pe await karo taaki login ke time fresh hash mile
+    try { await writeRegisteredMaids(maids); } catch(e) { writeRegisteredMaids(maids); }
 
     // Also add to admin's maids list as UNVERIFIED so admin sees them in pending queue
     try {
@@ -6744,7 +6755,6 @@ function rcSubmitLogin() {
   }
   // Use existing login flow
   document.getElementById('loginPhone').value = phone;
-  document.getElementById('loginOtp').value = otp;
   closeRegisterChoiceModal();
   submitLogin();
 }
@@ -8173,22 +8183,28 @@ function adminLogin() {
   });
 }
 async function _verifyAdminPassword(user, pass) {
-  try {
-    const { getDoc, doc: fbDoc } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
-    const snap = await getDoc(fbDoc(_db, 'adminData', 'adminConfig'));
-    if (snap.exists()) {
-      const fbPass = snap.data().password;
-      if (fbPass !== undefined) {
-        const admins = getAdmins();
-        const found = admins.find(a => a.username === user);
-        return !!(found && fbPass === pass);
-      }
-    }
-  } catch(e) { console.warn('Firebase admin password check failed:', e); }
   const admins = getAdmins();
   const found = admins.find(a => a.username === user);
-  const storedPasses = getLS('ram_admin_passwords', {admin:'admin123'});
-  return !!(found && (storedPasses[user] || 'admin123') === pass);
+  if (!found) return false;
+
+  // Firebase se latest password sync karo pehle (taaki dusre device se
+  // change kiya gaya password bhi yahan kaam kare)
+  let storedPasses = getLS('ram_admin_passwords', {admin: simpleHash('admin123')});
+  if (typeof window._fbGet === 'function') {
+    try {
+      const fbPasses = await window._fbGet('adminData', 'ram_admin_passwords');
+      if (fbPasses && typeof fbPasses === 'object') {
+        storedPasses = Object.assign({}, storedPasses, fbPasses);
+        localStorage.setItem('ram_admin_passwords', JSON.stringify(storedPasses));
+      }
+    } catch(e) { console.warn('Firebase admin password sync failed:', e); }
+  }
+
+  const stored = storedPasses[user] || simpleHash('admin123');
+  // Naye hashed passwords ke saath compare karo. Backward-compatible:
+  // agar koi bahut purana plain-text password reh gaya ho to wo bhi match
+  // ho jayega, lekin hum hamesha NAYE format (hash) mein hi store karte hain.
+  return stored === simpleHash(pass) || stored === pass;
 }
 function adminLogout() {
   sessionStorage.removeItem('ram_admin_auth');
@@ -9678,9 +9694,9 @@ function saveAdminUser(){
   if(admins.some(a=>a.username===username)){showToast('Username already exists');return;}
   admins.push({username,role,created:new Date().toISOString().split('T')[0],lastLogin:null});
   setAdmins(admins);
-  const passes=getLS('ram_admin_passwords',{admin:'admin123'});
-  passes[username]=pass;setLS('ram_admin_passwords',passes);
-  ADMIN_CREDENTIALS[username]=pass;
+  // Password ko hash karke store karte hain — plain text kabhi save nahi karna
+  const passes=getLS('ram_admin_passwords',{admin:simpleHash('admin123')});
+  passes[username]=simpleHash(pass);setLS('ram_admin_passwords',passes);
   closeModal('adminModal');renderAdmins();showToast('Admin user added!');
 }
 function deleteAdmin(i){
@@ -9942,11 +9958,15 @@ function changePassword(){
   const nw=document.getElementById('set-newpass').value;
   const cf=document.getElementById('set-confpass').value;
   const user=sessionStorage.getItem('ram_admin_auth')||'admin';
-  const passes=getLS('ram_admin_passwords',{admin:'admin123'});
-  if((passes[user]||'admin123')!==cur){showToast('Current password incorrect');return;}
+  const passes=getLS('ram_admin_passwords',{admin:simpleHash('admin123')});
+  const storedPass = passes[user] || simpleHash('admin123');
+  // Purane plain-text passwords ke saath backward-compatible: agar stored value
+  // hash jaisa nahi lagta (legacy plain text), to direct compare karo; warna hash compare karo.
+  const curMatches = (storedPass === cur) || (storedPass === simpleHash(cur));
+  if(!curMatches){showToast('Current password incorrect');return;}
   if(nw.length<6){showToast('New password must be at least 6 characters');return;}
   if(nw!==cf){showToast('Passwords do not match');return;}
-  passes[user]=nw;setLS('ram_admin_passwords',passes);
+  passes[user]=simpleHash(nw);setLS('ram_admin_passwords',passes);
   document.getElementById('set-curpass').value='';
   document.getElementById('set-newpass').value='';
   document.getElementById('set-confpass').value='';
@@ -10332,7 +10352,7 @@ localStorage.removeItem('ram_admin_auth');
   // Ensure default password for admin is set if not already changed
   const passes = getLS('ram_admin_passwords', {});
   if (!passes['admin']) {
-    passes['admin'] = 'admin123';
+    passes['admin'] = simpleHash('admin123');
     setLS('ram_admin_passwords', passes);
   }
 })();
@@ -11004,6 +11024,7 @@ function applyTranslations(lang) {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, doc, setDoc, collection, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js";
+import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC4zkeAfKLHeSaj3b3vxEKxvQCrQT56THU",
@@ -11017,6 +11038,9 @@ const firebaseConfig = {
 const _fbApp = initializeApp(firebaseConfig);
 const _db    = getFirestore(_fbApp);
 const _st    = getStorage(_fbApp);
+const _auth  = getAuth(_fbApp);
+let _recaptchaVerifier = null;
+let _confirmationResult = null;
 
 function _fbKey(k) { return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100); }
 
@@ -11323,7 +11347,6 @@ async function forgotSendOtp() {
     phoneErr.style.display = 'block'; return;
   }
 
-  // Stop a double-click / double-tap from sending two real OTP SMS (₹5 each)
   if (!otpSendGuardStart('forgotSendOtp_' + phone)) return;
 
   btn.disabled = true; btn.textContent = 'Checking...';
@@ -11333,10 +11356,10 @@ async function forgotSendOtp() {
     try {
       if (_forgotRole === 'customer') {
         const fbC = await window._fbGet('siteData', 'registeredCustomers');
-        if (fbC && typeof fbC === 'object') { const m = Object.assign({}, fbC, readCustomers()); localStorage.setItem('registeredCustomers', JSON.stringify(m)); }
+        if (fbC && typeof fbC === 'object') { const m = Object.assign({}, readCustomers(), fbC); localStorage.setItem('registeredCustomers', JSON.stringify(m)); }
       } else {
         const fbM = await window._fbGet('adminData', 'ram_registered_maids');
-        if (fbM && typeof fbM === 'object') { const m = Object.assign({}, fbM, readRegisteredMaids()); localStorage.setItem('ram_registered_maids', JSON.stringify(m)); }
+        if (fbM && typeof fbM === 'object') { const m = Object.assign({}, readRegisteredMaids(), fbM); localStorage.setItem('ram_registered_maids', JSON.stringify(m)); }
       }
     } catch(e) {}
   }
@@ -11356,24 +11379,37 @@ async function forgotSendOtp() {
     }
   }
 
-  // Send OTP
-  const otp = String(Math.floor(100000 + Math.random() * 900000));
-  const otpStore = readOtpStore();
-  setOtpEntry(otpStore, 'forgot_' + phone, otp);
-  writeOtpStore(otpStore); // saves to localStorage + Firebase
-
   btn.textContent = 'Sending...';
   hint.textContent = 'OTP bheja ja raha hai...';
   hint.style.display = 'block';
 
-  sendRealOtpSms(phone, otp).then(ok => {
+  try {
+    // Firebase Phone Auth — Invisible reCAPTCHA
+    if (_recaptchaVerifier) {
+      try { _recaptchaVerifier.clear(); } catch(e) {}
+    }
+    _recaptchaVerifier = new RecaptchaVerifier(_auth, 'recaptcha-container', { size: 'invisible' });
+
+    const phoneWithCode = '+91' + phone;
+    _confirmationResult = await signInWithPhoneNumber(_auth, phoneWithCode, _recaptchaVerifier);
+
     btn.disabled = false; btn.textContent = 'Resend OTP';
-    hint.textContent = ok ? '✅ OTP +91' + phone + ' par bheja gaya!' : '⚠️ SMS fail — dobara try karein.';
+    hint.textContent = '✅ OTP +91' + phone + ' par bheja gaya! (Firebase SMS)';
     hint.style.display = 'block';
     // Show Step 2
     document.getElementById('forgotStep2').style.display = 'block';
     setTimeout(() => document.getElementById('forgotOtp').focus(), 100);
-  });
+  } catch(err) {
+    console.error('Firebase OTP error:', err);
+    btn.disabled = false; btn.textContent = 'Send OTP';
+    let errMsg = 'OTP bhejne mein error. Dobara try karein.';
+    if (err.code === 'auth/invalid-phone-number') errMsg = 'Phone number format galat hai.';
+    else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Kuch der baad try karein.';
+    else if (err.code === 'auth/quota-exceeded') errMsg = 'OTP limit exceed ho gayi. Kal try karein.';
+    hint.textContent = '⚠️ ' + errMsg;
+    hint.style.display = 'block';
+    hint.style.color = '#dc2626';
+  }
 }
 
 async function forgotResetPassword() {
@@ -11386,22 +11422,8 @@ async function forgotResetPassword() {
   otpErr.style.display = 'none';
   passErr.style.display = 'none';
 
-  // Firebase se OTP sync karo pehle — taaki cross-device OTP kaam kare
-  await syncOtpFromFirebase().catch(()=>{});
-
-  // OTP verify
-  const otpStore = readOtpStore();
-  const fpOtpResult = checkOtpEntry(otpStore, 'forgot_' + phone, otp);
-  if (fpOtpResult === 'missing') {
-    otpErr.textContent = 'Pehle "Send OTP" dabao aur OTP enter karein.';
-    otpErr.style.display = 'block'; return;
-  }
-  if (fpOtpResult === 'expired') {
-    otpErr.textContent = 'OTP expire ho gaya. Please "Send OTP" dobara dabao.';
-    otpErr.style.display = 'block'; return;
-  }
-  if (fpOtpResult === 'wrong') {
-    otpErr.textContent = 'Galat OTP. Dobara check karein.';
+  if (!otp) {
+    otpErr.textContent = 'OTP enter karein.';
     otpErr.style.display = 'block'; return;
   }
   // Password validation
@@ -11414,7 +11436,23 @@ async function forgotResetPassword() {
     passErr.style.display = 'block'; return;
   }
 
-  // Update password hash in database
+  if (!_confirmationResult) {
+    otpErr.textContent = 'Pehle "Send OTP" dabao.';
+    otpErr.style.display = 'block'; return;
+  }
+
+  try {
+    // Firebase OTP verify karo
+    await _confirmationResult.confirm(otp);
+  } catch(err) {
+    console.error('OTP verify error:', err);
+    let msg = 'Galat OTP. Dobara check karein.';
+    if (err.code === 'auth/code-expired') msg = 'OTP expire ho gaya. "Send OTP" dobara dabao.';
+    otpErr.textContent = msg;
+    otpErr.style.display = 'block'; return;
+  }
+
+  // OTP verified! Ab password update karo
   const newHash = simpleHash(newPass);
   let savePromise;
   if (_forgotRole === 'customer') {
@@ -11435,9 +11473,7 @@ async function forgotResetPassword() {
     savePromise = writeRegisteredMaids(maids);
   }
 
-  // Clear OTP
-  delete otpStore['forgot_' + phone];
-  writeOtpStore(otpStore);
+  _confirmationResult = null;
 
   const finishSuccess = () => {
     closeForgotModal();
@@ -11448,12 +11484,7 @@ async function forgotResetPassword() {
     }, 500);
   };
 
-  // Wait for the Firebase save to actually finish before declaring success —
-  // this prevents a real-time listener from re-syncing stale data over the
-  // new password in the small window right after the local save.
   savePromise.then(finishSuccess).catch(() => {
-    // Firebase save failed (e.g. offline) — password is still updated locally
-    // on this device, so login will still work here, but warn the user.
     showToast('⚠️ Password is updated on this device, but online sync failed. Try again with internet on.');
     finishSuccess();
   });
