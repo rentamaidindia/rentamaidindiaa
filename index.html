@@ -4144,9 +4144,18 @@ function readCustomers() {
   catch (e) { return {}; }
 }
 function writeCustomers(data) {
-  localStorage.setItem('registeredCustomers', JSON.stringify(data));
+  // Firestore 1MB limit — base64 photos ko URL se replace karo, nahi to truncate karo
+  const safeData = {};
+  Object.keys(data).forEach(k => {
+    const rec = Object.assign({}, data[k]);
+    if (rec.photo && rec.photo.startsWith('data:') && rec.photo.length > 50000) {
+      rec.photo = ''; // base64 too large — Firebase Storage URL baad mein aayega
+    }
+    safeData[k] = rec;
+  });
+  localStorage.setItem('registeredCustomers', JSON.stringify(data)); // localStorage mein full rakhte hain
   localStorage.setItem('registeredCustomers_savedAt', new Date().toISOString());
-  if (typeof window._fbSet === "function") return window._fbSet("siteData", "registeredCustomers", data);
+  if (typeof window._fbSet === "function") return window._fbSet("siteData", "registeredCustomers", safeData);
   return Promise.resolve();
 }
 // OTP store is kept in localStorage AND Firebase so it works across devices/browsers.
@@ -4517,26 +4526,32 @@ async function submitSignup() {
     confirmPassErr.style.display = 'block'; return;
   }
 
-  // Success — save to Firebase Storage + Firestore
-  const signupPhotoImg = document.getElementById('signupPhotoPreview') && document.getElementById('signupPhotoPreview').querySelector('img');
-  const signupPhotoData = signupPhotoImg ? signupPhotoImg.src : '';
-  
+  // Loading state — button disable karo
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating account...'; }
+
+  // Photo upload PEHLE karo — base64 Firestore mein fail hoti hai (1MB limit)
+  const signupPhotoFile = document.getElementById('signupPhotoInput') ? document.getElementById('signupPhotoInput').files[0] : null;
+  let signupPhotoData = '';
+  if (signupPhotoFile && typeof window._fbUploadPhoto === 'function') {
+    try {
+      if (submitBtn) submitBtn.textContent = 'Uploading photo...';
+      signupPhotoData = await window._fbUploadPhoto(signupPhotoFile, 'customer-photos/' + phone + '_' + Date.now() + '.jpg') || '';
+    } catch(e) { signupPhotoData = ''; }
+  }
+  // Fallback to base64 preview if upload failed
+  if (!signupPhotoData) {
+    const signupPhotoImg = document.getElementById('signupPhotoPreview') && document.getElementById('signupPhotoPreview').querySelector('img');
+    signupPhotoData = signupPhotoImg ? signupPhotoImg.src : '';
+  }
+
+  if (submitBtn) submitBtn.textContent = 'Saving...';
+
   // Save customer data with password hash
   const passHash = simpleHash(pass);
   customers[phone] = { name, email, state, district, address, photo: signupPhotoData, passwordHash: passHash, createdAt: new Date().toISOString() };
   // Firebase pe await karo taaki login ke time fresh data mile
   try { await writeCustomers(customers); } catch(e) { writeCustomers(customers); }
-  
-  // Upload photo to Firebase Storage in background
-  const signupPhotoFile = document.getElementById('signupPhotoInput') ? document.getElementById('signupPhotoInput').files[0] : null;
-  if (signupPhotoFile && typeof window._fbUploadPhoto === 'function') {
-    window._fbUploadPhoto(signupPhotoFile, 'customer-photos/' + phone + '_' + Date.now() + '.jpg').then(url => {
-      if (url) {
-        const custs = readCustomers();
-        if (custs[phone]) { custs[phone].photo = url; writeCustomers(custs); }
-      }
-    }).catch(e => console.warn('Photo upload failed:', e));
-  }
+
   setAuthToken(phone);
   localStorage.setItem('userRole', 'customer');
   const redirectTo = pendingPageAfterLogin;
@@ -4905,9 +4920,17 @@ function readRegisteredMaids() {
   try { return JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) { return {}; }
 }
 function writeRegisteredMaids(data) {
+  const safeData = {};
+  Object.keys(data).forEach(k => {
+    const rec = Object.assign({}, data[k]);
+    if (rec.photo && rec.photo.startsWith('data:') && rec.photo.length > 50000) {
+      rec.photo = '';
+    }
+    safeData[k] = rec;
+  });
   localStorage.setItem('ram_registered_maids', JSON.stringify(data));
   localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
-  if (typeof window._fbSet === "function") return window._fbSet("adminData", "ram_registered_maids", data);
+  if (typeof window._fbSet === "function") return window._fbSet("adminData", "ram_registered_maids", safeData);
   return Promise.resolve();
 }
 
@@ -4918,6 +4941,10 @@ async function submitReg() {
     return;
   }
   regClearStepError(4);
+
+  // Submit button disable karo — double click / re-submit rokne ke liye
+  const submitBtn = document.querySelector('#reg-step4 button[onclick="submitReg()"]');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
 
   // Save maid data so they can login later
   const phone = document.getElementById('regPhone').value.replace(/\D/g, '');
@@ -4942,11 +4969,9 @@ async function submitReg() {
 
     // Also add to admin's maids list as UNVERIFIED so admin sees them in pending queue
     try {
-      // Use correct key: ram_admin_maids (same as admin panel's getMaids/setMaids)
       let adminMaids;
       try { adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || 'null'); } catch(e2) { adminMaids = null; }
       if (!adminMaids) {
-        // Try legacy key as fallback, else start with empty array
         try { adminMaids = JSON.parse(localStorage.getItem('ram_maids') || 'null'); } catch(e3) {}
         if (!adminMaids) adminMaids = [];
       }
@@ -4954,11 +4979,25 @@ async function submitReg() {
       const alreadyExists = adminMaids.find(m => m.phone === phone);
       if (!alreadyExists) {
         const maxId = adminMaids.reduce((mx, m) => Math.max(mx, m.id||0), 0);
-        // Get photo from preview
-        const regPhotoEl = document.getElementById('regPhotoPreview');
-        const regPhotoImg = regPhotoEl ? regPhotoEl.querySelector('img') : null;
-        const regPhotoBase64 = regPhotoImg ? regPhotoImg.src : '';
-        
+
+        // Photo upload PEHLE karo — base64 Firestore mein fail hoti hai (1MB limit)
+        const regPhotoFile = document.getElementById('regPhoto') ? document.getElementById('regPhoto').files[0] : null;
+        let photoUrl = '';
+        if (regPhotoFile && typeof window._fbUploadPhoto === 'function') {
+          try {
+            if (submitBtn) submitBtn.textContent = 'Uploading photo...';
+            photoUrl = await window._fbUploadPhoto(regPhotoFile, 'maid-photos/' + phone + '_' + Date.now() + '.jpg') || '';
+          } catch(e) { photoUrl = ''; }
+        }
+        // Fallback: agar upload fail ho to preview base64 use karo (truncated to avoid Firestore limit)
+        if (!photoUrl) {
+          const regPhotoEl = document.getElementById('regPhotoPreview');
+          const regPhotoImg = regPhotoEl ? regPhotoEl.querySelector('img') : null;
+          photoUrl = regPhotoImg ? regPhotoImg.src : '';
+        }
+
+        if (submitBtn) submitBtn.textContent = 'Saving...';
+
         const newMaid = {
           id: maxId + 1,
           name, phone,
@@ -4967,30 +5006,19 @@ async function submitReg() {
           salary: salary ? '₹' + salary + '/month' : '',
           services: services.length ? services : ['General Help'],
           workType, rating: 0, reviewCount: 0,
-          photo: regPhotoBase64,
+          photo: photoUrl,
           available: false, verified: false,
           registeredAt: new Date().toISOString(),
           fromWebsite: true
         };
         adminMaids.push(newMaid);
         localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
-        if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_maids', adminMaids); // already synced
-        
-        // Upload maid photo to Firebase Storage in background
-        const regPhotoFile = document.getElementById('regPhoto') ? document.getElementById('regPhoto').files[0] : null;
-        if (regPhotoFile && typeof window._fbUploadPhoto === 'function') {
-          window._fbUploadPhoto(regPhotoFile, 'maid-photos/' + phone + '_' + Date.now() + '.jpg').then(url => {
-            if (url) {
-              try {
-                let maids2 = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
-                const idx = maids2.findIndex(m => m.phone === phone);
-                if (idx !== -1) { maids2[idx].photo = url; localStorage.setItem('ram_admin_maids', JSON.stringify(maids2)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_maids', maids2); }
-              } catch(e) {}
-            }
-          }).catch(e => {});
+        // Firebase pe await karo — yahi main problem thi (fire-and-forget tha pehle)
+        if (typeof window._fbSet === 'function') {
+          try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e) {}
         }
-        
-        // Upload Aadhar to Firebase Storage
+
+        // Aadhar upload background mein
         const aadharFrontFile = document.getElementById('aadharFront') ? document.getElementById('aadharFront').files[0] : null;
         const aadharBackFile = document.getElementById('aadharBack') ? document.getElementById('aadharBack').files[0] : null;
         const aadharNum = document.getElementById('regAadharNumber') ? document.getElementById('regAadharNumber').value.replace(/\s/g,'') : '';
@@ -5001,13 +5029,11 @@ async function submitReg() {
         }
         if (aadharBackFile && typeof window._fbUploadPhoto === 'function') {
           window._fbUploadPhoto(aadharBackFile, 'aadhar/' + phone + '_back_' + Date.now() + '.jpg').then(url => {
-            if (url) {
-              if (typeof window._fbSet === 'function') window._fbSet('siteData', 'aadhar_' + phone + '_back', { phone, backUrl: url });
-            }
+            if (url && typeof window._fbSet === 'function') window._fbSet('siteData', 'aadhar_' + phone + '_back', { phone, backUrl: url });
           }).catch(e => {});
         }
       }
-    } catch(e){}
+    } catch(e){ console.warn('submitReg error:', e); }
   }
 
   // Show success screen
@@ -10954,7 +10980,7 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.g
 
 const firebaseConfig = {
   apiKey: "AIzaSyC4zkeAfKLHeSaj3b3vxEKxvQCrQT56THU",
-  authDomain: "rent-a-maid-india.firebaseapp.com",
+  authDomain: "rentamaidindia.com",
   projectId: "rent-a-maid-india",
   storageBucket: "rent-a-maid-india.firebasestorage.app",
   messagingSenderId: "193330848536",
@@ -10986,6 +11012,16 @@ window._rcConfirmationResult = null;
 window._auth = _auth;
 window.RecaptchaVerifier = RecaptchaVerifier;
 window.signInWithPhoneNumber = signInWithPhoneNumber;
+
+// Forgot password flow regular <script> mein hai — getter/setter se module variables expose karo
+Object.defineProperty(window, '_forgotRecaptchaVerifier', {
+  get() { return _recaptchaVerifier; },
+  set(v) { _recaptchaVerifier = v; }
+});
+Object.defineProperty(window, '_forgotConfirmationResult', {
+  get() { return _confirmationResult; },
+  set(v) { _confirmationResult = v; }
+});
 
 function _fbKey(k) { return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100); }
 
@@ -11330,21 +11366,27 @@ async function forgotSendOtp() {
 
   try {
     // Firebase Phone Auth — Invisible reCAPTCHA
-    if (_recaptchaVerifier) {
-      try { _recaptchaVerifier.clear(); } catch(e) {}
+    // window._forgotRecaptchaVerifier getter/setter module-scoped _recaptchaVerifier se linked hai
+    if (window._forgotRecaptchaVerifier) {
+      try { window._forgotRecaptchaVerifier.clear(); } catch(e) {}
+      window._forgotRecaptchaVerifier = null;
     }
-    if (_recaptchaVerifier) { try { _recaptchaVerifier.clear(); } catch(e) {} _recaptchaVerifier = null; }
     const rcEl = document.getElementById('recaptcha-container');
     if (rcEl) rcEl.innerHTML = '';
-    _recaptchaVerifier = new RecaptchaVerifier(_auth, 'recaptcha-container', { size: 'invisible', callback: () => {}, 'expired-callback': () => { _recaptchaVerifier = null; } });
-    await _recaptchaVerifier.render();
+    window._forgotRecaptchaVerifier = new window.RecaptchaVerifier(window._auth, 'recaptcha-container', {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => { window._forgotRecaptchaVerifier = null; }
+    });
+    await window._forgotRecaptchaVerifier.render();
 
     const phoneWithCode = '+91' + phone;
-    _confirmationResult = await signInWithPhoneNumber(_auth, phoneWithCode, _recaptchaVerifier);
+    window._forgotConfirmationResult = await window.signInWithPhoneNumber(window._auth, phoneWithCode, window._forgotRecaptchaVerifier);
 
     btn.disabled = false; btn.textContent = 'Resend OTP';
-    hint.textContent = '✅ OTP +91' + phone + ' par bheja gaya! (Firebase SMS)';
+    hint.textContent = '✅ OTP +91' + phone + ' par bheja gaya!';
     hint.style.display = 'block';
+    hint.style.color = '#16a34a';
     // Show Step 2
     document.getElementById('forgotStep2').style.display = 'block';
     setTimeout(() => document.getElementById('forgotOtp').focus(), 100);
@@ -11353,8 +11395,9 @@ async function forgotSendOtp() {
     btn.disabled = false; btn.textContent = 'Send OTP';
     let errMsg = 'OTP bhejne mein error. Dobara try karein.';
     if (err.code === 'auth/invalid-phone-number') errMsg = 'Phone number format galat hai.';
-    else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Kuch der baad try karein.';
+    else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Thodi der baad try karein.';
     else if (err.code === 'auth/quota-exceeded') errMsg = 'OTP limit exceed ho gayi. Kal try karein.';
+    else if (err.code === 'auth/captcha-check-failed') errMsg = 'Security check fail. Page refresh karke dobara try karein.';
     hint.textContent = '⚠️ ' + errMsg;
     hint.style.display = 'block';
     hint.style.color = '#dc2626';
@@ -11385,14 +11428,14 @@ async function forgotResetPassword() {
     passErr.style.display = 'block'; return;
   }
 
-  if (!_confirmationResult) {
+  if (!window._forgotConfirmationResult) {
     otpErr.textContent = 'Pehle "Send OTP" dabao.';
     otpErr.style.display = 'block'; return;
   }
 
   try {
     // Firebase OTP verify karo
-    await _confirmationResult.confirm(otp);
+    await window._forgotConfirmationResult.confirm(otp);
   } catch(err) {
     console.error('OTP verify error:', err);
     let msg = 'Galat OTP. Dobara check karein.';
@@ -11422,7 +11465,7 @@ async function forgotResetPassword() {
     savePromise = writeRegisteredMaids(maids);
   }
 
-  _confirmationResult = null;
+  window._forgotConfirmationResult = null;
 
   const finishSuccess = () => {
     closeForgotModal();
