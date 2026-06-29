@@ -3614,7 +3614,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAllServiceIconGrids();
 
   // ── Render Pricing Page plan cards from admin-saved PLANS data ──
-  (function renderPricingPagePlans() {
+  window.renderPricingPagePlans = function renderPricingPagePlans() {
     const grid = document.getElementById('pricingPageGrid');
     if (!grid) return;
     const plans = getWebsitePlans();
@@ -3645,7 +3645,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
     }).join('');
-  })();
+  };
+  window.renderPricingPagePlans();
 
   // Also render subscription page cards on load
   if (typeof renderWebsitePlans === 'function') renderWebsitePlans();
@@ -5097,6 +5098,11 @@ const PLANS = getWebsitePlans();
 
 // Render subscription page plan cards dynamically from saved plans
 function renderWebsitePlans() {
+  // Also refresh the public Pricing page cards (if rendered) so admin price
+  // changes show up there live too, not just on the subscription page.
+  if (typeof window.renderPricingPagePlans === 'function') {
+    try { window.renderPricingPagePlans(); } catch(e) {}
+  }
   var grid = document.getElementById('subPlansGrid');
   if (!grid) return;
   var plans = getWebsitePlans();
@@ -8740,15 +8746,31 @@ function renderDashboard() {
   }
 }
 
-function quickVerifyMaid(id) {
+async function quickVerifyMaid(id) {
   const maids = getMaids().map(m => m.id === id ? {...m, verified:true, available:true} : m);
   setMaids(maids);
-  // Also update ram_registered_maids so maid can login via OTP on website
+  // Also update ram_registered_maids so maid can login via OTP/password on website.
+  // IMPORTANT: fetch the latest data from Firebase first and merge — otherwise this
+  // device's possibly-stale/partial local copy would overwrite (and could wipe out
+  // passwordHash / other maids' records) when pushed back to Firebase.
   const approvedMaid = maids.find(m => m.id === id);
   if (approvedMaid && approvedMaid.phone) {
     try {
-      const regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
-      regMaids[approvedMaid.phone] = { name: approvedMaid.name, phone: approvedMaid.phone, verified: true };
+      let regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      if (typeof window._fbGet === 'function') {
+        try {
+          const fbMaids = await window._fbGet('adminData', 'ram_registered_maids');
+          if (fbMaids && typeof fbMaids === 'object') {
+            regMaids = Object.assign({}, regMaids, fbMaids);
+          }
+        } catch(e) { /* fall back to local copy if fetch fails */ }
+      }
+      // Preserve all existing fields (passwordHash etc.) for this maid; just flip verified on
+      regMaids[approvedMaid.phone] = Object.assign({}, regMaids[approvedMaid.phone], {
+        name: approvedMaid.name,
+        phone: approvedMaid.phone,
+        verified: true
+      });
       localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
       if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_registered_maids", regMaids);
     } catch(e) {}
@@ -11716,8 +11738,15 @@ function _fbKey(k) { return String(k).replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,100
 // ── Universal Firestore save ──
 window._fbSet = function(coll, key, val) {
   try {
-    return setDoc(doc(_db, coll, _fbKey(key)), { data: val, updatedAt: new Date().toISOString() })
+    // 15s safety timeout — slow/weak network par setDoc() kabhi resolve/reject
+    // na ho to bhi submit button (await chain) permanently stuck na rahe.
+    // Data localStorage mein already save ho chuka hota hai (writeCustomers/
+    // writeRegisteredMaids mein _fbSet se PEHLE), isliye yahan timeout safe hai —
+    // sirf online-sync delay hoga, user ka submit nahi rukega.
+    const savePromise = setDoc(doc(_db, coll, _fbKey(key)), { data: val, updatedAt: new Date().toISOString() })
       .catch(e => { console.warn('FB save failed:', key, e); throw e; });
+    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore save timeout')), 15000));
+    return Promise.race([savePromise, timeoutPromise]).catch(e => { console.warn('FB save failed/timeout:', key, e); throw e; });
   } catch(e) { return Promise.reject(e); }
 };
 
@@ -11734,35 +11763,48 @@ window._fbGet = async function(coll, key) {
 // ── Image compress (max 500px, 75% quality) ──
 window._compressImage = function(file, maxPx, quality) {
   return new Promise(resolve => {
+    let settled = false;
+    const done = (result) => { if (!settled) { settled = true; resolve(result); } };
+    // Safety net: image decoding/canvas can occasionally hang on some devices
+    // (corrupt EXIF, huge images, etc.) — never let this block registration forever.
+    const safetyTimer = setTimeout(() => done(file), 8000);
     try {
       const reader = new FileReader();
       reader.onload = e => {
         const img = new Image();
         img.onload = () => {
-          const scale = Math.min(1, (maxPx||500) / Math.max(img.width, img.height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-          canvas.toBlob(blob => resolve(blob || file), 'image/jpeg', quality || 0.75);
+          try {
+            const scale = Math.min(1, (maxPx||500) / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => { clearTimeout(safetyTimer); done(blob || file); }, 'image/jpeg', quality || 0.75);
+          } catch(e) { clearTimeout(safetyTimer); done(file); }
         };
-        img.onerror = () => resolve(file);
+        img.onerror = () => { clearTimeout(safetyTimer); done(file); };
         img.src = e.target.result;
       };
-      reader.onerror = () => resolve(file);
+      reader.onerror = () => { clearTimeout(safetyTimer); done(file); };
       reader.readAsDataURL(file);
-    } catch(e) { resolve(file); }
+    } catch(e) { clearTimeout(safetyTimer); done(file); }
   });
 };
 
 // ── Firebase Storage photo upload — compress + 20s timeout ──
 window._fbUploadPhoto = async function(file, path) {
   try {
-    const compressed = await window._compressImage(file, 500, 0.75);
-    const storageRef = ref(_st, path);
-    const uploadPromise = uploadBytes(storageRef, compressed).then(() => getDownloadURL(storageRef));
+    // Race the ENTIRE flow (compression + upload + URL fetch) against one timeout —
+    // previously only the upload step was time-boxed, so a stuck compression step
+    // could hang the whole registration/submit flow indefinitely.
+    const fullPromise = (async () => {
+      const compressed = await window._compressImage(file, 500, 0.75);
+      const storageRef = ref(_st, path);
+      await uploadBytes(storageRef, compressed);
+      return await getDownloadURL(storageRef);
+    })();
     const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Upload timeout')), 20000));
-    const url = await Promise.race([uploadPromise, timeoutPromise]);
+    const url = await Promise.race([fullPromise, timeoutPromise]);
     return url;
   } catch(e) {
     console.warn('Photo upload failed/timeout:', e);
@@ -11892,6 +11934,15 @@ function setupRealtimeSync() {
       localStorage.setItem('ram_website_plans', JSON.stringify(plans)); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_website_plans', plans);
       if (typeof window.PLANS !== 'undefined' && plans) Object.assign(window.PLANS, plans);
       if (typeof window.renderWebsitePlans === 'function') window.renderWebsitePlans();
+    }
+  });
+
+  // ── Site Content editor (hero text/badge, stats numbers, footer, logo,
+  // social links) — admin changes turant website pe, bina reload ──
+  onSnapshot(doc(_db, 'siteData', 'ram_site_content'), snap => {
+    if (snap.exists() && snap.data().data) {
+      localStorage.setItem('ram_site_content', JSON.stringify(snap.data().data));
+      if (typeof window.applySiteContent === 'function') { try { window.applySiteContent(); } catch(e) {} }
     }
   });
 
