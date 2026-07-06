@@ -13993,17 +13993,17 @@ async function initiateRazorpayPayment() {
   // admin panel mein woh attempt dikhe (sirf success hone par hi nahi).
   pendingPaymentLogId = logPaymentPending(pendingPlanKey, plan, userPhone, userName, userEmail);
 
-  // ✅ FIX #1: Order SERVER se banao — amount client se nahi bhejenge
-  // razorpayCreateOrder Cloud Function call karega Razorpay Orders API
-  // aur ek verified order_id return karega jiska amount server pe fix hai.
+  // ✅ FIX #1: Order SERVER se banao — Netlify Function call
   let serverOrder;
   try {
     showToast('⏳ Order create ho raha hai...');
-    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js');
-    const _functions = getFunctions(_fbApp, 'asia-south1');
-    const createOrder = httpsCallable(_functions, 'razorpayCreateOrder');
-    const result = await createOrder({ planKey: pendingPlanKey });
-    serverOrder = result.data; // { order_id, amount, currency }
+    const resp = await fetch('/.netlify/functions/razorpay-create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planKey: pendingPlanKey })
+    });
+    serverOrder = await resp.json();
+    if (!resp.ok) throw new Error(serverOrder.error || 'Order failed');
   } catch(e) {
     updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Order create failed: ' + (e.message || e) });
     showToast('⚠️ Order create nahi hua. Dobara try karein.');
@@ -14069,24 +14069,24 @@ async function initiateRazorpayPayment() {
 async function onRazorpaySuccess(response, planKey) {
   const plan = getWebsitePlans()[planKey] || PLANS[planKey];
 
-  // ✅ FIX #2: Plan activate karne se PEHLE server pe signature verify karo
-  // razorpayVerifyPayment Cloud Function HMAC SHA256 se check karega
-  // ki yeh payment genuinely Razorpay se aayi hai ya fake hai.
+  // ✅ FIX #2: Plan activate karne se PEHLE server pe signature verify karo — Netlify Function
   showToast('⏳ Payment verify ho rahi hai...');
   let verified = false;
   try {
-    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js');
-    const _functions = getFunctions(_fbApp, 'asia-south1');
-    const verifyPayment = httpsCallable(_functions, 'razorpayVerifyPayment');
-    const result = await verifyPayment({
-      razorpay_order_id: response.razorpay_order_id,
-      razorpay_payment_id: response.razorpay_payment_id,
-      razorpay_signature: response.razorpay_signature,
-      planKey: planKey
+    const vresp = await fetch('/.netlify/functions/razorpay-verify-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_signature: response.razorpay_signature,
+        planKey: planKey
+      })
     });
-    verified = result.data && result.data.verified;
+    const vdata = await vresp.json();
+    if (!vresp.ok) throw new Error(vdata.error || 'Verification failed');
+    verified = vdata.verified;
   } catch(e) {
-    // Verification fail — plan activate NAHI karenge
     updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Verification failed: ' + (e.message || e) });
     showToast('❌ Payment verification fail hui. Support se contact karein. Payment ID: ' + response.razorpay_payment_id);
     console.error('razorpayVerifyPayment error:', e);
