@@ -13975,107 +13975,82 @@ function buyPlan(planKey) {
   document.getElementById('payModalPrice').textContent = '₹' + plan.price;
   document.getElementById('payModalRequests').textContent = (plan.requests >= 9999 ? 'Unlimited' : plan.requests) + ' requests · valid for ' + plan.days + ' days';
   document.getElementById('paymentGatewayModal').style.display = 'flex';
-  // Order ko background mein prefetch karo taaki Pay button click pe ready ho
-  _prefetchRazorpayOrder();
-}
-
-// Pending server order — "Pay" button click se pehle create hoga
-let _pendingServerOrder = null;
-
-async function _prefetchRazorpayOrder() {
-  if (!pendingPlanKey) return;
-  const plan = getWebsitePlans()[pendingPlanKey] || PLANS[pendingPlanKey];
-  if (!plan || !plan.price) return;
-  try {
-    const resp = await fetch('/.netlify/functions/razorpay-create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planKey: pendingPlanKey })
-    });
-    _pendingServerOrder = await resp.json();
-    if (!resp.ok) { _pendingServerOrder = null; }
-  } catch(e) {
-    _pendingServerOrder = null;
-  }
 }
 
 function initiateRazorpayPayment() {
   if (!pendingPlanKey) return;
   const plan = getWebsitePlans()[pendingPlanKey] || PLANS[pendingPlanKey];
-  // plan null-guard — agar plan undefined ho to crash se bachao
   if (!plan || !plan.price) { showToast('⚠️ Plan details load nahi hue. Page refresh karke dobara try karein.'); closePaymentGatewayModal(); return; }
 
-  // Get user info for prefill
   var userPhone = localStorage.getItem('userPhone') || localStorage.getItem('authToken') || '';
   var userName = localStorage.getItem('userName') || 'Customer';
   var userEmail = localStorage.getItem('userEmail') || '';
 
-  // 🔥 Checkout khulne se PEHLE hi ek 'pending' record Firebase mein save karo
   pendingPaymentLogId = logPaymentPending(pendingPlanKey, plan, userPhone, userName, userEmail);
 
-  // ✅ FIX #1: Server order use karo — agar prefetch nahi hua to error dikhao
-  if (!_pendingServerOrder || !_pendingServerOrder.order_id) {
-    updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Order not ready' });
-    showToast('⚠️ Order create nahi hua. Dobara try karein.');
-    _pendingServerOrder = null;
-    return;
-  }
-  const serverOrder = _pendingServerOrder;
-  _pendingServerOrder = null; // use karke clear karo
+  // ✅ FIX: Server se order create karo, phir Razorpay seedha open karo
+  var btn = document.getElementById('razorpayPayBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="margin-right:8px;">⏳</span>Creating order...'; }
 
-  const options = {
-    key: RAZORPAY_KEY_ID,
-    order_id: serverOrder.order_id,
-    amount: serverOrder.amount,
-    currency: serverOrder.currency,
-    name: 'Rent a Maid India',
-    description: plan.name + ' Plan — ' + (plan.requests >= 9999 ? 'Unlimited' : plan.requests) + ' Requests · ' + plan.days + ' Days',
-    image: 'https://www.rentamaidindia.com/logo.png',
-    handler: function(response) {
-      // ✅ Payment response — ab server pe verify karana zaroori hai pehle
-      onRazorpaySuccess(response, pendingPlanKey);
-    },
-    prefill: {
-      name: userName,
-      contact: userPhone,
-      email: userEmail
-    },
-    notes: {
-      plan_key: pendingPlanKey,
-      plan_name: plan.name,
-      user_phone: userPhone
-    },
-    theme: {
-      color: '#f97316' // Orange brand color
-    },
-    modal: {
-      ondismiss: function() {
-        // ❌ User ne checkout band kar diya bina pay kiye — Firebase mein
-        // status 'cancelled' update karo taaki pata chale payment hua hi nahi.
-        updatePaymentStatus(pendingPaymentLogId, 'cancelled', { error: 'User closed checkout' });
-        showToast('Payment cancelled. Plan not activated.');
-      }
+  fetch('/.netlify/functions/razorpay-create-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ planKey: pendingPlanKey })
+  })
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(res) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-lock" style="margin-right:8px;"></i>Pay Securely with Razorpay'; }
+    if (!res.ok || !res.data.order_id) {
+      updatePaymentStatus(pendingPaymentLogId, 'failed', { error: res.data.error || 'Order failed' });
+      showToast('⚠️ Order create nahi hua. Dobara try karein.');
+      return;
     }
-  };
+    var serverOrder = res.data;
 
-  try {
-    const rzp = new Razorpay(options);
-    rzp.on('payment.failed', function(response) {
-      // ❌ Razorpay ne payment fail report kiya — Firebase mein turant
-      // 'failed' status + error detail update karo (live tracking).
-      updatePaymentStatus(pendingPaymentLogId, 'failed', {
-        error: (response.error && response.error.description) || 'Unknown error',
-        razorpay_order_id: (response.error && response.error.metadata && response.error.metadata.order_id) || ''
+    var options = {
+      key: RAZORPAY_KEY_ID,
+      order_id: serverOrder.order_id,
+      amount: serverOrder.amount,
+      currency: serverOrder.currency,
+      name: 'Rent a Maid India',
+      description: plan.name + ' Plan — ' + (plan.requests >= 9999 ? 'Unlimited' : plan.requests) + ' Requests · ' + plan.days + ' Days',
+      image: 'https://www.rentamaidindia.com/logo.png',
+      handler: function(response) {
+        onRazorpaySuccess(response, pendingPlanKey);
+      },
+      prefill: { name: userName, contact: userPhone, email: userEmail },
+      notes: { plan_key: pendingPlanKey, plan_name: plan.name, user_phone: userPhone },
+      theme: { color: '#f97316' },
+      modal: {
+        ondismiss: function() {
+          updatePaymentStatus(pendingPaymentLogId, 'cancelled', { error: 'User closed checkout' });
+          showToast('Payment cancelled. Plan not activated.');
+        }
+      }
+    };
+
+    try {
+      var rzp = new Razorpay(options);
+      rzp.on('payment.failed', function(response) {
+        updatePaymentStatus(pendingPaymentLogId, 'failed', {
+          error: (response.error && response.error.description) || 'Unknown error',
+          razorpay_order_id: (response.error && response.error.metadata && response.error.metadata.order_id) || ''
+        });
+        showToast('❌ Payment failed: ' + (response.error.description || 'Unknown error'));
       });
-      showToast('❌ Payment failed: ' + (response.error.description || 'Unknown error'));
-    });
-    document.getElementById('paymentGatewayModal').style.display = 'none';
-    rzp.open();
-  } catch(e) {
+      document.getElementById('paymentGatewayModal').style.display = 'none';
+      rzp.open();
+    } catch(e) {
+      updatePaymentStatus(pendingPaymentLogId, 'failed', { error: String(e && e.message || e) });
+      showToast('⚠️ Razorpay load failed. Check your internet connection.');
+      console.error('Razorpay error:', e);
+    }
+  })
+  .catch(function(e) {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-lock" style="margin-right:8px;"></i>Pay Securely with Razorpay'; }
     updatePaymentStatus(pendingPaymentLogId, 'failed', { error: String(e && e.message || e) });
-    showToast('⚠️ Razorpay load failed. Check your internet connection.');
-    console.error('Razorpay error:', e);
-  }
+    showToast('⚠️ Order create nahi hua. Internet check karein.');
+  });
 }
 
 async function onRazorpaySuccess(response, planKey) {
