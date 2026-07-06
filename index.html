@@ -10466,6 +10466,7 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
               <div id="regConfirmPasswordError" style="color:#dc2626;font-size:12px;margin-top:4px;display:none;"></div>
             </div>
+            <div class="form-group-v"><label>Alternate Phone</label><input type="tel" id="regAltPhone" placeholder="Optional" /></div>
             <div class="form-group-v"><label>Email Address</label><input type="email" id="regEmail" placeholder="Optional" /></div>
           </div>
 
@@ -10522,6 +10523,47 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="form-group-v"><label>PIN Code *</label><input type="text" id="regPinCode" placeholder="560001" maxlength="6" /></div>
             <div class="form-group-v full"><label>Current Full Address *</label><textarea id="regCurrentAddress" placeholder="House No., Street, Area..." style="min-height:80px;"></textarea></div>
+            <div class="form-group-v"><label>Native State *</label>
+              <select id="regNativeState" class="js-state-select" onchange="updateDistrictDropdown('regNativeState','regNativeDistrict',null)"><option value="">Select State</option><option value="Andhra Pradesh">Andhra Pradesh</option>
+<option value="Arunachal Pradesh">Arunachal Pradesh</option>
+<option value="Assam">Assam</option>
+<option value="Bihar">Bihar</option>
+<option value="Chhattisgarh">Chhattisgarh</option>
+<option value="Goa">Goa</option>
+<option value="Gujarat">Gujarat</option>
+<option value="Haryana">Haryana</option>
+<option value="Himachal Pradesh">Himachal Pradesh</option>
+<option value="Jharkhand">Jharkhand</option>
+<option value="Karnataka">Karnataka</option>
+<option value="Kerala">Kerala</option>
+<option value="Madhya Pradesh">Madhya Pradesh</option>
+<option value="Maharashtra">Maharashtra</option>
+<option value="Manipur">Manipur</option>
+<option value="Meghalaya">Meghalaya</option>
+<option value="Mizoram">Mizoram</option>
+<option value="Nagaland">Nagaland</option>
+<option value="Odisha">Odisha</option>
+<option value="Punjab">Punjab</option>
+<option value="Rajasthan">Rajasthan</option>
+<option value="Sikkim">Sikkim</option>
+<option value="Tamil Nadu">Tamil Nadu</option>
+<option value="Telangana">Telangana</option>
+<option value="Tripura">Tripura</option>
+<option value="Uttar Pradesh">Uttar Pradesh</option>
+<option value="Uttarakhand">Uttarakhand</option>
+<option value="West Bengal">West Bengal</option>
+<option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+<option value="Chandigarh">Chandigarh</option>
+<option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
+<option value="Delhi">Delhi</option>
+<option value="Jammu and Kashmir">Jammu and Kashmir</option>
+<option value="Ladakh">Ladakh</option>
+<option value="Lakshadweep">Lakshadweep</option>
+<option value="Puducherry">Puducherry</option></select>
+            </div>
+            <div class="form-group-v"><label>Native District *</label>
+              <select id="regNativeDistrict"><option value="">Select District</option></select>
+            </div>
           </div>
           <div id="regStep2Error" style="display:none;color:#dc2626;font-size:13px;font-weight:600;margin-top:4px;margin-bottom:12px;"></div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -10548,6 +10590,9 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="form-row">
             <div class="form-group-v"><label>Years of Experience *</label><input type="number" id="regExperience" placeholder="3" min="0" /></div>
             <div class="form-group-v"><label>Expected Salary (₹/month) *</label><input type="number" id="regSalary" placeholder="8000" /></div>
+            <div class="form-group-v"><label>Work Type *</label>
+              <select id="regWorkType"><option>Live-Out</option><option>Live-In</option><option>Both</option></select>
+            </div>
             <div class="form-group-v"><label>Work Shift *</label>
               <select id="regWorkShift"><option>Morning</option><option>Evening</option><option>Full Day</option><option>Night</option></select>
             </div>
@@ -12941,6 +12986,18 @@ async function submitLogin() {
   // Firebase se latest data sync karo pehle (async)
   (async () => {
     // Pehle Firebase se fresh data fetch karo
+    // Agar Firebase module abhi load ho raha hai toh max 8 seconds wait karo
+    if (typeof window._fbGet !== 'function') {
+      await new Promise(resolve => {
+        const start = Date.now();
+        const check = setInterval(() => {
+          if (typeof window._fbGet === 'function' || Date.now() - start > 8000) {
+            clearInterval(check);
+            resolve();
+          }
+        }, 100);
+      });
+    }
     if (typeof window._fbGet === 'function') {
       try {
         const fbCustomers = await window._fbGet('siteData', 'registeredCustomers');
@@ -13343,12 +13400,16 @@ async function regValidateStep(step) {
     const area = document.getElementById('regCurrentArea').value;
     const pin = document.getElementById('regPinCode').value.trim();
     const address = document.getElementById('regCurrentAddress').value.trim();
+    const nativeState = document.getElementById('regNativeState').value;
+    const nativeDistrict = document.getElementById('regNativeDistrict').value;
 
     if (!state) return 'Please select your current state.';
     if (!district) return 'Please select your current district.';
     if (!area) return 'Please select your area / locality.';
     if (!/^\d{6}$/.test(pin)) return 'Please enter a valid 6-digit PIN code.';
     if (!address) return 'Please enter your current full address.';
+    if (!nativeState) return 'Please select your native state.';
+    if (!nativeDistrict) return 'Please select your native district.';
     return null;
   }
   if (step === 3) {
@@ -13442,6 +13503,18 @@ function submitMaidLogin() {
 
   // Firebase se latest maid data sync karo
   (async () => {
+    // Agar Firebase module abhi load ho raha hai toh max 8 seconds wait karo
+    if (typeof window._fbGet !== 'function') {
+      await new Promise(resolve => {
+        const start = Date.now();
+        const check = setInterval(() => {
+          if (typeof window._fbGet === 'function' || Date.now() - start > 8000) {
+            clearInterval(check);
+            resolve();
+          }
+        }, 100);
+      });
+    }
     if (typeof window._fbGet === 'function') {
       try {
         const fbMaids = await window._fbGet('adminData', 'ram_registered_maids');
