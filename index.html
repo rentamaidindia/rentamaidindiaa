@@ -10396,16 +10396,28 @@ document.addEventListener('DOMContentLoaded', function() {
           </div>
         </div>
         <div class="contact-form-card">
-          <h3>Send an Enquiry</h3>
+          <h3>Contact Us write here</h3>
           <div class="form-row">
-            <div class="form-group-v"><label>Full Name *</label><input type="text" placeholder="John Doe" /></div>
-            <div class="form-group-v"><label>Phone Number *</label><input type="tel" placeholder="+91 9530112346" /></div>
-            <div class="form-group-v"><label>Email Address</label><input type="email" placeholder="john@example.com" /></div>
-            <div class="form-group-v"><label>City *</label><input type="text" placeholder="Mumbai" /></div>
-            <div class="form-group-v full"><label>Service Required *</label><input type="text" placeholder="E.g., Full-time Maid, Part-time Cook" /></div>
-            <div class="form-group-v full"><label>Message / Requirements</label><textarea placeholder="Tell us about your specific requirements..."></textarea></div>
+            <div class="form-group-v"><label>Full Name *</label><input type="text" id="helpName" placeholder="John Doe" /></div>
+            <div class="form-group-v"><label>Phone Number *</label><input type="tel" id="helpPhone" placeholder="+91 9530112346" /></div>
+            <div class="form-group-v"><label>Email Address</label><input type="email" id="helpEmail" placeholder="john@example.com" /></div>
+            <div class="form-group-v"><label>City *</label><input type="text" id="helpCity" placeholder="Mumbai" /></div>
+            <div class="form-group-v full">
+              <label>Category *</label>
+              <select id="helpCategory">
+                <option value="">-- Select Category --</option>
+                <option>Booking Problem</option>
+                <option>Payment Issue</option>
+                <option>Maid Related</option>
+                <option>Account Issue</option>
+                <option>Service Enquiry</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="form-group-v full"><label>Message / Problem *</label><textarea id="helpMessage" rows="4" placeholder="Apni problem ya enquiry yahan likhein..."></textarea></div>
           </div>
-          <button class="btn btn-lg btn-primary" onclick="showToast('Enquiry submitted! We will contact you shortly.')">Submit Enquiry</button>
+          <div id="helpSubmitStatus" style="display:none;margin-bottom:10px;font-size:13px;"></div>
+          <button class="btn btn-lg btn-primary" onclick="submitHelpEnquiry()"><i class="fas fa-paper-plane"></i> Submit for Help</button>
         </div>
       </div>
     </div>
@@ -10786,7 +10798,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <!-- Payment Gateway Placeholder -->
       <div id="paymentGatewayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;">
         <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:420px;position:relative;">
-          <button onclick="document.getElementById('paymentGatewayModal').style.display='none';" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">&times;</button>
+          <button onclick="closePaymentGatewayModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">&times;</button>
           <div style="text-align:center;margin-bottom:20px;">
             <div style="font-size:48px;margin-bottom:8px;">🔐</div>
             <h2 style="font-family:var(--serif);font-size:22px;font-weight:700;margin-bottom:6px;">Secure Payment</h2>
@@ -10868,6 +10880,11 @@ document.addEventListener('DOMContentLoaded', function() {
               <a onclick="dashTab('settings')" id="dtab-settings" class="dtab-customer"><i class="fas fa-gear"></i> Account Settings</a>
               <!-- Customer-only: a maid has no reason to "find maids" -->
               <a onclick="showPage('maids')" id="dtab-find-maids" class="dtab-customer"><i class="fas fa-search"></i> Find Maids</a>
+              <!-- Help & Support — visible to both customers and maids -->
+              <a onclick="dashTab('help')" id="dtab-help" style="position:relative;">
+                <i class="fas fa-headset"></i> Help & Support
+                <span id="helpUnreadBadge" style="margin-left:auto;background:#8b5cf6;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;display:none;"></span>
+              </a>
               <a onclick="logoutUser();" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
           </div>
@@ -13056,6 +13073,8 @@ async function submitLogin() {
     // Success
     setAuthToken(phone);
     localStorage.setItem('userRole', 'customer');
+    // FIX #1: Razorpay prefill ke liye user info cache karo
+    try { var _cu=customers[phone]||{}; if(_cu.name) localStorage.setItem('userName',_cu.name); if(_cu.email) localStorage.setItem('userEmail',_cu.email); localStorage.setItem('userPhone',phone); } catch(e) {}
     const redirectTo = pendingPageAfterLogin;
     pendingPageAfterLogin = null;
     try { if (history.state && history.state.modalOpen) history.back(); } catch(e) {}
@@ -13218,6 +13237,8 @@ async function submitSignup() {
 
   setAuthToken(phone);
   localStorage.setItem('userRole', 'customer');
+  // FIX #1: Razorpay prefill ke liye user info cache karo
+  try { if(name) localStorage.setItem('userName',name); if(email) localStorage.setItem('userEmail',email); localStorage.setItem('userPhone',phone); } catch(e) {}
   const redirectTo = pendingPageAfterLogin;
   pendingPageAfterLogin = null;
 
@@ -13542,9 +13563,9 @@ function submitMaidLogin() {
     const maids = readRegisteredMaids();
     if (!maids[phone]) {
       if (!firebaseSynced) {
-        phoneErr.textContent = 'Internet connection slow hai. Thoda wait karke dobara try karein.';
+        phoneErr.textContent = 'Server se connect nahi ho paya. Internet check karke dobara try karein.';
       } else {
-        phoneErr.textContent = 'Is number par koi maid account nahi hai. Pehle register karein.';
+        phoneErr.textContent = 'Is number par koi account nahi mila. Pehle register karein.';
       }
       phoneErr.style.display = 'block';
       if (submitBtn) submitBtn._processing = false;
@@ -13592,8 +13613,30 @@ function submitMaidLogin() {
     showToast('Welcome back, ' + maids[phone].name + '!');
     showPage('dashboard');
     if (typeof refreshNavUI === 'function') refreshNavUI();
-    // Force photo + Aadhar verification popup if not yet submitted
-    if (typeof maybeShowMaidVerifyPopup === 'function') setTimeout(maybeShowMaidVerifyPopup, 250);
+    // Login ke baad Firebase se latest aadhar + admin_maids data sync karo
+    // Taaki popup correctly decide ho sake (already submitted = no popup)
+    (async () => {
+      try {
+        if (typeof window._fbGet === 'function') {
+          // Sync aadhar data
+          const fbAadhar = await window._fbGet('siteData', 'aadhar_' + phone);
+          if (fbAadhar && fbAadhar.aadharNum) {
+            localStorage.setItem('aadhar_' + phone, JSON.stringify(fbAadhar));
+          }
+          // Sync ram_admin_maids (photo check ke liye)
+          const fbAdminMaids = await window._fbGet('adminData', 'ram_admin_maids');
+          if (fbAdminMaids && Array.isArray(fbAdminMaids)) {
+            localStorage.setItem('ram_admin_maids', JSON.stringify(fbAdminMaids));
+          }
+        }
+      } catch(e) { /* Firebase sync fail — local data use hoga */ }
+      // Real-time aadhar listener start karo (admin changes turant dikhenge)
+      if (typeof window._startMaidAadharListener === 'function') {
+        window._startMaidAadharListener(phone);
+      }
+      // Firebase sync complete hone ke BAAD popup check karo (race condition fix)
+      if (typeof maybeShowMaidVerifyPopup === 'function') maybeShowMaidVerifyPopup();
+    })();
   })();
 }
 
@@ -13643,13 +13686,23 @@ async function submitReg() {
     const maids = readRegisteredMaids();
     // Existing data preserve karo — sirf naye fields add/update karo
     const existing = maids[phone] || {};
-    maids[phone] = Object.assign({}, existing, { name, phone });
     // Save password hash
     const regPass = document.getElementById('regPassword').value;
-    if (regPass && regPass.length >= 8) {
-      maids[phone].passwordHash = simpleHash(regPass);
-    }
-    // Firebase pe await karo taaki login ke time fresh hash mile
+    const passHash = (regPass && regPass.length >= 8) ? simpleHash(regPass) : (existing.passwordHash || '');
+
+    // Poora registration data save karo — kisi bhi device se login ke baad data mile
+    maids[phone] = Object.assign({}, existing, {
+      name, phone,
+      state, district,
+      experience: parseInt(experience) || 0,
+      salary: salary ? '₹' + salary + '/month' : (existing.salary || ''),
+      workType: workType || (existing.workType || 'Live-Out'),
+      services: services.length ? services : (existing.services || ['General Help']),
+      passwordHash: passHash,
+      registeredAt: existing.registeredAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    // Firebase pe await karo taaki login ke time fresh data mile
     try { await writeRegisteredMaids(maids); } catch(e) { writeRegisteredMaids(maids); }
 
     // Also add to admin's maids list as UNVERIFIED so admin sees them in pending queue
@@ -13791,7 +13844,9 @@ function readSubscription() {
 function writeSubscription(data) {
   var k = _subKey();
   localStorage.setItem(k, JSON.stringify(data));
-  if (typeof window._fbSet === "function") window._fbSet("siteData", k, data);
+  return (typeof window._fbSetWhenReady === "function")
+    ? window._fbSetWhenReady("siteData", k, data).catch(function(e){ console.warn('Subscription FB save failed:', k, e); })
+    : (typeof window._fbSet === "function" ? window._fbSet("siteData", k, data).catch(function(e){ console.warn('Subscription FB save failed (fallback):', k, e); }) : Promise.resolve());
 }
 function readSentRequests() {
   try { return JSON.parse(localStorage.getItem(_reqKey()) || '[]'); }
@@ -13800,7 +13855,9 @@ function readSentRequests() {
 function writeSentRequests(arr) {
   var k = _reqKey();
   localStorage.setItem(k, JSON.stringify(arr));
-  if (typeof window._fbSet === "function") window._fbSet("siteData", k, arr);
+  return (typeof window._fbSetWhenReady === "function")
+    ? window._fbSetWhenReady("siteData", k, arr).catch(function(e){ console.warn('SentRequests FB save failed:', k, e); })
+    : (typeof window._fbSet === "function" ? window._fbSet("siteData", k, arr).catch(function(e){ console.warn('SentRequests FB save failed (fallback):', k, e); }) : Promise.resolve());
 }
 
 function getActiveCredit() {
@@ -13824,7 +13881,7 @@ function getActiveCredit() {
 // panel se sab payments (status ke saath) track ho sakein.
 // ══════════════════════════════════════════════════════════════════
 function getPaymentsLog() { return getLS('ram_admin_payments', []); }
-function setPaymentsLog(v) { setLS('ram_admin_payments', v); if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_admin_payments', v).catch(e => console.warn('Payments FB save failed:', e)); }
+function setPaymentsLog(v) { setLS('ram_admin_payments', v); }
 
 // Naya payment record banata hai (status: 'pending') aur turant Firebase
 // mein save karta hai — order create hote hi, checkout khulne se pehle.
@@ -13876,10 +13933,22 @@ function updatePaymentStatus(id, status, extra) {
 
 // ── BUY PLAN FLOW (Razorpay Integration) ──
 // 🔑 RAZORPAY KEY — Replace with your actual Key ID from Razorpay Dashboard
-const RAZORPAY_KEY_ID = 'rzp_live_T7DPSeu1tinNaY';
+const RAZORPAY_KEY_ID = 'rzp_live_TANpcvRKzm4g51';
 
 let pendingPlanKey = null;
 let pendingPaymentLogId = null; // current checkout ke payment-log record ka id
+
+function closePaymentGatewayModal() {
+  document.getElementById('paymentGatewayModal').style.display = 'none';
+  // FIX #2: Sirf tab cancel mark karo jab Razorpay checkout khul chuka ho
+  if (pendingPaymentLogId) {
+    updatePaymentStatus(pendingPaymentLogId, 'cancelled', { error: 'User closed payment modal' });
+  }
+  // FIX #3: State hamesha reset — orphan pending records aur stale planKey dono se bachao
+  pendingPlanKey = null;
+  pendingPaymentLogId = null;
+  if (typeof window._rzpBtnReset === 'function') window._rzpBtnReset();
+}
 
 function buyPlan(planKey) {
   if (!getAuthToken()) {
@@ -13887,6 +13956,18 @@ function buyPlan(planKey) {
     showToast('Please login first to select a plan!');
     openAuthModal('login');
     return;
+  }
+  // FIX #3: Active valid plan already hai to confirm karo pehle
+  const _existingCredit = getActiveCredit();
+  if (_existingCredit.valid && _existingCredit.credits > 0) {
+    const _existPlan = getWebsitePlans()[_existingCredit.planKey] || PLANS[_existingCredit.planKey] || {};
+    const _daysLeft = _existingCredit.expiry ? Math.max(0, Math.ceil((new Date(_existingCredit.expiry) - new Date()) / 86400000)) : 0;
+    const _confirmed = window.confirm(
+      '⚠️ Aapka ' + (_existPlan.name || _existingCredit.planKey) + ' Plan abhi bhi active hai!\n' +
+      _existingCredit.credits + ' requests aur ' + _daysLeft + ' din baaki hain.\n\n' +
+      'Kya aap phir bhi naya plan khareedna chahte hain?'
+    );
+    if (!_confirmed) return;
   }
   pendingPlanKey = planKey;
   const plan = getWebsitePlans()[planKey] || PLANS[planKey];
@@ -13896,9 +13977,11 @@ function buyPlan(planKey) {
   document.getElementById('paymentGatewayModal').style.display = 'flex';
 }
 
-function initiateRazorpayPayment() {
+async function initiateRazorpayPayment() {
   if (!pendingPlanKey) return;
   const plan = getWebsitePlans()[pendingPlanKey] || PLANS[pendingPlanKey];
+  // plan null-guard — agar plan undefined ho to crash se bachao
+  if (!plan || !plan.price) { showToast('⚠️ Plan details load nahi hue. Page refresh karke dobara try karein.'); closePaymentGatewayModal(); return; }
 
   // Get user info for prefill
   var userPhone = localStorage.getItem('userPhone') || localStorage.getItem('authToken') || '';
@@ -13910,15 +13993,34 @@ function initiateRazorpayPayment() {
   // admin panel mein woh attempt dikhe (sirf success hone par hi nahi).
   pendingPaymentLogId = logPaymentPending(pendingPlanKey, plan, userPhone, userName, userEmail);
 
+  // ✅ FIX #1: Order SERVER se banao — amount client se nahi bhejenge
+  // razorpayCreateOrder Cloud Function call karega Razorpay Orders API
+  // aur ek verified order_id return karega jiska amount server pe fix hai.
+  let serverOrder;
+  try {
+    showToast('⏳ Order create ho raha hai...');
+    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js');
+    const _functions = getFunctions(_fbApp, 'asia-south1');
+    const createOrder = httpsCallable(_functions, 'razorpayCreateOrder');
+    const result = await createOrder({ planKey: pendingPlanKey });
+    serverOrder = result.data; // { order_id, amount, currency }
+  } catch(e) {
+    updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Order create failed: ' + (e.message || e) });
+    showToast('⚠️ Order create nahi hua. Dobara try karein.');
+    console.error('razorpayCreateOrder error:', e);
+    return;
+  }
+
   const options = {
     key: RAZORPAY_KEY_ID,
-    amount: plan.price * 100, // Razorpay amount in paise (₹1 = 100 paise)
-    currency: 'INR',
+    order_id: serverOrder.order_id,   // ✅ Server-created order_id — amount tamper nahi ho sakta
+    amount: serverOrder.amount,        // Server se aaya — client se nahi
+    currency: serverOrder.currency,
     name: 'Rent a Maid India',
     description: plan.name + ' Plan — ' + (plan.requests >= 9999 ? 'Unlimited' : plan.requests) + ' Requests · ' + plan.days + ' Days',
     image: 'https://www.rentamaidindia.com/logo.png',
     handler: function(response) {
-      // ✅ Payment successful — activate plan
+      // ✅ Payment response — ab server pe verify karana zaroori hai pehle
       onRazorpaySuccess(response, pendingPlanKey);
     },
     prefill: {
@@ -13964,8 +14066,44 @@ function initiateRazorpayPayment() {
   }
 }
 
-function onRazorpaySuccess(response, planKey) {
+async function onRazorpaySuccess(response, planKey) {
   const plan = getWebsitePlans()[planKey] || PLANS[planKey];
+
+  // ✅ FIX #2: Plan activate karne se PEHLE server pe signature verify karo
+  // razorpayVerifyPayment Cloud Function HMAC SHA256 se check karega
+  // ki yeh payment genuinely Razorpay se aayi hai ya fake hai.
+  showToast('⏳ Payment verify ho rahi hai...');
+  let verified = false;
+  try {
+    const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js');
+    const _functions = getFunctions(_fbApp, 'asia-south1');
+    const verifyPayment = httpsCallable(_functions, 'razorpayVerifyPayment');
+    const result = await verifyPayment({
+      razorpay_order_id: response.razorpay_order_id,
+      razorpay_payment_id: response.razorpay_payment_id,
+      razorpay_signature: response.razorpay_signature,
+      planKey: planKey
+    });
+    verified = result.data && result.data.verified;
+  } catch(e) {
+    // Verification fail — plan activate NAHI karenge
+    updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Verification failed: ' + (e.message || e) });
+    showToast('❌ Payment verification fail hui. Support se contact karein. Payment ID: ' + response.razorpay_payment_id);
+    console.error('razorpayVerifyPayment error:', e);
+    pendingPlanKey = null;
+    pendingPaymentLogId = null;
+    return;
+  }
+
+  if (!verified) {
+    updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Signature mismatch — possible tamper' });
+    showToast('❌ Payment authentic nahi lagi. Support se contact karein.');
+    pendingPlanKey = null;
+    pendingPaymentLogId = null;
+    return;
+  }
+
+  // ✅ Verification pass — ab safely plan activate karo
   const now = new Date();
   const expiry = new Date(now.getTime() + plan.days * 24 * 60 * 60 * 1000);
 
@@ -13987,8 +14125,13 @@ function onRazorpaySuccess(response, planKey) {
     razorpay_signature: response.razorpay_signature || ''
   });
 
-  // Reset sent requests for fresh plan
-  writeSentRequests([]);
+  // FIX #4: sentRequests sirf tab reset karo jab plan CHANGE ho —
+  // renewal (same plan dobara lena) pe purane requests wipe nahi hone chahiye.
+  var prevSub = readSubscription();
+  var prevPlanKey = prevSub && prevSub.planKey;
+  if (!prevPlanKey || prevPlanKey !== planKey) {
+    writeSentRequests([]);
+  }
 
   pendingPlanKey = null;
   pendingPaymentLogId = null;
@@ -14112,7 +14255,9 @@ function sendRequestToMaid(maidId) {
     if (alreadyIdx >= 0) custReqs[alreadyIdx] = entry;
     else custReqs.unshift(entry);
     localStorage.setItem(custKey, JSON.stringify(custReqs));
-    if (typeof window._fbSet === "function") window._fbSet("siteData", custKey, custReqs);
+    // FIX #4: _fbSetWhenReady — request status reliable sync
+    if (typeof window._fbSetWhenReady === "function") window._fbSetWhenReady("siteData", custKey, custReqs).catch(function(e){ console.warn("custReqs FB save failed:", e); });
+    else if (typeof window._fbSet === "function") window._fbSet("siteData", custKey, custReqs).catch(function(e){ console.warn("custReqs FB save failed (fallback):", e); });
   } catch(e) {}
 
   // Also save to admin booking list
@@ -14159,7 +14304,9 @@ function saveMaidRequest(maidPhone, req) {
     if (!exists) {
       list.unshift(req);
       localStorage.setItem(key, JSON.stringify(list));
-      if (typeof window._fbSet === "function") window._fbSet("siteData", key.replace(/[^a-zA-Z0-9_-]/g,"_"), list);
+      // FIX #4: _fbSetWhenReady — module load se pehle bhi safe
+      if (typeof window._fbSetWhenReady === "function") window._fbSetWhenReady("siteData", key.replace(/[^a-zA-Z0-9_-]/g,"_"), list).catch(function(e){ console.warn("saveMaidRequest FB save failed:", e); });
+      else if (typeof window._fbSet === "function") window._fbSet("siteData", key.replace(/[^a-zA-Z0-9_-]/g,"_"), list).catch(function(e){ console.warn("saveMaidRequest FB save failed (fallback):", e); });
     }
   } catch(e) {}
 }
@@ -14246,7 +14393,9 @@ function updateMaidRequestStatus(maidPhone, reqId, status) {
       if (existingIdx >= 0) custReqs[existingIdx] = entry;
       else custReqs.unshift(entry);
       localStorage.setItem(custKey, JSON.stringify(custReqs));
-      if (typeof window._fbSet === "function") window._fbSet("siteData", custKey, custReqs);
+      // FIX #4: _fbSetWhenReady — request status reliable sync
+    if (typeof window._fbSetWhenReady === "function") window._fbSetWhenReady("siteData", custKey, custReqs).catch(function(e){ console.warn("custReqs FB save failed:", e); });
+    else if (typeof window._fbSet === "function") window._fbSet("siteData", custKey, custReqs).catch(function(e){ console.warn("custReqs FB save failed (fallback):", e); });
     }
   } catch(e) {}
 }
@@ -14393,8 +14542,16 @@ function renderMobileAccountSection() {
 }
 
 function logoutUser() {
+  // Maid aadhar real-time listener band karo
+  if (typeof window._stopMaidAadharListener === 'function') {
+    window._stopMaidAadharListener();
+  }
   clearAuthToken();
   localStorage.removeItem('userRole');
+  // FIX #5: Dusre user ke device pe purana naam/email Razorpay mein na aaye
+  localStorage.removeItem('userName');
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userPhone');
   updateNavbarUI();
   // Reset credit bars so next user doesn't see previous user's plan
   const dashNum = document.getElementById('dashCreditNum');
@@ -14446,7 +14603,7 @@ function dashTab(tab) {
     tab = 'overview';
   }
 
-  const allTabs = ['overview','requests','maid-requests','maid-profile-edit','subscription','settings'];
+  const allTabs = ['overview','requests','maid-requests','maid-profile-edit','subscription','settings','help'];
   allTabs.forEach(t => {
     const el = document.getElementById('dtab-' + t);
     if (el) el.classList.toggle('active', t === tab);
@@ -14669,7 +14826,22 @@ function dashTab(tab) {
         <button class="btn btn-lg btn-primary" onclick="showPage('subscription')"><i class="fas fa-crown"></i> ${credit.valid ? 'Upgrade Plan' : 'Get a Plan'}</button>
         ${credit.valid ? `<button class="btn btn-lg btn-outline" onclick="showPage('subscription')"><i class="fas fa-arrows-rotate"></i> Compare Plans</button>` : ''}
       </div>
+
+      <!-- ── PAYMENT HISTORY ── -->
+      <div style="margin-top:28px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="font-size:15px;font-weight:700;color:var(--foreground);display:flex;align-items:center;gap:8px;">
+            <i class="fas fa-receipt" style="color:#8b5cf6;"></i> Payment History
+          </div>
+          <button onclick="loadCustomerPaymentHistory()" style="margin-left:auto;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div id="custPaymentHistoryList">
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>
+        </div>
+      </div>
     `;
+    // Payment history Firebase se load karo
+    setTimeout(() => { if (typeof loadCustomerPaymentHistory === 'function') loadCustomerPaymentHistory(); }, 50);
   } else if (tab === 'settings') {
     const initial = cust ? cust.name[0].toUpperCase() : 'U';
     const photoHTML = cust && cust.photo ? `<img src="${cust.photo}" alt="Profile photo">` : initial;
@@ -14728,40 +14900,98 @@ function dashTab(tab) {
       <button class="btn btn-lg btn-primary" onclick="saveAccountSettings()"><i class="fas fa-check"></i> Save Changes</button>
       <p style="font-size:12px;color:var(--muted);margin-top:14px;"><i class="fas fa-shield-halved"></i> Your phone number is your login ID and cannot be changed here.</p>
     `;
+  } else if (tab === 'help') {
+    // ── HELP & SUPPORT TAB — user apni enquiries dekhe + nayi submit kare ──
+    content.innerHTML = `
+      <div class="dash-section-title">Help & Support</div>
+      <!-- New Enquiry Form -->
+      <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:14px;padding:20px;margin-bottom:22px;">
+        <div style="font-size:15px;font-weight:700;color:var(--foreground);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-circle-plus" style="color:var(--primary);"></i> Nayi Problem / Enquiry Submit Karo
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">Category *</label>
+            <select id="userHelpCategory" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;">
+              <option value="">-- Select --</option>
+              <option>Booking Problem</option>
+              <option>Payment Issue</option>
+              <option>Maid Related</option>
+              <option>Account Issue</option>
+              <option>Service Enquiry</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">City</label>
+            <input type="text" id="userHelpCity" placeholder="Aapka city" value="${(isMaid ? '' : (cust && cust.district ? cust.district : ''))}" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;"/>
+          </div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">Apni Problem Likhein *</label>
+          <textarea id="userHelpMessage" rows="3" placeholder="Yahan apni problem ya sawal detail mein likhein..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;resize:vertical;"></textarea>
+        </div>
+        <div id="userHelpSubmitStatus" style="display:none;font-size:13px;margin-bottom:8px;"></div>
+        <button class="btn btn-md btn-primary" onclick="submitUserHelpFromDash()"><i class="fas fa-paper-plane"></i> Submit Karo</button>
+      </div>
+      <!-- Past Enquiries -->
+      <div style="font-size:14px;font-weight:700;color:var(--foreground);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-clock-rotate-left" style="color:var(--muted);"></i> Purani Enquiries
+        <button onclick="loadUserHelpEnquiries()" style="margin-left:auto;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-rotate-right"></i> Refresh</button>
+      </div>
+      <div id="userHelpList" style="display:flex;flex-direction:column;gap:12px;">
+        <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>
+      </div>
+    `;
+    loadUserHelpEnquiries();
+    startUserHelpRealtimeSync();
   } else if (tab === 'maid-profile-edit') {
     // ── MAID COMPLETE PROFILE TAB ──
     var maidPhone2 = getLoggedMaidPhone();
     var adminMaids2 = [];
     try { adminMaids2 = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(e2) {}
     var myMaid2 = adminMaids2.find(function(m){ return m.phone === maidPhone2; }) || {};
-    var regMaids2 = readRegisteredMaids();
-    var myName2 = myMaid2.name || (regMaids2[maidPhone2] && regMaids2[maidPhone2].name) || '';
-    var servicesStr2 = (myMaid2.services || []).join(', ');
-    var langStr2 = (myMaid2.languages || []).join(', ');
-    var cityState2 = [myMaid2.city, myMaid2.state].filter(Boolean).join(', ');
-    var regDate2 = myMaid2.registeredAt ? new Date(myMaid2.registeredAt).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : 'N/A';
-    var maidPhotoHTML2 = myMaid2.photo ? '<img src="' + myMaid2.photo + '" alt="Profile photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : (myName2 ? myName2[0].toUpperCase() : '?');
 
-    // Check aadhar status
+    // regMaids2: maid ka own registration data — fallback for name, photo, services etc.
+    var regMaids2 = readRegisteredMaids();
+    var regRec2 = regMaids2[maidPhone2] || {};
+
+    // Merge: admin_maids authoritative for verified/available; regRec for rest
+    var myName2 = myMaid2.name || regRec2.name || '';
+    var photo2 = myMaid2.photo || regRec2.photo || '';
+    var servicesArr2 = (myMaid2.services && myMaid2.services.length) ? myMaid2.services : (regRec2.services || []);
+    var servicesStr2 = servicesArr2.join(', ');
+    var langStr2 = (myMaid2.languages || []).join(', ');
+    var city2 = myMaid2.city || regRec2.district || '';
+    var state2 = myMaid2.state || regRec2.state || '';
+    var cityState2 = [city2, state2].filter(Boolean).join(', ');
+    var exp2 = myMaid2.experience !== undefined ? myMaid2.experience : (regRec2.experience !== undefined ? regRec2.experience : null);
+    var salary2 = myMaid2.salary || regRec2.salary || '';
+    var workType2 = myMaid2.workType || regRec2.workType || '';
+    var regDateRaw2 = myMaid2.registeredAt || regRec2.registeredAt || '';
+    var regDate2 = regDateRaw2 ? new Date(regDateRaw2).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : 'N/A';
+    var maidPhotoHTML2 = photo2 ? '<img src="' + photo2 + '" alt="Profile photo" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">' : (myName2 ? myName2[0].toUpperCase() : '?');
+
+    // Check aadhar status from Firebase-synced localStorage
     var aadharData2 = null;
     try { aadharData2 = JSON.parse(localStorage.getItem('aadhar_' + maidPhone2) || 'null'); } catch(ea) {}
-    var aadharStatus2 = aadharData2 ? aadharData2.status : 'none'; // 'none','pending','verified','rejected'
-    var hasPhoto2 = !!myMaid2.photo;
-    var hasAadhar2 = aadharData2 && (aadharData2.frontUrl || aadharData2.aadharNum);
-    var isLive2 = myMaid2.verified && myMaid2.available;
+    var aadharStatus2 = aadharData2 ? (aadharData2.status || 'none') : 'none';
+    var hasPhoto2 = !!photo2;
+    var hasAadhar2 = !!(aadharData2 && aadharData2.frontUrl && aadharData2.backUrl && aadharData2.aadharNum);
+    var isLive2 = !!(myMaid2.verified && myMaid2.available);
 
-    // Status banner
+    // Status banner — 6 states
     var statusBanner2 = '';
     if (isLive2) {
-      statusBanner2 = '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-circle-check" style="font-size:22px;color:#16a34a;"></i><div><div style="font-weight:700;color:#15803d;font-size:14px;">✅ Profile Live hai</div><div style="font-size:13px;color:#166534;">Aapka profile customers ko dikh raha hai.</div></div></div>';
-    } else if (aadharStatus2 === 'pending') {
-      statusBanner2 = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-clock" style="font-size:22px;color:#d97706;"></i><div><div style="font-weight:700;color:#92400e;font-size:14px;">⏳ Verification Pending</div><div style="font-size:13px;color:#78350f;">Admin review kar raha hai. Approve hone ke baad profile live hogi.</div></div></div>';
+      statusBanner2 = '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-circle-check" style="font-size:22px;color:#16a34a;"></i><div><div style="font-weight:700;color:#15803d;font-size:14px;">✅ Profile Live hai!</div><div style="font-size:13px;color:#166534;">Aapka profile verified hai aur customers ko dikh raha hai.</div></div></div>';
+    } else if (aadharStatus2 === 'verified') {
+      statusBanner2 = '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-shield-check" style="font-size:22px;color:#16a34a;"></i><div><div style="font-weight:700;color:#15803d;font-size:14px;">✅ Aadhar Verified — Profile Activate hone wali hai</div><div style="font-size:13px;color:#166534;">Admin ne aadhar verify kar diya. Profile bahut jald live ho jayegi.</div></div></div>';
+    } else if (aadharStatus2 === 'pending' || (hasPhoto2 && hasAadhar2)) {
+      statusBanner2 = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-clock" style="font-size:22px;color:#d97706;"></i><div><div style="font-weight:700;color:#92400e;font-size:14px;">⏳ Verification Pending</div><div style="font-size:13px;color:#78350f;">Photo aur Aadhar submit ho gayi. Admin review kar raha hai — approve hone ke baad profile live hogi. Aap profile normally use kar sakte hain.</div></div></div>';
     } else if (aadharStatus2 === 'rejected') {
-      statusBanner2 = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-circle-xmark" style="font-size:22px;color:#dc2626;"></i><div><div style="font-weight:700;color:#b91c1c;font-size:14px;">❌ Aadhar Rejected</div><div style="font-size:13px;color:#991b1b;">Apna Aadhar dobara upload karein.</div></div></div>';
+      statusBanner2 = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-circle-xmark" style="font-size:22px;color:#dc2626;"></i><div><div style="font-weight:700;color:#b91c1c;font-size:14px;">❌ Aadhar Rejected</div><div style="font-size:13px;color:#991b1b;">Admin ne reject kiya. Niche se sahi Aadhar dobara upload karein.</div></div></div>';
     } else if (!hasPhoto2 || !hasAadhar2) {
-      statusBanner2 = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-triangle-exclamation" style="font-size:22px;color:#ea580c;"></i><div><div style="font-weight:700;color:#c2410c;font-size:14px;">⚠️ Profile Incomplete</div><div style="font-size:13px;color:#9a3412;">Profile live karne ke liye Photo aur Aadhar dono upload karein.</div></div></div>';
-    } else {
-      statusBanner2 = '<div style="background:#f0f9ff;border:1.5px solid #bae6fd;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-info-circle" style="font-size:22px;color:#0284c7;"></i><div><div style="font-weight:700;color:#0369a1;font-size:14px;">Verification Submit Karo</div><div style="font-size:13px;color:#0c4a6e;">Photo aur Aadhar ready hai. Niche "Submit for Verification" button dabao.</div></div></div>';
+      statusBanner2 = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-triangle-exclamation" style="font-size:22px;color:#ea580c;"></i><div><div style="font-weight:700;color:#c2410c;font-size:14px;">⚠️ Photo aur Aadhar Required</div><div style="font-size:13px;color:#9a3412;">Profile live karne ke liye niche se photo aur Aadhar dono upload karein.</div></div></div>';
     }
 
     content.innerHTML = '<div class="dash-section-title">My Profile</div>'
@@ -14770,14 +15000,14 @@ function dashTab(tab) {
       + '<div style="width:64px;height:64px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex-shrink:0;overflow:hidden;">' + maidPhotoHTML2 + '</div>'
       + '<div style="flex:1;"><div style="font-size:20px;font-weight:800;">' + (myName2 || 'Your Name') + '</div>'
       + '<div style="font-size:13px;opacity:.8;margin-top:3px;"><i class="fas fa-location-dot"></i> ' + (cityState2 || 'N/A') + '</div>'
-      + (isLive2 ? '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.25);color:#bbf7d0;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;"><i class="fas fa-shield-check"></i> Live & Verified</div>' : '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(251,191,36,.2);color:#fde68a;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;"><i class="fas fa-clock"></i> Pending Verification</div>')
+      + (isLive2 ? '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.25);color:#bbf7d0;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;"><i class="fas fa-shield-check"></i> Live & Verified</div>' : (aadharStatus2 === 'pending' || (hasPhoto2 && hasAadhar2)) ? '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(251,191,36,.2);color:#fde68a;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;"><i class="fas fa-clock"></i> Pending Verification</div>' : '<div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;background:rgba(239,68,68,.2);color:#fca5a5;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;"><i class="fas fa-exclamation-circle"></i> Setup Required</div>')
       + '</div></div>'
 
       // ── PHOTO SECTION (Required) ──
       + '<div style="background:#fff;border:' + (hasPhoto2 ? '1px solid #bbf7d0' : '2px dashed #fed7aa') + ';border-radius:14px;padding:18px 20px;margin-bottom:14px;">'
       + '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;">📷 Profile Photo <span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">Required</span>' + (hasPhoto2 ? ' <span style="margin-left:auto;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">✓ Uploaded</span>' : '') + '</div>'
       + '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">'
-      + (hasPhoto2 ? '<img src="' + myMaid2.photo + '" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #bbf7d0;" />' : '<div style="width:72px;height:72px;border-radius:50%;background:#f3f4f6;border:3px dashed #d1d5db;display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="font-size:24px;color:#9ca3af;"></i></div>')
+      + (hasPhoto2 ? '<img src="' + photo2 + '" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #bbf7d0;" />' : '<div style="width:72px;height:72px;border-radius:50%;background:#f3f4f6;border:3px dashed #d1d5db;display:flex;align-items:center;justify-content:center;"><i class="fas fa-user" style="font-size:24px;color:#9ca3af;"></i></div>')
       + '<div>'
       + '<button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById(\'maidProfilePhotoInput\').click()"><i class="fas fa-camera"></i> ' + (hasPhoto2 ? 'Change Photo' : 'Upload Photo') + '</button>'
       + (hasPhoto2 ? '<button type="button" class="btn btn-sm btn-outline" style="color:#dc2626;border-color:#fecaca;margin-left:8px;" onclick="removeMaidProfilePhoto()"><i class="fas fa-trash"></i></button>' : '')
@@ -14825,16 +15055,17 @@ function dashTab(tab) {
       + '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Profile Details</div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;font-size:14px;">'
       + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Phone</div><strong>+91 ' + maidPhone2 + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Experience</div><strong>' + (myMaid2.experience !== undefined ? myMaid2.experience + ' years' : 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Salary</div><strong>' + (myMaid2.salary || 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Work Type</div><strong>' + (myMaid2.workType || 'N/A') + '</strong></div>'
+      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Experience</div><strong>' + (exp2 !== null ? exp2 + ' years' : 'N/A') + '</strong></div>'
+      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Salary</div><strong>' + (salary2 || 'N/A') + '</strong></div>'
+      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Work Type</div><strong>' + (workType2 || 'N/A') + '</strong></div>'
       + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Services</div><strong>' + (servicesStr2 || 'N/A') + '</strong></div>'
       + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Languages</div><strong>' + (langStr2 || 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Availability</div><strong style="color:' + (isLive2 ? '#16a34a' : '#dc2626') + ';"><i class="fas fa-circle" style="font-size:9px;"></i> ' + (isLive2 ? 'Available (Live)' : 'Not Live Yet') + '</strong></div>'
+      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Availability</div><strong style="color:' + (isLive2 ? '#16a34a' : '#6b7280') + ';"><i class="fas fa-circle" style="font-size:9px;"></i> ' + (isLive2 ? 'Available (Live)' : 'Pending Approval') + '</strong></div>'
       + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Registered On</div><strong>' + regDate2 + '</strong></div>'
       + '</div></div>'
       + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:18px;">'
-      + '<div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#15803d;font-weight:600;"><i class="fas fa-info-circle" style="font-size:16px;"></i> Baaki details (experience, salary, services) admin ke paas hain. Change ke liye admin se contact karein.</div></div>'
+      + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:18px;">'
+      + '<div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#15803d;font-weight:600;"><i class="fas fa-info-circle" style="font-size:16px;"></i> Ye details aapki registration se hain. Change ke liye admin se contact karein.</div></div>'
       + '<div style="font-size:14px;font-weight:700;margin-bottom:10px;">Quick Actions</div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">'
       + '<button class="dash-quick-action" onclick="dashTab(\'maid-requests\')"><i class="fas fa-bell"></i><div><div class="qa-title">Requests Dekho</div><div class="qa-sub">Customer requests</div></div></button>'
@@ -15196,45 +15427,53 @@ async function saveMaidAadharFromProfile() {
   const statusEl = document.getElementById('maidAadharSaveStatus');
   if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#d97706'; statusEl.innerHTML='<i class="fas fa-spinner fa-spin"></i> Uploading...'; }
 
-  let frontUrl = existingAadhar && existingAadhar.frontUrl || '';
-  let backUrl = existingAadhar && existingAadhar.backUrl || '';
+  // Block the mandatory popup from popping open on top of this tab while
+  // the upload is in progress (realtime Firebase listeners fire on ANY
+  // unrelated change and would otherwise re-trigger it mid-submission).
+  window._maidVerifyBusy = true;
+  try {
+    let frontUrl = existingAadhar && existingAadhar.frontUrl || '';
+    let backUrl = existingAadhar && existingAadhar.backUrl || '';
 
-  // Upload new files if selected
-  if (frontFile && typeof window._fbUploadPhoto === 'function') {
-    try {
-      frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + maidPhone + '_front_' + Date.now() + '.jpg') || '';
-    } catch(e) { /* fallback to base64 */ }
-    if (!frontUrl) {
-      const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(frontFile); });
-      frontUrl = b64;
+    // Upload new files if selected
+    if (frontFile && typeof window._fbUploadPhoto === 'function') {
+      try {
+        frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + maidPhone + '_front_' + Date.now() + '.jpg') || '';
+      } catch(e) { /* fallback to base64 */ }
+      if (!frontUrl) {
+        const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(frontFile); });
+        frontUrl = b64;
+      }
     }
-  }
-  if (backFile && typeof window._fbUploadPhoto === 'function') {
-    try {
-      backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + maidPhone + '_back_' + Date.now() + '.jpg') || '';
-    } catch(e) { /* fallback to base64 */ }
-    if (!backUrl) {
-      const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(backFile); });
-      backUrl = b64;
+    if (backFile && typeof window._fbUploadPhoto === 'function') {
+      try {
+        backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + maidPhone + '_back_' + Date.now() + '.jpg') || '';
+      } catch(e) { /* fallback to base64 */ }
+      if (!backUrl) {
+        const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(backFile); });
+        backUrl = b64;
+      }
     }
+
+    const aadharData = { phone: maidPhone, aadharNum, frontUrl, backUrl: backUrl || '', status: 'pending', submittedAt: new Date().toISOString() };
+    localStorage.setItem('aadhar_' + maidPhone, JSON.stringify(aadharData));
+    if (typeof window._fbSet === 'function') {
+      try { await window._fbSet('siteData', 'aadhar_' + maidPhone, aadharData); } catch(e) {}
+    }
+
+    // Clear file references
+    if (window._maidAadharFiles) window._maidAadharFiles = {};
+
+    if (statusEl) { statusEl.style.color='#15803d'; statusEl.innerHTML='✅ Aadhar submitted! Admin review ke baad profile live hogi.'; }
+    showToast('✅ Aadhar verification submit ho gayi! Admin approve karne ke baad profile live hogi.');
+
+    // Update admin badges
+    if (typeof window.updateNavBadges === 'function') { try { updateNavBadges(); } catch(e){} }
+
+    setTimeout(() => dashTab('maid-profile-edit'), 1200);
+  } finally {
+    window._maidVerifyBusy = false;
   }
-
-  const aadharData = { phone: maidPhone, aadharNum, frontUrl, backUrl: backUrl || '', status: 'pending', submittedAt: new Date().toISOString() };
-  localStorage.setItem('aadhar_' + maidPhone, JSON.stringify(aadharData));
-  if (typeof window._fbSet === 'function') {
-    window._fbSet('siteData', 'aadhar_' + maidPhone, aadharData).catch(() => {});
-  }
-
-  // Clear file references
-  if (window._maidAadharFiles) window._maidAadharFiles = {};
-
-  if (statusEl) { statusEl.style.color='#15803d'; statusEl.innerHTML='✅ Aadhar submitted! Admin review ke baad profile live hogi.'; }
-  showToast('✅ Aadhar verification submit ho gayi! Admin approve karne ke baad profile live hogi.');
-  
-  // Update admin badges
-  if (typeof window.updateNavBadges === 'function') { try { updateNavBadges(); } catch(e){} }
-
-  setTimeout(() => dashTab('maid-profile-edit'), 1200);
 }
 
 function submitMaidForVerification() {
@@ -15248,32 +15487,70 @@ function submitMaidForVerification() {
 // ══════════════════════════════════════
 window._popupPhotoFile = null;
 window._popupAadharFiles = {};
+// True while a photo/Aadhar submission is actively in progress (either via this
+// popup or the "My Profile" tab) — prevents the realtime Firebase listeners
+// (which fire on ANY unrelated change) from re-opening/resetting this popup
+// mid-submission or right on top of the profile tab the maid is already using.
+window._maidVerifyBusy = false;
 
 function getMaidVerifyStatus(phone) {
+  // admin_maids: admin panel ka data (verified/available flags, photo after admin upload)
   let adminMaids = [];
   try { adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(e) {}
   const m = adminMaids.find(x => x.phone === phone) || {};
+
+  // registered_maids: maid ka registration data (name, photo, etc.)
+  let regRec = {};
+  try {
+    const regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+    regRec = regMaids[phone] || {};
+  } catch(e) {}
+
+  // aadhar: Firebase siteData se synced record
   let aadhar = null;
   try { aadhar = JSON.parse(localStorage.getItem('aadhar_' + phone) || 'null'); } catch(e) {}
-  const hasPhoto = !!m.photo;
-  const aadharStatus = aadhar ? aadhar.status : 'none'; // 'none' | 'pending' | 'verified' | 'rejected'
+
+  // Photo: admin_maids ya registered_maids — jo bhi ho
+  const hasPhoto = !!(m.photo || regRec.photo);
+
+  // Aadhar fully submitted = frontUrl + backUrl + aadharNum teeno present hain
   const hasAadharSubmitted = !!(aadhar && aadhar.frontUrl && aadhar.backUrl && aadhar.aadharNum);
-  return { maid: m, hasPhoto, aadhar, aadharStatus, hasAadharSubmitted, isLive: !!(m.verified && m.available) };
+
+  const aadharStatus = aadhar ? (aadhar.status || 'none') : 'none';
+  const isLive = !!(m.verified && m.available);
+
+  return { maid: m, regRec, hasPhoto, aadhar, aadharStatus, hasAadharSubmitted, isLive };
 }
 
-// Should the forced popup be shown right now for the logged-in maid?
+// Kya forced popup dikhana chahiye?
+// Ek baar photo+aadhar submit ho jaaye → KABHI popup nahi (jab tak reject na ho)
 function maidNeedsVerificationPopup() {
   if (!isMaidUser() || !getAuthToken()) return false;
   const phone = getLoggedMaidPhone();
   if (!phone) return false;
   const st = getMaidVerifyStatus(phone);
-  // Force the popup again if rejected, or if photo / aadhar submission is missing.
+
+  // Admin approved → bilkul popup nahi
+  if (st.isLive) return false;
+  // Admin ne aadhar verify kar di → popup nahi
+  if (st.aadharStatus === 'verified') return false;
+  // Aadhar submit ho chuki, pending review → popup nahi (profile tab mein status dikhega)
+  if (st.aadharStatus === 'pending') return false;
+  // Aadhar reject hua → dobara upload karna hai → popup
   if (st.aadharStatus === 'rejected') return true;
-  if (!st.hasPhoto || !st.hasAadharSubmitted) return true;
-  return false;
+  // Photo aur Aadhar dono submit ho chuki hain → popup nahi chahe kuch bhi ho
+  if (st.hasPhoto && st.hasAadharSubmitted) return false;
+  // Kuch bhi missing hai → popup
+  return true;
 }
 
 function openMaidVerifyPopup() {
+  // Already open? Don't reset it — a background Firebase sync (unrelated to
+  // this maid) can retrigger this function; resetting mid-fill-in would wipe
+  // the photo/Aadhar files she's already selected.
+  const existingPopup = document.getElementById('maidVerifyPopup');
+  if (existingPopup && existingPopup.style.display === 'flex') return;
+
   const phone = getLoggedMaidPhone();
   if (!phone) return;
   const st = getMaidVerifyStatus(phone);
@@ -15283,7 +15560,8 @@ function openMaidVerifyPopup() {
   window._popupAadharFiles = {};
 
   const preview = document.getElementById('popupPhotoPreview');
-  if (preview) preview.innerHTML = st.hasPhoto ? '<img src="' + st.maid.photo + '" style="width:100%;height:100%;object-fit:cover;">' : '<i class="fas fa-user" style="font-size:22px;color:#9ca3af;"></i>';
+  const photoSrc = st.maid.photo || (st.regRec && st.regRec.photo) || '';
+  if (preview) preview.innerHTML = st.hasPhoto ? '<img src="' + photoSrc + '" style="width:100%;height:100%;object-fit:cover;">' : '<i class="fas fa-user" style="font-size:22px;color:#9ca3af;"></i>';
 
   const numEl = document.getElementById('popupAadharNum');
   if (numEl) numEl.value = (st.aadhar && st.aadhar.aadharNum) ? st.aadhar.aadharNum : '';
@@ -15328,7 +15606,41 @@ function closeMaidVerifyPopup() {
 }
 
 // Called after maid login / on any page load — opens the popup only if needed.
-function maybeShowMaidVerifyPopup() {
+// Async: pehle Firebase se aadhar status sync karta hai, tab decide karta hai.
+async function maybeShowMaidVerifyPopup() {
+  // Upload in progress — don't interrupt
+  if (window._maidVerifyBusy) return;
+  // Maid is already on My Profile tab — don't stack popup on top
+  if (document.getElementById('maidAadharSaveStatus')) return;
+
+  const phone = getLoggedMaidPhone();
+  if (!phone) return;
+
+  // Firebase se sabka latest data sync karo pehle, tab faisla karo
+  if (typeof window._fbGet === 'function') {
+    try {
+      // 1. Aadhar record
+      const fbAadhar = await window._fbGet('siteData', 'aadhar_' + phone);
+      if (fbAadhar && fbAadhar.aadharNum) {
+        localStorage.setItem('aadhar_' + phone, JSON.stringify(fbAadhar));
+      }
+      // 2. Admin maids (verified/available flags + photo)
+      const fbAdminMaids = await window._fbGet('adminData', 'ram_admin_maids');
+      if (fbAdminMaids && Array.isArray(fbAdminMaids)) {
+        localStorage.setItem('ram_admin_maids', JSON.stringify(fbAdminMaids));
+      }
+      // 3. Registered maids (maid ka own photo/data — fallback source)
+      const fbRegMaids = await window._fbGet('adminData', 'ram_registered_maids');
+      if (fbRegMaids && typeof fbRegMaids === 'object') {
+        // Merge carefully — don't overwrite newer local data
+        const local = {};
+        try { Object.assign(local, JSON.parse(localStorage.getItem('ram_registered_maids') || '{}')); } catch(e) {}
+        const merged = Object.assign({}, local, fbRegMaids);
+        localStorage.setItem('ram_registered_maids', JSON.stringify(merged));
+      }
+    } catch(e) { /* Firebase unavailable — localStorage data se kaam chalega */ }
+  }
+
   if (maidNeedsVerificationPopup()) openMaidVerifyPopup();
   else closeMaidVerifyPopup();
 }
@@ -15381,6 +15693,7 @@ async function submitMaidVerifyPopup() {
   const hasBack = window._popupAadharFiles.back || (st.aadhar && st.aadhar.backUrl);
   if (!hasFront || !hasBack) return showErr('⚠️ Aadhar ke dono sides (front + back) upload karein.');
 
+  window._maidVerifyBusy = true;
   const submitBtn = document.getElementById('popupVerifySubmitBtn');
   if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...'; }
   if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#d97706'; statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading to cloud...'; }
@@ -15447,16 +15760,39 @@ async function submitMaidVerifyPopup() {
       }
     }, 900);
   } catch(e) {
-    if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.innerHTML = '⚠️ Submit nahi ho paaya, dobara try karein.'; }
-    showToast('⚠️ Kuch gadbad ho gayi. Internet check karke dobara try karein.');
+    console.error('Aadhar/Photo submit failed:', e);
+    let reason = 'Kuch gadbad ho gayi. Internet check karke dobara try karein.';
+    if (e && (e.name === 'QuotaExceededError' || /quota/i.test(e.message || ''))) {
+      reason = 'Photo/Aadhar ka size zyada hai is device ki storage ke liye. Chhoti size ki photo (jaise 1-2MB) try karein.';
+    } else if ((e && /network|fetch|offline/i.test(e.message || '')) || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+      reason = 'Internet connection weak/band hai. Wifi ya mobile data check karke dobara try karein.';
+    } else if (e && e.message) {
+      reason = 'Submit nahi ho paaya: ' + e.message;
+    }
+    if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.innerHTML = '⚠️ ' + reason; }
+    showToast('⚠️ ' + reason);
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit for Verification'; }
+    window._maidVerifyBusy = false;
   }
 }
 
 // Re-check on every page load (covers refresh while still logged in as maid)
 document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(maybeShowMaidVerifyPopup, 300);
+  // Pehle thoda wait karo taaki Firebase initialize ho jaye, phir sync + popup check karo
+  setTimeout(async function() {
+    // Agar maid logged in hai aur Firebase ready hai
+    if (typeof isMaidUser === 'function' && isMaidUser()) {
+      const phone = typeof getLoggedMaidPhone === 'function' ? getLoggedMaidPhone() : null;
+      if (phone) {
+        // Aadhar real-time listener start karo (agar pehle se nahi chala)
+        if (typeof window._startMaidAadharListener === 'function') {
+          window._startMaidAadharListener(phone);
+        }
+      }
+    }
+    if (typeof maybeShowMaidVerifyPopup === 'function') await maybeShowMaidVerifyPopup();
+  }, 1200);
 });
 
 // ── CUSTOMER PHOTO MODAL ──
@@ -16205,6 +16541,8 @@ async function rcSubmitLogin() {
   window._rcConfirmationResult = null;
   setAuthToken(phone);
   localStorage.setItem('userRole', 'customer');
+  // FIX #1: Razorpay prefill ke liye user info cache karo
+  try { var _rcu=customers[phone]||{}; if(_rcu.name) localStorage.setItem('userName',_rcu.name); if(_rcu.email) localStorage.setItem('userEmail',_rcu.email); localStorage.setItem('userPhone',phone); } catch(e) {}
   const redirectTo = pendingPageAfterLogin;
   pendingPageAfterLogin = null;
   closeRegisterChoiceModal();
@@ -16312,6 +16650,7 @@ async function rcSubmitLogin() {
       <div class="nav-item" onclick="gotoPage('testimonials')"><i class="fas fa-quote-left"></i> Testimonials</div>
       <div class="nav-section-label">Verification</div>
       <div class="nav-item" onclick="gotoPage('aadhar')"><i class="fas fa-id-card" style="color:#f59e0b;"></i> Aadhar Verification <span class="nav-badge" id="aadharNavBadge" style="background:#f59e0b;">0</span></div>
+      <div class="nav-item" onclick="gotoPage('help')"><i class="fas fa-headset" style="color:#8b5cf6;"></i> Help & Support <span class="nav-badge" id="helpNavBadge" style="background:#8b5cf6;display:none;">0</span></div>
       <div class="nav-section-label">System</div>
       <div class="nav-item" onclick="gotoPage('admins')"><i class="fas fa-user-shield"></i> Admin Users</div>
       <div class="nav-item" onclick="gotoPage('settings')"><i class="fas fa-sliders"></i> Settings</div>
@@ -17199,6 +17538,25 @@ async function rcSubmitLogin() {
             <table><thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Last Login</th><th>Actions</th></tr></thead>
             <tbody id="adminTbody"></tbody></table>
           </div>
+        </div>
+      </div>
+
+      <!-- ══ HELP & SUPPORT PAGE ══ -->
+      <div class="admin-page" id="pg-help">
+        <div class="section-head">
+          <div><h2>Help & Support</h2><p>User enquiries aur problems — yahan reply karo</p></div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <select id="helpFilterStatus" onchange="renderHelpEnquiries()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);">
+              <option value="">All Enquiries</option>
+              <option value="open">Open</option>
+              <option value="replied">Replied</option>
+              <option value="closed">Closed</option>
+            </select>
+            <button class="action-btn action-btn-outline" onclick="loadHelpEnquiries()"><i class="fas fa-rotate-right"></i> Refresh</button>
+          </div>
+        </div>
+        <div id="helpEnquiriesContainer" style="display:flex;flex-direction:column;gap:14px;">
+          <div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
         </div>
       </div>
 
@@ -18145,6 +18503,8 @@ function updateNavBadges() {
   });
   const aadharBadge = document.getElementById('aadharNavBadge');
   if(aadharBadge) { aadharBadge.textContent = pendingAadhar; aadharBadge.style.display = pendingAadhar > 0 ? 'inline' : 'none'; }
+  // Help enquiries open count
+  if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
   renderNotifications();
 }
 
@@ -18158,7 +18518,7 @@ function gotoPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
   });
-  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',payments:'Payments',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification'};
+  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',payments:'Payments',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification',help:'Help & Support'};
   document.getElementById('topbarTitle').textContent = titles[page] || page;
   currentPage = page;
   closeSidebar();
@@ -18176,6 +18536,10 @@ function gotoPage(page) {
   // Jab aadhar page khule, auto-load Firebase se data
   if (page === 'aadhar') {
     setTimeout(() => { if (typeof loadAllAadharData === 'function') loadAllAadharData(); }, 100);
+  }
+  // Help page khulte hi enquiries load karo
+  if (page === 'help') {
+    setTimeout(() => { if (typeof loadHelpEnquiries === 'function') loadHelpEnquiries(); }, 100);
   }
   // Jab website editor khule, extras load karo
   if (page === 'website') {
@@ -18631,15 +18995,37 @@ function renderViewMaidBody(m, id) {
             </button>
           </div>
         ` : '<div style="color:#16a34a;font-size:13px;font-weight:600;"><i class="fas fa-circle-check"></i> Aadhar Verified</div>'}
-      ` : '<div style="font-size:13px;color:var(--muted);">Maid ne abhi Aadhar submit nahi kiya.</div>'}
+      ` : `
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">Admin: Aadhar Upload Karo</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px;font-weight:600;">Aadhar Number</div>
+              <input type="text" id="adminAadharNumInput_${m.phone}" maxlength="12" placeholder="12-digit Aadhar number" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;"/>
+            </div>
+            <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;background:var(--muted-bg);font-size:12px;color:var(--muted);" id="adminAadharFrontLabel_${m.phone}">
+              <i class="fas fa-upload"></i> Aadhar Front Upload
+              <input type="file" id="adminAadharFrontInput_${m.phone}" accept="image/*" style="display:none;" onchange="adminAadharImgPreview(event,'adminAadharFrontLabel_${m.phone}','front')"/>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px dashed var(--border);border-radius:8px;cursor:pointer;background:var(--muted-bg);font-size:12px;color:var(--muted);" id="adminAadharBackLabel_${m.phone}">
+              <i class="fas fa-upload"></i> Aadhar Back Upload
+              <input type="file" id="adminAadharBackInput_${m.phone}" accept="image/*" style="display:none;" onchange="adminAadharImgPreview(event,'adminAadharBackLabel_${m.phone}','back')"/>
+            </label>
+            <div id="adminAadharUploadStatus_${m.phone}" style="font-size:12px;display:none;"></div>
+            <button class="action-btn action-btn-primary action-btn-sm" onclick="adminUploadAadharForMaid('${m.phone}',${m.id})">
+              <i class="fas fa-paper-plane"></i> Aadhar Submit Karo
+            </button>
+          </div>
+        </div>
+      `}
     </div>
   `;
 
   document.getElementById('viewMaidBody').innerHTML = `
     <div style="display:grid;grid-template-columns:200px 1fr;gap:20px;">
       <div style="text-align:center;">
-        <div class="profile-avatar-big" style="width:80px;height:80px;margin:0 auto 12px;font-size:28px;">
-          ${m.photo ? `<img src="${m.photo}" onerror="this.innerHTML='${m.name[0]}'"/>` : m.name[0]}
+        <div class="profile-avatar-big" id="adminViewMaidPhotoAvatar" style="width:80px;height:80px;margin:0 auto 12px;font-size:28px;">
+          ${m.photo ? `<img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.innerHTML='${m.name[0]}'"/>` : m.name[0]}
         </div>
         <div class="profile-name" style="font-size:16px;">${m.name}</div>
         <div class="profile-meta">${m.city}, ${m.state}</div>
@@ -18649,6 +19035,14 @@ function renderViewMaidBody(m, id) {
         </div>
         <div style="margin-top:12px;font-size:20px;color:#f59e0b;">${'★'.repeat(Math.round(m.rating))}</div>
         <div style="font-size:13px;color:var(--text2);">${m.rating}/5 · ${m.reviewCount} reviews</div>
+        <!-- Admin Photo Upload -->
+        <div style="margin-top:12px;">
+          <label for="adminViewMaidPhotoInput" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:var(--primary);color:#fff;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;">
+            <i class="fas fa-camera"></i> Photo Change Karo
+          </label>
+          <input type="file" id="adminViewMaidPhotoInput" accept="image/*" style="display:none;" onchange="adminViewMaidPhotoChange(event,${m.id},'${m.phone||''}')"/>
+          <div id="adminViewMaidPhotoStatus" style="font-size:11px;color:var(--muted);margin-top:4px;"></div>
+        </div>
       </div>
       <div>
         ${[['Phone',m.phone||'N/A'],['City',m.city],['State',m.state],['Experience',m.experience+' years'],['Registered',m.registeredAt?new Date(m.registeredAt).toLocaleDateString('en-IN'):'N/A'],['Languages',m.languages?.join(', ')||'N/A'],['Services',m.services?.join(', ')||'N/A']].map(([k,v])=>`
@@ -18693,6 +19087,125 @@ function verifyAadharAdmin(phone, maidId) {
   updateNavBadges();
 }
 
+// ── Admin: View Modal — Photo Change ──
+async function adminViewMaidPhotoChange(event, maidId, phone) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Image too large — max 5MB.'); return; }
+  const statusEl = document.getElementById('adminViewMaidPhotoStatus');
+  if (statusEl) { statusEl.textContent = '⏳ Uploading...'; statusEl.style.color = '#f59e0b'; }
+
+  // Turant preview dikhao (base64)
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const avatar = document.getElementById('adminViewMaidPhotoAvatar');
+    if (avatar) avatar.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>';
+  };
+  reader.readAsDataURL(file);
+
+  let photoUrl = '';
+  // Firebase Storage pe upload karo
+  if (typeof window._fbUploadPhoto === 'function') {
+    try {
+      const path = 'maid-photos/' + (phone || 'maid') + '_' + Date.now() + '.jpg';
+      photoUrl = await window._fbUploadPhoto(file, path) || '';
+    } catch(e) { console.warn('Photo upload failed:', e); }
+  }
+
+  // Agar Firebase upload fail ya unavailable, base64 se kaam chalo
+  if (!photoUrl) {
+    photoUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(file); });
+  }
+
+  // MAIDS array aur localStorage update karo
+  const maids = getMaids();
+  const idx = maids.findIndex(m => m.id === maidId);
+  if (idx !== -1) {
+    maids[idx].photo = photoUrl;
+    setMaids(maids);
+  }
+
+  // ram_registered_maids mein bhi photo update karo (maid dashboard pe reflect ho)
+  if (phone) {
+    try {
+      const regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      if (regMaids[phone]) { regMaids[phone].photo = photoUrl; }
+      else { regMaids[phone] = { phone, photo: photoUrl }; }
+      localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
+      if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_registered_maids', regMaids);
+    } catch(e) {}
+  }
+
+  renderMaids();
+  renderDashboard();
+  if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
+  else if (typeof window.renderMaidCards === 'function') window.renderMaidCards();
+
+  if (statusEl) { statusEl.textContent = '✅ Photo update ho gayi!'; statusEl.style.color = '#16a34a'; }
+  showToast('✅ Maid photo update ho gayi — website pe live hai!');
+}
+
+// ── Admin: Aadhar img label preview ──
+function adminAadharImgPreview(event, labelId, side) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const label = document.getElementById(labelId);
+  if (label) {
+    label.style.borderColor = '#22c55e';
+    label.style.background = '#f0fdf4';
+    label.style.color = '#15803d';
+    label.querySelector('i').className = 'fas fa-check-circle';
+    const textNode = label.childNodes[1] || label;
+    if (label.childNodes[1]) label.childNodes[1].textContent = ' ' + (side === 'front' ? 'Front' : 'Back') + ' Selected ✓';
+  }
+}
+
+// ── Admin: Aadhar Upload for Maid (admin ki taraf se) ──
+async function adminUploadAadharForMaid(phone, maidId) {
+  const aadharNumEl = document.getElementById('adminAadharNumInput_' + phone);
+  const frontInput = document.getElementById('adminAadharFrontInput_' + phone);
+  const backInput = document.getElementById('adminAadharBackInput_' + phone);
+  const statusEl = document.getElementById('adminAadharUploadStatus_' + phone);
+
+  const aadharNum = aadharNumEl ? aadharNumEl.value.replace(/\s/g,'') : '';
+  const frontFile = frontInput && frontInput.files && frontInput.files[0];
+  const backFile = backInput && backInput.files && backInput.files[0];
+
+  if (!/^\d{12}$/.test(aadharNum)) {
+    showToast('12-digit Aadhar number enter karo.');
+    return;
+  }
+  if (!frontFile) { showToast('Aadhar front photo select karo.'); return; }
+
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = '⏳ Uploading...'; statusEl.style.color = '#f59e0b'; }
+
+  let frontUrl = '', backUrl = '';
+  try {
+    if (typeof window._fbUploadPhoto === 'function') {
+      frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + phone + '_front_' + Date.now() + '.jpg') || '';
+      if (backFile) backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + phone + '_back_' + Date.now() + '.jpg') || '';
+    }
+    // Fallback to base64 if Firebase unavailable
+    if (!frontUrl) frontUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(frontFile); });
+    if (!backUrl && backFile) backUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = ev => r(ev.target.result); fr.readAsDataURL(backFile); });
+  } catch(e) { console.warn('Aadhar upload error:', e); }
+
+  const aadharData = {
+    phone, aadharNum, frontUrl, backUrl: backUrl || '',
+    status: 'pending', submittedAt: new Date().toISOString(), uploadedByAdmin: true
+  };
+  localStorage.setItem('aadhar_' + phone, JSON.stringify(aadharData));
+  if (typeof window._fbSet === 'function') {
+    try { await window._fbSet('siteData', 'aadhar_' + phone, aadharData); } catch(e) {}
+  }
+
+  if (statusEl) { statusEl.textContent = '✅ Aadhar upload ho gaya!'; statusEl.style.color = '#16a34a'; }
+  showToast('✅ Aadhar documents upload ho gaye — ab Verify ya Reject karo.');
+  // Modal refresh karo taake naya data dikh sake
+  viewMaid(maidId);
+  renderAadharPage();
+}
+
 // ── Admin: Reject Aadhar ──
 function rejectAadharAdmin(phone) {
   if (typeof window._fbSet === 'function') {
@@ -18706,6 +19219,518 @@ function rejectAadharAdmin(phone) {
   closeModal('viewMaidModal');
   renderMaids();
   renderAadharPage();
+}
+
+// ══════════════════════════════════════
+// CUSTOMER PAYMENT HISTORY
+// ══════════════════════════════════════
+
+async function loadCustomerPaymentHistory() {
+  const listEl = document.getElementById('custPaymentHistoryList');
+  if (!listEl) return;
+  const phone = getAuthToken();
+  if (!phone) { listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;">Login karein payment history dekhne ke liye.</div>'; return; }
+
+  listEl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Firebase se load ho raha hai...</div>';
+
+  let payments = [];
+
+  // Firebase se real-time data fetch karo
+  if (typeof window._fbGet === 'function') {
+    try {
+      const fbPayments = await window._fbGet('adminData', 'ram_admin_payments');
+      if (Array.isArray(fbPayments)) {
+        // Sirf is customer ke payments filter karo
+        payments = fbPayments.filter(p => p.userPhone === phone);
+        // localStorage bhi update karo (fresh data se)
+        try {
+          const allLocal = JSON.parse(localStorage.getItem('ram_admin_payments') || '[]');
+          // Merge: Firebase authoritative
+          const mergedMap = {};
+          allLocal.forEach(p => { mergedMap[p.id] = p; });
+          fbPayments.forEach(p => { mergedMap[p.id] = p; });
+          localStorage.setItem('ram_admin_payments', JSON.stringify(Object.values(mergedMap)));
+        } catch(e) {}
+      }
+    } catch(e) { console.warn('Payment history Firebase load failed:', e); }
+  }
+
+  // Fallback: localStorage se
+  if (!payments.length) {
+    try {
+      const local = JSON.parse(localStorage.getItem('ram_admin_payments') || '[]');
+      payments = local.filter(p => p.userPhone === phone);
+    } catch(e) {}
+  }
+
+  // Sort: newest first
+  payments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+  renderCustomerPaymentHistory(payments);
+}
+
+function renderCustomerPaymentHistory(payments) {
+  const listEl = document.getElementById('custPaymentHistoryList');
+  if (!listEl) return;
+
+  if (!payments.length) {
+    listEl.innerHTML = `
+      <div style="text-align:center;padding:24px;background:var(--muted-bg);border-radius:12px;border:1.5px dashed var(--border);">
+        <i class="fas fa-receipt" style="font-size:28px;color:var(--muted);opacity:.4;display:block;margin-bottom:8px;"></i>
+        <div style="font-size:13px;color:var(--muted);">Abhi koi payment nahi ki. Plan lene ke baad yahan history aayegi.</div>
+      </div>`;
+    return;
+  }
+
+  const statusStyle = {
+    success:   { bg: '#f0fdf4', border: '#86efac', color: '#16a34a', icon: 'fa-circle-check',   label: 'Success' },
+    pending:   { bg: '#fffbeb', border: '#fde68a', color: '#b45309', icon: 'fa-clock',           label: 'Pending' },
+    failed:    { bg: '#fef2f2', border: '#fca5a5', color: '#dc2626', icon: 'fa-circle-xmark',    label: 'Failed' },
+    cancelled: { bg: '#f9fafb', border: '#e5e7eb', color: '#6b7280', icon: 'fa-ban',             label: 'Cancelled' },
+  };
+
+  listEl.innerHTML = payments.map(p => {
+    const s = statusStyle[p.status] || statusStyle.pending;
+    const date = p.createdAt ? new Date(p.createdAt).toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—';
+    const updDate = p.updatedAt && p.updatedAt !== p.createdAt ? new Date(p.updatedAt).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+    return `
+      <div style="background:${s.bg};border:1.5px solid ${s.border};border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div style="width:40px;height:40px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+          <i class="fas ${s.icon}" style="font-size:18px;color:${s.color};"></i>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:15px;font-weight:700;color:var(--foreground);">${p.planName || 'Plan'} <span style="font-size:12px;font-weight:600;color:${s.color};background:${s.bg};border:1px solid ${s.border};padding:2px 8px;border-radius:999px;margin-left:4px;">${s.label}</span></div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px;">${date}</div>
+          ${p.razorpay_payment_id ? `<div style="font-size:11px;color:var(--muted);margin-top:4px;font-family:monospace;">Payment ID: ${p.razorpay_payment_id}</div>` : ''}
+          ${updDate && p.status !== 'pending' ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;">Updated: ${updDate}</div>` : ''}
+          ${p.error ? `<div style="font-size:11px;color:#dc2626;margin-top:4px;"><i class="fas fa-triangle-exclamation"></i> ${p.error}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:20px;font-weight:800;color:var(--foreground);">₹${(p.amount||0).toLocaleString('en-IN')}</div>
+          <div style="font-size:11px;color:var(--muted);">${p.currency || 'INR'}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// HELP & SUPPORT SYSTEM
+// ══════════════════════════════════════
+
+// ── Website: Submit Help Enquiry (Contact Page) ──
+async function submitHelpEnquiry() {
+  const name = (document.getElementById('helpName')?.value || '').trim();
+  const phone = (document.getElementById('helpPhone')?.value || '').replace(/\D/g,'');
+  const email = (document.getElementById('helpEmail')?.value || '').trim();
+  const city = (document.getElementById('helpCity')?.value || '').trim();
+  const category = document.getElementById('helpCategory')?.value || '';
+  const message = (document.getElementById('helpMessage')?.value || '').trim();
+  const statusEl = document.getElementById('helpSubmitStatus');
+
+  if (!name) { showToast('Naam enter karo.'); return; }
+  if (!phone || phone.length < 10) { showToast('Valid phone number enter karo.'); return; }
+  if (!category) { showToast('Category select karo.'); return; }
+  if (!message) { showToast('Message/problem likhna zaroori hai.'); return; }
+
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#f59e0b'; statusEl.textContent = '⏳ Submitting...'; }
+
+  const enquiry = {
+    id: 'help_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
+    name, phone, email, city, category, message,
+    status: 'open',
+    submittedAt: new Date().toISOString(),
+    adminReply: '',
+    repliedAt: ''
+  };
+
+  // Firebase mein save karo
+  if (typeof window._fbSet === 'function') {
+    try {
+      await window._fbSet('siteData', enquiry.id, enquiry);
+    } catch(e) { console.warn('Firebase help save failed:', e); }
+  }
+  // localStorage backup
+  try {
+    const all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    all.unshift(enquiry);
+    localStorage.setItem('help_enquiries', JSON.stringify(all));
+  } catch(e) {}
+
+  // Admin ko notification
+  addNotification({ audience: 'admin', title: '🆘 New Help Enquiry', message: name + ' (' + phone + '): ' + category, page: 'help' });
+
+  if (statusEl) { statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Enquiry submit ho gayi! Hum jald aapse contact karenge.'; }
+  showToast('✅ Enquiry submit ho gayi! Admin jald jawab denge.');
+  // Form clear
+  ['helpName','helpPhone','helpEmail','helpCity','helpMessage'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  if (document.getElementById('helpCategory')) document.getElementById('helpCategory').value = '';
+  updateHelpNavBadge();
+}
+
+// ── Admin: Load Help Enquiries ──
+async function loadHelpEnquiries() {
+  const container = document.getElementById('helpEnquiriesContainer');
+  if (!container) return;
+  container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);"><i class="fas fa-spinner fa-spin"></i> Firebase se load ho raha hai...</div>';
+
+  let enquiries = [];
+
+  // Firebase se load karo
+  if (typeof window._fbGet === 'function') {
+    try {
+      // siteData se saari help_ keys fetch karo
+      const allSite = await window._fbGet('siteData', null);
+      if (allSite && typeof allSite === 'object') {
+        Object.values(allSite).forEach(v => {
+          if (v && typeof v === 'object' && v.id && v.id.startsWith('help_')) enquiries.push(v);
+        });
+      }
+    } catch(e) { console.warn('Firebase help load failed:', e); }
+  }
+
+  // localStorage fallback / merge
+  try {
+    const local = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    // Merge: Firebase wale already hai, local se jo Firebase me nahi aaye add karo
+    const fbIds = new Set(enquiries.map(e => e.id));
+    local.forEach(e => { if (!fbIds.has(e.id)) enquiries.push(e); });
+  } catch(e) {}
+
+  // Sort by newest first
+  enquiries.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+  // localStorage mein update karo
+  localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
+
+  renderHelpEnquiries(enquiries);
+  updateHelpNavBadge();
+}
+
+// ── Admin: Render Help Enquiries ──
+function renderHelpEnquiries(enquiriesParam) {
+  const container = document.getElementById('helpEnquiriesContainer');
+  if (!container) return;
+  const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
+  let enquiries = enquiriesParam || JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  if (filterStatus) enquiries = enquiries.filter(e => e.status === filterStatus);
+
+  if (!enquiries.length) {
+    container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted);"><i class="fas fa-headset" style="font-size:36px;margin-bottom:12px;display:block;opacity:.3;"></i><div style="font-size:15px;">Koi enquiry nahi mili.</div></div>';
+    return;
+  }
+
+  const statusColors = { open: '#ef4444', replied: '#f59e0b', closed: '#22c55e' };
+  const statusLabels = { open: 'Open', replied: 'Replied', closed: 'Closed' };
+
+  container.innerHTML = enquiries.map(e => `
+    <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.04);">
+      <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
+            <span style="font-size:15px;font-weight:700;color:var(--foreground);">${e.name}</span>
+            <span style="font-size:12px;color:var(--muted);">· ${e.phone}${e.city ? ' · ' + e.city : ''}</span>
+            <span style="padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${statusColors[e.status]||'#6b7280'}22;color:${statusColors[e.status]||'#6b7280'};">${statusLabels[e.status]||e.status}</span>
+          </div>
+          <div style="font-size:12px;color:var(--primary);font-weight:700;margin-bottom:6px;"><i class="fas fa-tag"></i> ${e.category}</div>
+          <div style="font-size:14px;color:var(--foreground);background:var(--muted-bg);padding:10px 12px;border-radius:8px;line-height:1.5;">${e.message}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;">${new Date(e.submittedAt).toLocaleString('en-IN')}</div>
+          ${e.adminReply ? `
+          <div style="margin-top:10px;padding:10px 12px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px;">
+            <div style="font-size:11px;font-weight:700;color:#16a34a;margin-bottom:4px;"><i class="fas fa-reply"></i> Admin Reply — ${e.repliedAt ? new Date(e.repliedAt).toLocaleString('en-IN') : ''}</div>
+            <div style="font-size:13px;color:#166534;">${e.adminReply}</div>
+          </div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;min-width:160px;">
+          ${e.status !== 'closed' ? `
+          <textarea id="replyBox_${e.id}" placeholder="Reply likhein..." style="width:100%;min-width:160px;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;resize:vertical;min-height:70px;">${e.adminReply||''}</textarea>
+          <button class="action-btn action-btn-primary action-btn-sm" onclick="sendHelpReply('${e.id}')"><i class="fas fa-paper-plane"></i> Reply Bhejo</button>
+          <button class="action-btn action-btn-success action-btn-sm" onclick="closeHelpEnquiry('${e.id}')"><i class="fas fa-check"></i> Close Karo</button>
+          ` : `<div style="font-size:12px;color:var(--muted);font-weight:600;"><i class="fas fa-circle-check" style="color:#22c55e;"></i> Closed</div>`}
+          <button class="action-btn action-btn-danger action-btn-sm" onclick="deleteHelpEnquiry('${e.id}')"><i class="fas fa-trash"></i> Delete</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Admin: Send Reply ──
+async function sendHelpReply(id) {
+  const replyEl = document.getElementById('replyBox_' + id);
+  const reply = (replyEl?.value || '').trim();
+  if (!reply) { showToast('Reply likhna zaroori hai.'); return; }
+
+  let enquiries = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  const idx = enquiries.findIndex(e => e.id === id);
+  if (idx === -1) { showToast('Enquiry nahi mili.'); return; }
+
+  enquiries[idx].adminReply = reply;
+  enquiries[idx].repliedAt = new Date().toISOString();
+  enquiries[idx].status = 'replied';
+  enquiries[idx].replyRead = false; // User ne abhi nahi padha
+  localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
+
+  // Firebase mein save karo (global help_enquiries)
+  if (typeof window._fbSet === 'function') {
+    try { await window._fbSet('siteData', id, enquiries[idx]); } catch(e) {}
+  }
+
+  // User ke personal my_help_<phone> key mein bhi update karo
+  const userPhone = enquiries[idx].phone;
+  if (userPhone) {
+    try {
+      const myList = JSON.parse(localStorage.getItem('my_help_' + userPhone) || '[]');
+      const midx = myList.findIndex(e => e.id === id);
+      if (midx !== -1) { myList[midx] = Object.assign({}, myList[midx], enquiries[idx]); }
+      else { myList.unshift(enquiries[idx]); }
+      localStorage.setItem('my_help_' + userPhone, JSON.stringify(myList));
+    } catch(e) {}
+  }
+
+  showToast('✅ Reply save ho gayi — user ko Firebase se turant milegi!');
+  renderHelpEnquiries(enquiries);
+  updateHelpNavBadge();
+}
+
+// ── Admin: Close Enquiry ──
+async function closeHelpEnquiry(id) {
+  let enquiries = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  const idx = enquiries.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  enquiries[idx].status = 'closed';
+  localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
+  if (typeof window._fbSet === 'function') {
+    try { await window._fbSet('siteData', id, enquiries[idx]); } catch(e) {}
+  }
+  showToast('Enquiry close ho gayi.');
+  renderHelpEnquiries(enquiries);
+  updateHelpNavBadge();
+}
+
+// ── Admin: Delete Enquiry ──
+async function deleteHelpEnquiry(id) {
+  if (!confirm('Yeh enquiry permanently delete ho jayegi. Confirm?')) return;
+  let enquiries = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  enquiries = enquiries.filter(e => e.id !== id);
+  localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
+  if (typeof window._fbGet === 'function' && typeof window._fbSet === 'function') {
+    try {
+      // Firebase se delete: null set karo
+      await window._fbSet('siteData', id, null);
+    } catch(e) {}
+  }
+  showToast('Enquiry delete ho gayi.');
+  renderHelpEnquiries(enquiries);
+  updateHelpNavBadge();
+}
+
+// ── Update Help badge in sidebar ──
+function updateHelpNavBadge() {
+  try {
+    const enquiries = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    const openCount = enquiries.filter(e => e.status === 'open').length;
+    const badge = document.getElementById('helpNavBadge');
+    if (badge) {
+      badge.textContent = openCount;
+      badge.style.display = openCount > 0 ? 'inline-flex' : 'none';
+    }
+  } catch(e) {}
+}
+
+// ══ USER DASHBOARD — HELP TAB FUNCTIONS ══
+
+// ── User: Submit from Dashboard Help Tab ──
+async function submitUserHelpFromDash() {
+  const isMaid = isMaidUser();
+  const phone = isMaid ? getLoggedMaidPhone() : getAuthToken();
+  const customers = readCustomers();
+  const cust = (!isMaid && phone) ? customers[phone] : null;
+  const regMaids = readRegisteredMaids();
+  const maidRec = (isMaid && phone) ? regMaids[phone] : null;
+  const name = cust ? cust.name : (maidRec ? maidRec.name : (phone || 'User'));
+
+  const category = document.getElementById('userHelpCategory')?.value || '';
+  const city = (document.getElementById('userHelpCity')?.value || '').trim();
+  const message = (document.getElementById('userHelpMessage')?.value || '').trim();
+  const statusEl = document.getElementById('userHelpSubmitStatus');
+
+  if (!category) { showToast('Category select karo.'); return; }
+  if (!message) { showToast('Problem likhna zaroori hai.'); return; }
+
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.style.color = '#f59e0b'; statusEl.textContent = '⏳ Submit ho rahi hai...'; }
+
+  const enquiry = {
+    id: 'help_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
+    name, phone, email: cust ? (cust.email||'') : '',
+    city: city || (cust ? (cust.district||'') : ''),
+    category, message,
+    userType: isMaid ? 'maid' : 'customer',
+    status: 'open',
+    submittedAt: new Date().toISOString(),
+    adminReply: '', repliedAt: '',
+    replyRead: false
+  };
+
+  // Firebase save
+  if (typeof window._fbSet === 'function') {
+    try { await window._fbSet('siteData', enquiry.id, enquiry); } catch(e) {}
+  }
+  // localStorage
+  try {
+    const all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    all.unshift(enquiry);
+    localStorage.setItem('help_enquiries', JSON.stringify(all));
+  } catch(e) {}
+  // User ki apni enquiry list
+  try {
+    const myList = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+    myList.unshift(enquiry);
+    localStorage.setItem('my_help_' + phone, JSON.stringify(myList));
+  } catch(e) {}
+
+  addNotification({ audience: 'admin', title: '🆘 New Help Enquiry', message: name + ' (' + phone + '): ' + category, page: 'help' });
+
+  if (statusEl) { statusEl.style.color = '#16a34a'; statusEl.textContent = '✅ Submit ho gayi! Admin jald jawab denge.'; }
+  if (document.getElementById('userHelpCategory')) document.getElementById('userHelpCategory').value = '';
+  if (document.getElementById('userHelpMessage')) document.getElementById('userHelpMessage').value = '';
+  updateHelpNavBadge();
+  loadUserHelpEnquiries();
+}
+
+// ── User: Load their own enquiries ──
+async function loadUserHelpEnquiries() {
+  const phone = isMaidUser() ? getLoggedMaidPhone() : getAuthToken();
+  if (!phone) return;
+  const listEl = document.getElementById('userHelpList');
+  if (!listEl) return;
+
+  let myEnquiries = [];
+
+  // Firebase se load
+  if (typeof window._fbGet === 'function') {
+    try {
+      const allSite = await window._fbGet('siteData', null);
+      if (allSite && typeof allSite === 'object') {
+        Object.values(allSite).forEach(v => {
+          if (v && v.id && v.id.startsWith('help_') && v.phone === phone) {
+            myEnquiries.push(v);
+          }
+        });
+      }
+    } catch(e) {}
+  }
+
+  // localStorage fallback/merge
+  try {
+    const local = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+    const fbIds = new Set(myEnquiries.map(e => e.id));
+    local.forEach(e => { if (!fbIds.has(e.id)) myEnquiries.push(e); });
+  } catch(e) {}
+
+  // Sort newest first
+  myEnquiries.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+
+  // Save locally
+  localStorage.setItem('my_help_' + phone, JSON.stringify(myEnquiries));
+
+  // Unread replies badge update
+  const unreadReplies = myEnquiries.filter(e => e.adminReply && !e.replyRead).length;
+  const badge = document.getElementById('helpUnreadBadge');
+  if (badge) { badge.textContent = unreadReplies; badge.style.display = unreadReplies > 0 ? 'inline' : 'none'; }
+
+  renderUserHelpEnquiries(myEnquiries, phone);
+}
+
+// ── User: Render their enquiries ──
+function renderUserHelpEnquiries(enquiries, phone) {
+  const listEl = document.getElementById('userHelpList');
+  if (!listEl) return;
+
+  if (!enquiries || !enquiries.length) {
+    listEl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;"><i class="fas fa-inbox" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3;"></i>Abhi koi enquiry nahi hai. Upar form se submit karo.</div>';
+    return;
+  }
+
+  const statusColors = { open: '#ef4444', replied: '#8b5cf6', closed: '#22c55e' };
+  const statusLabels = { open: '⏳ Awaiting Reply', replied: '✅ Admin ne Reply Di', closed: '🔒 Closed' };
+
+  listEl.innerHTML = enquiries.map(e => `
+    <div style="background:var(--card-bg);border:1.5px solid ${e.adminReply && !e.replyRead ? '#8b5cf6' : 'var(--border)'};border-radius:12px;padding:16px 18px;${e.adminReply && !e.replyRead ? 'box-shadow:0 0 0 3px #8b5cf622;' : ''}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <span style="font-size:12px;font-weight:700;color:var(--primary);"><i class="fas fa-tag"></i> ${e.category}</span>
+        <span style="padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700;background:${statusColors[e.status]||'#6b7280'}22;color:${statusColors[e.status]||'#6b7280'};">${statusLabels[e.status]||e.status}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);">${new Date(e.submittedAt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
+      </div>
+      <div style="font-size:13px;color:var(--foreground);background:var(--muted-bg);padding:10px 12px;border-radius:8px;line-height:1.5;margin-bottom:8px;">${e.message}</div>
+      ${e.adminReply ? `
+        <div style="background:${e.replyRead ? '#f0fdf4' : '#faf5ff'};border:1.5px solid ${e.replyRead ? '#86efac' : '#c4b5fd'};border-radius:8px;padding:12px 14px;">
+          <div style="font-size:11px;font-weight:700;color:${e.replyRead ? '#16a34a' : '#7c3aed'};margin-bottom:6px;">
+            <i class="fas fa-reply"></i> Admin ka Jawab ${e.repliedAt ? '— ' + new Date(e.repliedAt).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : ''}
+            ${!e.replyRead ? '<span style="margin-left:6px;background:#7c3aed;color:#fff;font-size:9px;padding:2px 6px;border-radius:999px;">NEW</span>' : ''}
+          </div>
+          <div style="font-size:14px;color:var(--foreground);line-height:1.5;">${e.adminReply}</div>
+          ${!e.replyRead ? `<button onclick="markHelpReplyRead('${e.id}','${phone}')" style="margin-top:8px;background:none;border:1.5px solid #c4b5fd;color:#7c3aed;font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer;"><i class="fas fa-check"></i> Read kar liya</button>` : ''}
+        </div>
+      ` : '<div style="font-size:12px;color:var(--muted);font-style:italic;">Admin jald reply karenge...</div>'}
+    </div>
+  `).join('');
+}
+
+// ── Mark reply as read ──
+async function markHelpReplyRead(id, phone) {
+  try {
+    const myList = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+    const idx = myList.findIndex(e => e.id === id);
+    if (idx !== -1) { myList[idx].replyRead = true; localStorage.setItem('my_help_' + phone, JSON.stringify(myList)); }
+    // Firebase update
+    const allHelp = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    const aidx = allHelp.findIndex(e => e.id === id);
+    if (aidx !== -1) { allHelp[aidx].replyRead = true; localStorage.setItem('help_enquiries', JSON.stringify(allHelp)); }
+    if (typeof window._fbSet === 'function' && aidx !== -1) {
+      await window._fbSet('siteData', id, allHelp[aidx]);
+    }
+  } catch(e) {}
+  loadUserHelpEnquiries();
+}
+
+// ── Realtime sync: Firebase se naya reply aaya to user ko turant dikhao ──
+let _helpRealtimeTimer = null;
+function startUserHelpRealtimeSync() {
+  if (_helpRealtimeTimer) clearInterval(_helpRealtimeTimer);
+  // Har 15 sec mein Firebase se check karo
+  _helpRealtimeTimer = setInterval(async () => {
+    const helpTab = document.getElementById('userHelpList');
+    if (!helpTab) { clearInterval(_helpRealtimeTimer); return; } // Tab band ho gayi
+    const phone = isMaidUser() ? getLoggedMaidPhone() : getAuthToken();
+    if (!phone) return;
+    if (typeof window._fbGet !== 'function') return;
+    try {
+      const allSite = await window._fbGet('siteData', null);
+      if (!allSite) return;
+      const myList = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+      let changed = false;
+      Object.values(allSite).forEach(v => {
+        if (!v || !v.id || !v.id.startsWith('help_') || v.phone !== phone) return;
+        const idx = myList.findIndex(e => e.id === v.id);
+        if (idx === -1) { myList.unshift(v); changed = true; }
+        else if (v.adminReply && myList[idx].adminReply !== v.adminReply) {
+          myList[idx] = Object.assign({}, myList[idx], v, { replyRead: false });
+          changed = true;
+        }
+      });
+      if (changed) {
+        myList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+        localStorage.setItem('my_help_' + phone, JSON.stringify(myList));
+        renderUserHelpEnquiries(myList, phone);
+        // Notification bhi do
+        const newReplies = myList.filter(e => e.adminReply && !e.replyRead).length;
+        if (newReplies > 0) {
+          const badge = document.getElementById('helpUnreadBadge');
+          if (badge) { badge.textContent = newReplies; badge.style.display = 'inline'; }
+          showToast('💬 Admin ne aapki enquiry ka jawab de diya! Help tab mein dekho.');
+        }
+      }
+    } catch(e) {}
+  }, 15000);
 }
 
 // ══════════════════════════════════════
@@ -22124,6 +23149,66 @@ function setupRealtimeSync() {
     if (typeof window.renderMaids === 'function') { try { window.renderMaids(); } catch(e) {} }
     if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
   });
+
+  // ── Maid Aadhar status — real-time listener (admin approve/reject turant dikhega) ──
+  // Jab bhi maid logged in ho, uske aadhar document ka live listener start karo.
+  // Agar admin status change kare toh bina logout-login ke turant update hoga.
+  (function _startMaidAadharListener() {
+    let _currentAadharUnsub = null;
+    let _watchedPhone = null;
+
+    function startAadharListener(phone) {
+      if (!phone || phone === _watchedPhone) return;
+      // Purana listener band karo
+      if (_currentAadharUnsub) { try { _currentAadharUnsub(); } catch(e) {} }
+      _watchedPhone = phone;
+      try {
+        _currentAadharUnsub = onSnapshot(doc(_db, 'siteData', 'aadhar_' + phone), aSnap => {
+          if (!aSnap.exists()) return;
+          const newAadhar = aSnap.data();
+          if (!newAadhar || !newAadhar.aadharNum) return;
+          const prevRaw = localStorage.getItem('aadhar_' + phone);
+          let prevStatus = 'none';
+          try { prevStatus = (JSON.parse(prevRaw) || {}).status || 'none'; } catch(e) {}
+          // localStorage update karo
+          localStorage.setItem('aadhar_' + phone, JSON.stringify(newAadhar));
+          // Dashboard refresh karo taaki status banner update ho
+          if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
+          // Popup logic re-check karo (agar verified/pending ho gayi toh close karo, rejected toh open karo)
+          if (!window._maidVerifyBusy && typeof maybeShowMaidVerifyPopup === 'function') {
+            maybeShowMaidVerifyPopup();
+          }
+          // Status change toast — admin ne approve ya reject kiya
+          const newStatus = newAadhar.status || 'none';
+          if (newStatus !== prevStatus) {
+            if (newStatus === 'verified') {
+              if (typeof showToast === 'function') showToast('✅ Aapka Aadhar admin ne verify kar diya! Profile live ho gayi hai.');
+            } else if (newStatus === 'rejected') {
+              if (typeof showToast === 'function') showToast('❌ Aapka Aadhar reject hua hai. Please My Profile mein dobara upload karein.');
+            }
+          }
+        });
+      } catch(e) { console.warn('Aadhar listener start failed:', e); }
+    }
+
+    function stopAadharListener() {
+      if (_currentAadharUnsub) { try { _currentAadharUnsub(); } catch(e) {} }
+      _currentAadharUnsub = null;
+      _watchedPhone = null;
+    }
+
+    // Expose so login/logout can control it
+    window._startMaidAadharListener = startAadharListener;
+    window._stopMaidAadharListener = stopAadharListener;
+
+    // Agar page load pe already maid logged in hai toh turant start karo
+    setTimeout(function() {
+      if (typeof isMaidUser === 'function' && isMaidUser()) {
+        const p = typeof getLoggedMaidPhone === 'function' ? getLoggedMaidPhone() : null;
+        if (p) startAadharListener(p);
+      }
+    }, 800);
+  })();
 
   // ══════════════════════════════════════════════════════════════════════
   // 🔥 MAID REQUEST INBOX — Real-time Firebase sync
