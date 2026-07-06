@@ -13975,9 +13975,31 @@ function buyPlan(planKey) {
   document.getElementById('payModalPrice').textContent = '₹' + plan.price;
   document.getElementById('payModalRequests').textContent = (plan.requests >= 9999 ? 'Unlimited' : plan.requests) + ' requests · valid for ' + plan.days + ' days';
   document.getElementById('paymentGatewayModal').style.display = 'flex';
+  // Order ko background mein prefetch karo taaki Pay button click pe ready ho
+  _prefetchRazorpayOrder();
 }
 
-async function initiateRazorpayPayment() {
+// Pending server order — "Pay" button click se pehle create hoga
+let _pendingServerOrder = null;
+
+async function _prefetchRazorpayOrder() {
+  if (!pendingPlanKey) return;
+  const plan = getWebsitePlans()[pendingPlanKey] || PLANS[pendingPlanKey];
+  if (!plan || !plan.price) return;
+  try {
+    const resp = await fetch('/.netlify/functions/razorpay-create-order', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ planKey: pendingPlanKey })
+    });
+    _pendingServerOrder = await resp.json();
+    if (!resp.ok) { _pendingServerOrder = null; }
+  } catch(e) {
+    _pendingServerOrder = null;
+  }
+}
+
+function initiateRazorpayPayment() {
   if (!pendingPlanKey) return;
   const plan = getWebsitePlans()[pendingPlanKey] || PLANS[pendingPlanKey];
   // plan null-guard — agar plan undefined ho to crash se bachao
@@ -13988,33 +14010,23 @@ async function initiateRazorpayPayment() {
   var userName = localStorage.getItem('userName') || 'Customer';
   var userEmail = localStorage.getItem('userEmail') || '';
 
-  // 🔥 Checkout khulne se PEHLE hi ek 'pending' record Firebase mein save karo —
-  // taaki agar user payment chhod de / bina complete kiye band kar de, tab bhi
-  // admin panel mein woh attempt dikhe (sirf success hone par hi nahi).
+  // 🔥 Checkout khulne se PEHLE hi ek 'pending' record Firebase mein save karo
   pendingPaymentLogId = logPaymentPending(pendingPlanKey, plan, userPhone, userName, userEmail);
 
-  // ✅ FIX #1: Order SERVER se banao — Netlify Function call
-  let serverOrder;
-  try {
-    showToast('⏳ Order create ho raha hai...');
-    const resp = await fetch('/.netlify/functions/razorpay-create-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planKey: pendingPlanKey })
-    });
-    serverOrder = await resp.json();
-    if (!resp.ok) throw new Error(serverOrder.error || 'Order failed');
-  } catch(e) {
-    updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Order create failed: ' + (e.message || e) });
+  // ✅ FIX #1: Server order use karo — agar prefetch nahi hua to error dikhao
+  if (!_pendingServerOrder || !_pendingServerOrder.order_id) {
+    updatePaymentStatus(pendingPaymentLogId, 'failed', { error: 'Order not ready' });
     showToast('⚠️ Order create nahi hua. Dobara try karein.');
-    console.error('razorpayCreateOrder error:', e);
+    _pendingServerOrder = null;
     return;
   }
+  const serverOrder = _pendingServerOrder;
+  _pendingServerOrder = null; // use karke clear karo
 
   const options = {
     key: RAZORPAY_KEY_ID,
-    order_id: serverOrder.order_id,   // ✅ Server-created order_id — amount tamper nahi ho sakta
-    amount: serverOrder.amount,        // Server se aaya — client se nahi
+    order_id: serverOrder.order_id,
+    amount: serverOrder.amount,
     currency: serverOrder.currency,
     name: 'Rent a Maid India',
     description: plan.name + ' Plan — ' + (plan.requests >= 9999 ? 'Unlimited' : plan.requests) + ' Requests · ' + plan.days + ' Days',
