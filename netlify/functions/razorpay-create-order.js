@@ -1,12 +1,12 @@
 const https = require('https');
 
-const RAZORPAY_KEY_ID = 'rzp_live_T7DPSeu1tinNaY';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 const PLANS = {
-  basic:    { price: 199 },
-  standard: { price: 499 },
-  premium:  { price: 999 },
+  basic:    { price: 100   },  // ₹1
+  standard: { price: 4900  },  // ₹49
+  premium:  { price: 9900  },  // ₹99
 };
 
 exports.handler = async (event) => {
@@ -25,7 +25,8 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid plan' }) };
   }
 
-  const amountPaise = PLANS[planKey].price * 100;
+  const amountPaise = PLANS[planKey].price;
+
   const orderData = JSON.stringify({
     amount: amountPaise,
     currency: 'INR',
@@ -62,6 +63,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         order_id: order.id,
         amount: order.amount,
