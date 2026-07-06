@@ -13503,18 +13503,19 @@ function submitMaidLogin() {
 
   // Firebase se latest maid data sync karo
   (async () => {
-    // Agar Firebase module abhi load ho raha hai toh max 8 seconds wait karo
+    // Agar Firebase module abhi load ho raha hai toh max 12 seconds wait karo
     if (typeof window._fbGet !== 'function') {
       await new Promise(resolve => {
         const start = Date.now();
         const check = setInterval(() => {
-          if (typeof window._fbGet === 'function' || Date.now() - start > 8000) {
+          if (typeof window._fbGet === 'function' || Date.now() - start > 12000) {
             clearInterval(check);
             resolve();
           }
         }, 100);
       });
     }
+    let firebaseSynced = false;
     if (typeof window._fbGet === 'function') {
       try {
         const fbMaids = await window._fbGet('adminData', 'ram_registered_maids');
@@ -13528,17 +13529,23 @@ function submitMaidLogin() {
             if (!localRec) {
               merged[k] = fbRec;
             } else {
+              // Firebase ke fields authoritative hain (especially passwordHash)
               merged[k] = Object.assign({}, localRec, fbRec);
             }
           });
           localStorage.setItem('ram_registered_maids', JSON.stringify(merged));
+          firebaseSynced = true;
         }
       } catch(e) { console.warn('Firebase maid sync failed:', e); }
     }
 
     const maids = readRegisteredMaids();
     if (!maids[phone]) {
-      phoneErr.textContent = 'Is number par koi maid account nahi hai. Pehle register karein.';
+      if (!firebaseSynced) {
+        phoneErr.textContent = 'Internet connection slow hai. Thoda wait karke dobara try karein.';
+      } else {
+        phoneErr.textContent = 'Is number par koi maid account nahi hai. Pehle register karein.';
+      }
       phoneErr.style.display = 'block';
       if (submitBtn) submitBtn._processing = false;
       return;
@@ -13552,7 +13559,14 @@ function submitMaidLogin() {
     // Hash compare — normal + legacy plain text fallback
     const storedHash = maids[phone].passwordHash;
     const passHash = simpleHash(pass);
-    const passwordMatch = storedHash && (
+    // Agar passwordHash hi nahi hai account mein (incomplete registration)
+    if (!storedHash) {
+      passErr.textContent = 'Account incomplete hai. Please dobara register karein ya admin se contact karein.';
+      passErr.style.display = 'block';
+      if (submitBtn) submitBtn._processing = false;
+      return;
+    }
+    const passwordMatch = (
       storedHash === passHash ||
       storedHash === pass
     );
@@ -13595,7 +13609,7 @@ function writeRegisteredMaids(data) {
     }
     safeData[k] = rec;
   });
-  localStorage.setItem('ram_registered_maids', JSON.stringify(data));
+  localStorage.setItem('ram_registered_maids', JSON.stringify(safeData));
   localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
   // _fbSetWhenReady: module load se pehle bhi safe hai — queue karta hai
   return (typeof window._fbSetWhenReady === "function")
@@ -13627,7 +13641,9 @@ async function submitReg() {
   
   if (phone && name) {
     const maids = readRegisteredMaids();
-    maids[phone] = { name, phone };
+    // Existing data preserve karo — sirf naye fields add/update karo
+    const existing = maids[phone] || {};
+    maids[phone] = Object.assign({}, existing, { name, phone });
     // Save password hash
     const regPass = document.getElementById('regPassword').value;
     if (regPass && regPass.length >= 8) {
