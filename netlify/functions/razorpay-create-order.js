@@ -3,32 +3,26 @@ const https = require('https');
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
-const PLANS = {
-  basic:    { price: 100   },  // ₹1
-  standard: { price: 4900  },  // ₹49
-  premium:  { price: 9900  },  // ₹99
-};
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
-  let planKey;
+  let body;
   try {
-    planKey = JSON.parse(event.body).planKey;
+    body = JSON.parse(event.body);
   } catch {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid request' }) };
   }
 
-  if (!planKey || !PLANS[planKey]) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid plan' }) };
+  const { planKey, amount } = body;
+
+  if (!planKey || !amount || amount < 100) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid plan or amount' }) };
   }
 
-  const amountPaise = PLANS[planKey].price;
-
   const orderData = JSON.stringify({
-    amount: amountPaise,
+    amount: amount,
     currency: 'INR',
     receipt: 'rcpt_' + Date.now(),
     notes: { plan_key: planKey }
