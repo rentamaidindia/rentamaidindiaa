@@ -2177,6 +2177,9 @@ tr:hover td{background:#f8fafc;}
 }
 </script>
 
+<!-- Razorpay Checkout SDK — permanently loaded so it's ready before the customer's first click -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
 </head>
 <body>
 
@@ -10535,47 +10538,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="form-group-v"><label>PIN Code *</label><input type="text" id="regPinCode" placeholder="560001" maxlength="6" /></div>
             <div class="form-group-v full"><label>Current Full Address *</label><textarea id="regCurrentAddress" placeholder="House No., Street, Area..." style="min-height:80px;"></textarea></div>
-            <div class="form-group-v"><label>Native State *</label>
-              <select id="regNativeState" class="js-state-select" onchange="updateDistrictDropdown('regNativeState','regNativeDistrict',null)"><option value="">Select State</option><option value="Andhra Pradesh">Andhra Pradesh</option>
-<option value="Arunachal Pradesh">Arunachal Pradesh</option>
-<option value="Assam">Assam</option>
-<option value="Bihar">Bihar</option>
-<option value="Chhattisgarh">Chhattisgarh</option>
-<option value="Goa">Goa</option>
-<option value="Gujarat">Gujarat</option>
-<option value="Haryana">Haryana</option>
-<option value="Himachal Pradesh">Himachal Pradesh</option>
-<option value="Jharkhand">Jharkhand</option>
-<option value="Karnataka">Karnataka</option>
-<option value="Kerala">Kerala</option>
-<option value="Madhya Pradesh">Madhya Pradesh</option>
-<option value="Maharashtra">Maharashtra</option>
-<option value="Manipur">Manipur</option>
-<option value="Meghalaya">Meghalaya</option>
-<option value="Mizoram">Mizoram</option>
-<option value="Nagaland">Nagaland</option>
-<option value="Odisha">Odisha</option>
-<option value="Punjab">Punjab</option>
-<option value="Rajasthan">Rajasthan</option>
-<option value="Sikkim">Sikkim</option>
-<option value="Tamil Nadu">Tamil Nadu</option>
-<option value="Telangana">Telangana</option>
-<option value="Tripura">Tripura</option>
-<option value="Uttar Pradesh">Uttar Pradesh</option>
-<option value="Uttarakhand">Uttarakhand</option>
-<option value="West Bengal">West Bengal</option>
-<option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-<option value="Chandigarh">Chandigarh</option>
-<option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-<option value="Delhi">Delhi</option>
-<option value="Jammu and Kashmir">Jammu and Kashmir</option>
-<option value="Ladakh">Ladakh</option>
-<option value="Lakshadweep">Lakshadweep</option>
-<option value="Puducherry">Puducherry</option></select>
-            </div>
-            <div class="form-group-v"><label>Native District *</label>
-              <select id="regNativeDistrict"><option value="">Select District</option></select>
-            </div>
+
           </div>
           <div id="regStep2Error" style="display:none;color:#dc2626;font-size:13px;font-weight:600;margin-top:4px;margin-bottom:12px;"></div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;">
@@ -10602,9 +10565,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="form-row">
             <div class="form-group-v"><label>Years of Experience *</label><input type="number" id="regExperience" placeholder="3" min="0" /></div>
             <div class="form-group-v"><label>Expected Salary (₹/month) *</label><input type="number" id="regSalary" placeholder="8000" /></div>
-            <div class="form-group-v"><label>Work Type *</label>
-              <select id="regWorkType"><option>Live-Out</option><option>Live-In</option><option>Both</option></select>
-            </div>
+
             <div class="form-group-v"><label>Work Shift *</label>
               <select id="regWorkShift"><option>Morning</option><option>Evening</option><option>Full Day</option><option>Night</option></select>
             </div>
@@ -13094,6 +13055,7 @@ async function submitLogin() {
         if (typeof window._fbGet === 'function') {
           const subKey = 'userSubscription_' + phone;
           const reqKey = 'sentRequests_' + phone;
+          const contactedKeyLogin = 'contactedMaids_' + phone;
           // Subscription Firebase se load karo
           const fbSub = await window._fbGet('siteData', subKey);
           if (fbSub && fbSub.planKey && fbSub.expiry) {
@@ -13115,6 +13077,14 @@ async function submitLogin() {
               if (!merged.find(lr => lr.id === r.id)) merged.push(r);
             });
             localStorage.setItem(reqKey, JSON.stringify(merged));
+          }
+          // FIX: contactedMaids (lifetime "already contacted" list) bhi sync karo
+          // taaki dusre device/browser pe bhi already-contacted maids free dikhein.
+          const fbContacted = await window._fbGet('siteData', contactedKeyLogin);
+          if (Array.isArray(fbContacted)) {
+            const localContacted = JSON.parse(localStorage.getItem(contactedKeyLogin) || '[]');
+            const mergedContacted = Array.from(new Set([...localContacted, ...fbContacted]));
+            localStorage.setItem(contactedKeyLogin, JSON.stringify(mergedContacted));
           }
           refreshAllCreditBars();
         }
@@ -13421,16 +13391,15 @@ async function regValidateStep(step) {
     const area = document.getElementById('regCurrentArea').value;
     const pin = document.getElementById('regPinCode').value.trim();
     const address = document.getElementById('regCurrentAddress').value.trim();
-    const nativeState = document.getElementById('regNativeState').value;
-    const nativeDistrict = document.getElementById('regNativeDistrict').value;
+    const nativeState = document.getElementById('regNativeState')?.value || '';
+    const nativeDistrict = document.getElementById('regNativeDistrict')?.value || '';
 
     if (!state) return 'Please select your current state.';
     if (!district) return 'Please select your current district.';
     if (!area) return 'Please select your area / locality.';
     if (!/^\d{6}$/.test(pin)) return 'Please enter a valid 6-digit PIN code.';
     if (!address) return 'Please enter your current full address.';
-    if (!nativeState) return 'Please select your native state.';
-    if (!nativeDistrict) return 'Please select your native district.';
+
     return null;
   }
   if (step === 3) {
@@ -13577,30 +13546,62 @@ function submitMaidLogin() {
     // decided after she submits photo + Aadhar (mandatory popup) and admin
     // reviews it.
 
-    // Hash compare — normal + legacy plain text fallback
+    // Hash compare — customer wala same pattern (no incomplete block)
     const storedHash = maids[phone].passwordHash;
     const passHash = simpleHash(pass);
-    // Agar passwordHash hi nahi hai account mein (incomplete registration)
-    if (!storedHash) {
-      passErr.textContent = 'Account incomplete hai. Please dobara register karein ya admin se contact karein.';
-      passErr.style.display = 'block';
-      if (submitBtn) submitBtn._processing = false;
-      return;
+
+    // Agar passwordHash nahi hai — Firebase se check karo (2 jagah: full list + alag doc)
+    let finalStoredHash = storedHash;
+    if (!finalStoredHash) {
+      try {
+        if (typeof window._fbGet === 'function') {
+          // Pehle poori list se try karo
+          const freshMaids = await window._fbGet('adminData', 'ram_registered_maids');
+          if (freshMaids && freshMaids[phone] && freshMaids[phone].passwordHash) {
+            finalStoredHash = freshMaids[phone].passwordHash;
+            maids[phone] = Object.assign({}, maids[phone], freshMaids[phone]);
+            localStorage.setItem('ram_registered_maids', JSON.stringify(Object.assign(readRegisteredMaids(), { [phone]: maids[phone] })));
+          }
+          // Agar abhi bhi nahi mila — alag maid_phone document check karo (backup)
+          if (!finalStoredHash) {
+            const maidDoc = await window._fbGet('adminData', 'maid_' + phone);
+            if (maidDoc && maidDoc.passwordHash) {
+              finalStoredHash = maidDoc.passwordHash;
+              maids[phone] = Object.assign({}, maids[phone], maidDoc);
+              localStorage.setItem('ram_registered_maids', JSON.stringify(Object.assign(readRegisteredMaids(), { [phone]: maids[phone] })));
+            }
+          }
+        }
+      } catch(e) {}
     }
-    const passwordMatch = (
-      storedHash === passHash ||
-      storedHash === pass
-    );
-    if (!passwordMatch) {
-      passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
-      passErr.style.display = 'block';
-      if (submitBtn) submitBtn._processing = false;
-      return;
-    }
-    // Legacy plain text upgrade
-    if (storedHash === pass) {
+
+    // Fresh Firebase check ke baad bhi nahi mila — pehli baar password set karo
+    if (!finalStoredHash) {
       maids[phone].passwordHash = passHash;
-      writeRegisteredMaids(maids);
+      try { await writeRegisteredMaids(maids); } catch(e) { writeRegisteredMaids(maids); }
+      // Alag document mein bhi seedha save karo (backup — 1MB limit se safe)
+      if (typeof window._fbSet === "function") {
+        const rec = Object.assign({}, maids[phone]);
+        if (rec.photo && rec.photo.startsWith("data:")) rec.photo = "";
+        window._fbSet("adminData", "maid_" + phone, rec).catch(function() {});
+      }
+      // Login continue karo — password set ho gaya
+    } else {
+      const passwordMatch = (
+        finalStoredHash === passHash ||   // Normal hashed match
+        finalStoredHash === pass          // Legacy plain text fallback
+      );
+      if (!passwordMatch) {
+        passErr.textContent = 'Galat password. Dobara try karein ya Forgot Password use karein.';
+        passErr.style.display = 'block';
+        if (submitBtn) submitBtn._processing = false;
+        return;
+      }
+      // Legacy plain text upgrade
+      if (finalStoredHash === pass) {
+        maids[phone].passwordHash = passHash;
+        writeRegisteredMaids(maids);
+      }
     }
 
     // Success
@@ -13620,7 +13621,7 @@ function submitMaidLogin() {
         if (typeof window._fbGet === 'function') {
           // Sync aadhar data
           const fbAadhar = await window._fbGet('siteData', 'aadhar_' + phone);
-          if (fbAadhar && fbAadhar.aadharNum) {
+          if (fbAadhar && fbAadhar.frontUrl) {
             localStorage.setItem('aadhar_' + phone, JSON.stringify(fbAadhar));
           }
           // Sync ram_admin_maids (photo check ke liye)
@@ -13654,10 +13655,23 @@ function writeRegisteredMaids(data) {
   });
   localStorage.setItem('ram_registered_maids', JSON.stringify(safeData));
   localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
-  // _fbSetWhenReady: module load se pehle bhi safe hai — queue karta hai
-  return (typeof window._fbSetWhenReady === "function")
+
+  // 1) Poora collection ek document mein (backward compat — admin panel, listeners)
+  const fullSave = (typeof window._fbSetWhenReady === "function")
     ? window._fbSetWhenReady("adminData", "ram_registered_maids", safeData)
     : (typeof window._fbSet === "function" ? window._fbSet("adminData", "ram_registered_maids", safeData) : Promise.resolve());
+
+  // 2) Har maid ka ALAG document — taaki 1MB Firestore limit se passwordHash kabhi na chhute
+  //    Jab poora ram_registered_maids document bada ho ke fail ho, yeh backup kaam aata hai
+  if (typeof window._fbSet === "function") {
+    Object.keys(safeData).forEach(phone => {
+      const rec = Object.assign({}, safeData[phone]);
+      if (rec.photo && rec.photo.startsWith("data:")) rec.photo = "";
+      window._fbSet("adminData", "maid_" + phone, rec).catch(function() {});
+    });
+  }
+
+  return fullSave;
 }
 
 async function submitReg() {
@@ -13675,35 +13689,102 @@ async function submitReg() {
   // Save maid data so they can login later
   const phone = document.getElementById('regPhone').value.replace(/\D/g, '');
   const name = document.getElementById('regFullName').value.trim();
+  const age = document.getElementById('regAge')?.value || '';
+  const gender = document.getElementById('regGender')?.value || '';
+  const altPhone = document.getElementById('regAltPhone')?.value.replace(/\D/g, '') || '';
+  const email = document.getElementById('regEmail')?.value.trim() || '';
   const state = document.getElementById('regCurrentState')?.value || '';
   const district = document.getElementById('regCurrentDistrict')?.value || '';
+  const area = document.getElementById('regCurrentArea')?.value || '';
+  const pinCode = document.getElementById('regPinCode')?.value.trim() || '';
+  const address = document.getElementById('regCurrentAddress')?.value.trim() || '';
   const experience = document.getElementById('regExperience')?.value || '0';
   const salary = document.getElementById('regSalary')?.value || '';
+  const workShift = document.getElementById('regWorkShift')?.value || '';
   const workType = document.getElementById('regWorkType')?.value || 'Live-Out';
   const services = Array.from(document.querySelectorAll('.reg-service-cb:checked')).map(c => c.parentElement.textContent.trim());
-  
+
   if (phone && name) {
+    // ── STEP 1: Firebase module load hone ka wait karo (max 15 seconds) ──
+    // Iske bina _fbSet undefined hota hai aur data sirf localStorage mein
+    // rehta hai — naye device par login karne par maid nahi milti.
+    if (typeof window._fbSet !== 'function') {
+      if (submitBtn) submitBtn.textContent = 'Connecting...';
+      await new Promise(resolve => {
+        const start = Date.now();
+        const poll = setInterval(() => {
+          if (typeof window._fbSet === 'function' || Date.now() - start > 15000) {
+            clearInterval(poll); resolve();
+          }
+        }, 100);
+      });
+    }
+
     const maids = readRegisteredMaids();
-    // Existing data preserve karo — sirf naye fields add/update karo
     const existing = maids[phone] || {};
-    // Save password hash
     const regPass = document.getElementById('regPassword').value;
     const passHash = (regPass && regPass.length >= 8) ? simpleHash(regPass) : (existing.passwordHash || '');
 
-    // Poora registration data save karo — kisi bhi device se login ke baad data mile
-    maids[phone] = Object.assign({}, existing, {
+    // NOTE: Photo yahan registration form mein nahi maangi jaati — maid apna
+    // photo pehli baar LOGIN ke baad wale mandatory "Verify" popup mein
+    // (submitMaidVerifyPopup) upload karti hai, jo already Firebase mein
+    // turant save karta hai.
+    if (submitBtn) submitBtn.textContent = 'Saving...';
+
+    // ── STEP 2: Poora registration record banao ──
+    const maidRecord = Object.assign({}, existing, {
       name, phone,
+      age: age ? parseInt(age) || age : (existing.age || ''),
+      gender: gender || (existing.gender || ''),
+      altPhone: altPhone || (existing.altPhone || ''),
+      email: email || (existing.email || ''),
       state, district,
+      area: area || (existing.area || ''),
+      pinCode: pinCode || (existing.pinCode || ''),
+      address: address || (existing.address || ''),
       experience: parseInt(experience) || 0,
       salary: salary ? '₹' + salary + '/month' : (existing.salary || ''),
+      workShift: workShift || (existing.workShift || ''),
       workType: workType || (existing.workType || 'Live-Out'),
       services: services.length ? services : (existing.services || ['General Help']),
       passwordHash: passHash,
       registeredAt: existing.registeredAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
-    // Firebase pe await karo taaki login ke time fresh data mile
-    try { await writeRegisteredMaids(maids); } catch(e) { writeRegisteredMaids(maids); }
+
+    maids[phone] = maidRecord;
+
+    // ── STEP 3: localStorage mein turant save karo (offline fallback) ──
+    localStorage.setItem('ram_registered_maids', JSON.stringify(maids));
+    localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
+
+    // ── STEP 4: Firebase mein directly await karo — DONO jagah save karo ──
+    // (a) Per-maid ALAG document — yeh HAMESHA chhota hota hai (1MB limit se safe),
+    //     isliye yeh primary reliable save hai. Naye device par login ke waqt
+    //     submitMaidLogin() pehle yehi check karta hai.
+    // (b) Poora ram_registered_maids collection — admin panel ke liye (backward compat)
+    if (typeof window._fbSet === 'function') {
+      if (submitBtn) submitBtn.textContent = 'Syncing to cloud...';
+      const safeRecord = Object.assign({}, maidRecord);
+      if (safeRecord.photo && safeRecord.photo.startsWith('data:')) safeRecord.photo = '';
+      try {
+        // (a) Per-maid doc — AWAIT karo, yahi most important hai
+        await window._fbSet('adminData', 'maid_' + phone, safeRecord);
+      } catch(e) { console.warn('Per-maid Firebase save failed:', e); }
+      try {
+        // (b) Full collection — fire-and-forget (large doc, may time out on slow net)
+        const safeAll = {};
+        Object.keys(maids).forEach(k => {
+          const r = Object.assign({}, maids[k]);
+          if (r.photo && r.photo.startsWith('data:')) r.photo = '';
+          safeAll[k] = r;
+        });
+        window._fbSet('adminData', 'ram_registered_maids', safeAll).catch(e => console.warn('Full maids Firebase save failed:', e));
+      } catch(e) {}
+    } else {
+      // Firebase load nahi hua — _fbSetWhenReady queue se baad mein try hoga
+      writeRegisteredMaids(maids);
+    }
 
     // Also add to admin's maids list as UNVERIFIED so admin sees them in pending queue
     try {
@@ -13718,33 +13799,17 @@ async function submitReg() {
       if (!alreadyExists) {
         const maxId = adminMaids.reduce((mx, m) => Math.max(mx, m.id||0), 0);
 
-        // Photo upload PEHLE karo — base64 Firestore mein fail hoti hai (1MB limit)
-        const regPhotoFile = document.getElementById('regPhoto') ? document.getElementById('regPhoto').files[0] : null;
-        let photoUrl = '';
-        if (regPhotoFile && typeof window._fbUploadPhoto === 'function') {
-          try {
-            if (submitBtn) submitBtn.textContent = 'Uploading photo...';
-            photoUrl = await window._fbUploadPhoto(regPhotoFile, 'maid-photos/' + phone + '_' + Date.now() + '.jpg') || '';
-          } catch(e) { photoUrl = ''; }
-        }
-        // Fallback: agar upload fail ho to preview base64 use karo (truncated to avoid Firestore limit)
-        if (!photoUrl) {
-          const regPhotoEl = document.getElementById('regPhotoPreview');
-          const regPhotoImg = regPhotoEl ? regPhotoEl.querySelector('img') : null;
-          photoUrl = regPhotoImg ? regPhotoImg.src : '';
-        }
-
-        if (submitBtn) submitBtn.textContent = 'Saving...';
-
         const newMaid = {
           id: maxId + 1,
           name, phone,
-          city: district, state,
+          age: age ? parseInt(age) || age : '',
+          gender, altPhone, email,
+          city: district, state, area, pinCode, address,
           experience: parseInt(experience)||0,
           salary: salary ? '₹' + salary + '/month' : '',
           services: services.length ? services : ['General Help'],
-          workType, rating: 0, reviewCount: 0,
-          photo: photoUrl,
+          workShift, workType, rating: 0, reviewCount: 0,
+          photo: '', // Photo login ke baad wale verify popup mein aayega
           available: false, verified: false,
           registeredAt: new Date().toISOString(),
           fromWebsite: true
@@ -13837,6 +13902,21 @@ const MAID_EXTRA = {};
 
 function _subKey() { var t = localStorage.getItem('authToken'); return t ? 'userSubscription_' + t : 'userSubscription'; }
 function _reqKey() { var t = localStorage.getItem('authToken'); return t ? 'sentRequests_' + t : 'sentRequests'; }
+// contactedMaids = persistent lifetime list of maid IDs already contacted.
+// Alag se rakha gaya hai taaki naye plan par credits fresh ho jayein (sentRequests reset)
+// lekin already-contacted maid dobara free mein dekhi ja sake, jab tak plan valid rehta hai.
+function _contactedKey() { var t = localStorage.getItem('authToken'); return t ? 'contactedMaids_' + t : 'contactedMaids'; }
+function readContactedMaids() {
+  try { return JSON.parse(localStorage.getItem(_contactedKey()) || '[]'); }
+  catch(e) { return []; }
+}
+function writeContactedMaids(arr) {
+  var k = _contactedKey();
+  localStorage.setItem(k, JSON.stringify(arr));
+  return (typeof window._fbSetWhenReady === "function")
+    ? window._fbSetWhenReady("siteData", k, arr).catch(function(e){ console.warn('ContactedMaids FB save failed:', k, e); })
+    : (typeof window._fbSet === "function" ? window._fbSet("siteData", k, arr).catch(function(e){ console.warn('ContactedMaids FB save failed (fallback):', k, e); }) : Promise.resolve());
+}
 function readSubscription() {
   try { return JSON.parse(localStorage.getItem(_subKey()) || 'null'); }
   catch(e) { return null; }
@@ -13995,7 +14075,7 @@ function initiateRazorpayPayment() {
   fetch('/.netlify/functions/razorpay-create-order', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ planKey: pendingPlanKey })
+    body: JSON.stringify({ planKey: pendingPlanKey, amount: Math.round(plan.price * 100) })
   })
   .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
   .then(function(res) {
@@ -14094,6 +14174,11 @@ async function onRazorpaySuccess(response, planKey) {
   const now = new Date();
   const expiry = new Date(now.getTime() + plan.days * 24 * 60 * 60 * 1000);
 
+  // FIX: Purana plan abhi valid tha ya expire ho chuka tha — subscription
+  // overwrite karne SE PEHLE check karo, taaki contactedMaids history sahi
+  // decide ho sake (neeche dekho).
+  const _oldCreditWasValid = getActiveCredit().valid;
+
   // 🔥 Payment SUCCESS — Firebase mein status 'success' + Razorpay payment ID
   // turant update karo (live tracking, admin panel ke liye).
   updatePaymentStatus(pendingPaymentLogId, 'success', {
@@ -14112,12 +14197,17 @@ async function onRazorpaySuccess(response, planKey) {
     razorpay_signature: response.razorpay_signature || ''
   });
 
-  // FIX #4: sentRequests sirf tab reset karo jab plan CHANGE ho —
-  // renewal (same plan dobara lena) pe purane requests wipe nahi hone chahiye.
-  var prevSub = readSubscription();
-  var prevPlanKey = prevSub && prevSub.planKey;
-  if (!prevPlanKey || prevPlanKey !== planKey) {
-    writeSentRequests([]);
+  // FIX: Har baar naya plan lene pe sentRequests reset karo
+  // Chahe same plan ho ya alag — naye plan me fresh credits milne chahiye
+  writeSentRequests([]);
+
+  // FIX: contactedMaids ("already contacted maid" history) sirf tab reset hoga
+  // jab purana plan already expire ho chuka tha. Agar purana plan abhi valid
+  // tha, history barqarar rahegi — same maid dobara free mein dekhi ja sakegi,
+  // credit dobara nahi katega. Plan expire hone ke baad naya plan liya to
+  // history clear ho jaayegi — us maid ko phir se fresh request bhejni hogi.
+  if (!_oldCreditWasValid) {
+    writeContactedMaids([]);
   }
 
   pendingPlanKey = null;
@@ -14188,13 +14278,19 @@ function sendRequestToMaid(maidId) {
     showPage('subscription');
     return;
   }
-  const already = readSentRequests();
-  if (already.includes(maidId)) {
+  // FIX: Duplicate-check ab persistent contactedMaids list se hota hai, na ki
+  // per-plan sentRequests se — taaki plan valid rehte hue same maid ko dobara
+  // credit charge na ho (chahe beech mein naya plan hi kyun na le liya ho).
+  const contacted = readContactedMaids();
+  if (contacted.includes(maidId)) {
     showToast('You have already sent a request to this maid.');
     return;
   }
+  const already = readSentRequests();
   already.push(maidId);
-  writeSentRequests(already);
+  writeSentRequests(already); // current-plan credit usage counter
+  contacted.push(maidId);
+  writeContactedMaids(contacted); // lifetime "already contacted" record
   refreshAllCreditBars();
 
   // ── Save FULL customer data to maid's request inbox ──
@@ -14729,8 +14825,10 @@ function dashTab(tab) {
       </div>
     `;
   } else if (tab === 'requests') {
-    const sent = readSentRequests();
-    const maids = sent.map(id => MAIDS.find(m => m.id === id)).filter(Boolean);
+    // Plan valid ho to sentRequests dikhao (phone ke saath), expire ho to contactedMaids history (phone ke bina)
+    const planActiveForReqs = credit.valid;
+    const reqMaidIds = planActiveForReqs ? readSentRequests() : readContactedMaids();
+    const maids = reqMaidIds.map(id => MAIDS.find(m => m.id === id)).filter(Boolean);
 
     // Read response statuses from customer-readable key
     let custReqStatuses = [];
@@ -14749,14 +14847,20 @@ function dashTab(tab) {
 
     content.innerHTML = `
       <div class="dash-section-title">Requests Sent <span style="font-size:13px;font-weight:600;color:var(--muted);">${maids.length} total</span></div>
+      ${!planActiveForReqs && maids.length > 0 ? `
+      <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:13px;color:#92400e;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <i class="fas fa-clock" style="font-size:16px;color:#a16207;"></i>
+        <span><strong>Aapka plan expire ho gaya hai.</strong> Yahan pehle contact ki maids ki history hai — contact details dekhne ke liye naya plan len aur phir se request bhejein.</span>
+        <button class="btn btn-sm btn-primary" style="margin-left:auto;white-space:nowrap;" onclick="showPage('subscription')"><i class="fas fa-crown"></i> Renew Plan</button>
+      </div>` : `
       <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:10px 14px;font-size:13px;color:#0369a1;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
         <i class="fas fa-circle-info"></i> Jab maid aapki request accept ya decline karegi, status yahan <strong>turant update</strong> ho jayega.
-      </div>
+      </div>`}
       ${maids.length === 0 ? `<div class="dash-empty-state"><i class="fas fa-paper-plane"></i>You haven't sent any requests yet.<br><button class="btn btn-md btn-primary" style="margin-top:16px;" onclick="showPage('maids')">Find Maids</button></div>` :
       maids.map(m => {
         const respStatus = getMaidRespStatus(m.id);
-        const cardBorder = respStatus === 'Accepted' ? '#86efac' : respStatus === 'Rejected' ? '#fca5a5' : 'var(--border)';
-        const cardBg = respStatus === 'Accepted' ? '#f0fdf4' : respStatus === 'Rejected' ? '#fff5f5' : '#fff';
+        const cardBorder = !planActiveForReqs ? '#fde68a' : respStatus === 'Accepted' ? '#86efac' : respStatus === 'Rejected' ? '#fca5a5' : 'var(--border)';
+        const cardBg = !planActiveForReqs ? '#fffbeb' : respStatus === 'Accepted' ? '#f0fdf4' : respStatus === 'Rejected' ? '#fff5f5' : '#fff';
         return `
         <div style="display:flex;align-items:center;gap:14px;border:1.5px solid ${cardBorder};border-radius:12px;padding:14px;margin-bottom:12px;background:${cardBg};cursor:pointer;transition:all .15s;" onmouseover="this.style.boxShadow='0 4px 14px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'" onclick="showMaidProfile(${m.id})">
           <div style="width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:18px;flex-shrink:0;overflow:hidden;">
@@ -14765,11 +14869,13 @@ function dashTab(tab) {
           <div style="flex:1;min-width:0;">
             <div style="font-weight:700;font-size:15px;">${m.name}</div>
             <div style="font-size:13px;color:var(--muted);"><i class="fas fa-location-dot" style="font-size:11px;"></i> ${m.city}, ${m.state}</div>
-            <div style="font-size:13px;color:var(--primary);font-weight:600;margin-top:2px;"><i class="fas fa-phone"></i> +91 ${m.phone}</div>
+            ${planActiveForReqs
+              ? `<div style="font-size:13px;color:var(--primary);font-weight:600;margin-top:2px;"><i class="fas fa-phone"></i> +91 ${m.phone}</div>`
+              : `<div style="font-size:12px;color:#a16207;margin-top:3px;"><i class="fas fa-lock" style="font-size:11px;"></i> Phone locked — plan renew karein</div>`}
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">
-            ${statusBadge(respStatus)}
-            ${respStatus === 'Accepted' ? `<a href="https://wa.me/91${m.phone}" target="_blank" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:5px;background:#25d366;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
+            ${planActiveForReqs ? statusBadge(respStatus) : `<span style="display:inline-flex;align-items:center;gap:5px;background:#fef3c7;color:#92400e;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap;"><i class="fas fa-history"></i> History</span>`}
+            ${planActiveForReqs && respStatus === 'Accepted' ? `<a href="https://wa.me/91${m.phone}" target="_blank" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:5px;background:#25d366;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:8px;text-decoration:none;white-space:nowrap;"><i class="fab fa-whatsapp"></i> WhatsApp</a>` : ''}
           </div>
         </div>
       `}).join('')}
@@ -14964,7 +15070,7 @@ function dashTab(tab) {
     try { aadharData2 = JSON.parse(localStorage.getItem('aadhar_' + maidPhone2) || 'null'); } catch(ea) {}
     var aadharStatus2 = aadharData2 ? (aadharData2.status || 'none') : 'none';
     var hasPhoto2 = !!photo2;
-    var hasAadhar2 = !!(aadharData2 && aadharData2.frontUrl && aadharData2.backUrl && aadharData2.aadharNum);
+    var hasAadhar2 = !!(aadharData2 && aadharData2.frontUrl);
     var isLive2 = !!(myMaid2.verified && myMaid2.available);
 
     // Status banner — 6 states
@@ -15007,24 +15113,18 @@ function dashTab(tab) {
       + '<div style="background:#fff;border:' + (hasAadhar2 ? '1px solid #bbf7d0' : '2px dashed #fed7aa') + ';border-radius:14px;padding:18px 20px;margin-bottom:14px;">'
       + '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;">🪪 Aadhar Verification <span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">Required</span>' + (aadharStatus2==='verified' ? ' <span style="margin-left:auto;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">✓ Verified</span>' : aadharStatus2==='pending' ? ' <span style="margin-left:auto;background:#fffbeb;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">⏳ Under Review</span>' : aadharStatus2==='rejected' ? ' <span style="margin-left:auto;background:#fef2f2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">❌ Rejected</span>' : '') + '</div>'
       + '<div class="form-group-v" style="margin-bottom:10px;">'
-      + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Number *</label>'
-      + '<input type="text" id="maidAadharNumInput" maxlength="12" placeholder="12-digit Aadhar number" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;background:#f9fafb;outline:none;" value="' + (aadharData2 && aadharData2.aadharNum ? aadharData2.aadharNum : '') + '">'
+      <!-- Aadhar number field removed -->
       + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">'
-      + '<div>'
-      + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Front Side *</label>'
+      + '<div style="margin-bottom:12px;">'
+      + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Front Side *</label>'
       + '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed ' + (aadharData2 && aadharData2.frontUrl ? '#22c55e' : '#d1d5db') + ';border-radius:8px;cursor:pointer;background:' + (aadharData2 && aadharData2.frontUrl ? '#f0fdf4' : '#f9fafb') + ';font-size:13px;color:' + (aadharData2 && aadharData2.frontUrl ? '#15803d' : '#6b7280') + ';">'
       + '<i class="fas fa-' + (aadharData2 && aadharData2.frontUrl ? 'check-circle' : 'upload') + '"></i> ' + (aadharData2 && aadharData2.frontUrl ? 'Uploaded ✓' : 'Upload Front')
       + '<input type="file" id="maidAadharFront" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'front\')">'
       + '</label>'
       + '</div>'
-      + '<div>'
-      + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Back Side *</label>'
-      + '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed ' + (aadharData2 && aadharData2.backUrl ? '#22c55e' : '#d1d5db') + ';border-radius:8px;cursor:pointer;background:' + (aadharData2 && aadharData2.backUrl ? '#f0fdf4' : '#f9fafb') + ';font-size:13px;color:' + (aadharData2 && aadharData2.backUrl ? '#15803d' : '#6b7280') + ';">'
-      + '<i class="fas fa-' + (aadharData2 && aadharData2.backUrl ? 'check-circle' : 'upload') + '"></i> ' + (aadharData2 && aadharData2.backUrl ? 'Uploaded ✓' : 'Upload Back')
-      + '<input type="file" id="maidAadharBack" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'back\')">'
-      + '</label>'
-      + '</div></div>'
+      + '<div style="display:none;">'
+      + '<label><input type="file" id="maidAadharBack" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'back\')"></label>'
+      + '</div>'
       + '<div id="maidAadharSaveStatus" style="font-size:13px;margin-bottom:10px;display:none;"></div>'
       + (aadharStatus2 !== 'verified' ? '<button class="btn btn-md btn-primary" onclick="saveMaidAadharFromProfile()" style="width:100%;"><i class="fas fa-paper-plane"></i> Submit Aadhar for Verification</button>' : '<div style="text-align:center;font-size:13px;color:#15803d;font-weight:600;"><i class="fas fa-circle-check"></i> Aadhar Verified by Admin</div>')
       + '</div>'
@@ -15390,12 +15490,7 @@ async function saveMaidAadharFromProfile() {
   const maidPhone = getLoggedMaidPhone();
   if (!maidPhone) { showToast('Please login first.'); return; }
 
-  const numEl = document.getElementById('maidAadharNumInput');
-  const aadharNum = numEl ? numEl.value.replace(/\s/g,'') : '';
-  if (!/^\d{12}$/.test(aadharNum)) {
-    showToast('⚠️ Valid 12-digit Aadhar number enter karein.');
-    if (numEl) numEl.focus(); return;
-  }
+  const aadharNum = '';
 
   const frontFile = window._maidAadharFiles && window._maidAadharFiles.front;
   const backFile = window._maidAadharFiles && window._maidAadharFiles.back;
@@ -15404,10 +15499,9 @@ async function saveMaidAadharFromProfile() {
   var existingAadhar = null;
   try { existingAadhar = JSON.parse(localStorage.getItem('aadhar_' + maidPhone) || 'null'); } catch(e) {}
   const hasFront = frontFile || (existingAadhar && existingAadhar.frontUrl);
-  const hasBack = backFile || (existingAadhar && existingAadhar.backUrl);
 
-  if (!hasFront || !hasBack) {
-    showToast('⚠️ Aadhar ke dono sides (front + back) upload karein.');
+  if (!hasFront) {
+    showToast('⚠️ Aadhar ka front side upload karein.');
     return;
   }
 
@@ -15428,17 +15522,18 @@ async function saveMaidAadharFromProfile() {
         frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + maidPhone + '_front_' + Date.now() + '.jpg') || '';
       } catch(e) { /* fallback to base64 */ }
       if (!frontUrl) {
-        const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(frontFile); });
-        frontUrl = b64;
+        const compressed = typeof window._compressImage === 'function' ? await window._compressImage(frontFile, 800, 0.70) : frontFile;
+        frontUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(compressed); });
       }
     }
+    // Back side optional
     if (backFile && typeof window._fbUploadPhoto === 'function') {
       try {
         backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + maidPhone + '_back_' + Date.now() + '.jpg') || '';
       } catch(e) { /* fallback to base64 */ }
       if (!backUrl) {
-        const b64 = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(backFile); });
-        backUrl = b64;
+        const compressed = typeof window._compressImage === 'function' ? await window._compressImage(backFile, 800, 0.70) : backFile;
+        backUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(compressed); });
       }
     }
 
@@ -15500,8 +15595,8 @@ function getMaidVerifyStatus(phone) {
   // Photo: admin_maids ya registered_maids — jo bhi ho
   const hasPhoto = !!(m.photo || regRec.photo);
 
-  // Aadhar fully submitted = frontUrl + backUrl + aadharNum teeno present hain
-  const hasAadharSubmitted = !!(aadhar && aadhar.frontUrl && aadhar.backUrl && aadhar.aadharNum);
+  // Aadhar fully submitted = sirf frontUrl kaafi hai
+  const hasAadharSubmitted = !!(aadhar && aadhar.frontUrl);
 
   const aadharStatus = aadhar ? (aadhar.status || 'none') : 'none';
   const isLive = !!(m.verified && m.available);
@@ -15521,13 +15616,13 @@ function maidNeedsVerificationPopup() {
   if (st.isLive) return false;
   // Admin ne aadhar verify kar di → popup nahi
   if (st.aadharStatus === 'verified') return false;
-  // Aadhar submit ho chuki, pending review → popup nahi (profile tab mein status dikhega)
+  // Aadhar submit ho chuki (pending review) → popup nahi — profile tab mein status dikhega
   if (st.aadharStatus === 'pending') return false;
+  // Aadhar front already uploaded (any device pe) → popup nahi
+  if (st.hasAadharSubmitted) return false;
   // Aadhar reject hua → dobara upload karna hai → popup
   if (st.aadharStatus === 'rejected') return true;
-  // Photo aur Aadhar dono submit ho chuki hain → popup nahi chahe kuch bhi ho
-  if (st.hasPhoto && st.hasAadharSubmitted) return false;
-  // Kuch bhi missing hai → popup
+  // Kuch bhi submit nahi → popup
   return true;
 }
 
@@ -15550,8 +15645,7 @@ function openMaidVerifyPopup() {
   const photoSrc = st.maid.photo || (st.regRec && st.regRec.photo) || '';
   if (preview) preview.innerHTML = st.hasPhoto ? '<img src="' + photoSrc + '" style="width:100%;height:100%;object-fit:cover;">' : '<i class="fas fa-user" style="font-size:22px;color:#9ca3af;"></i>';
 
-  const numEl = document.getElementById('popupAadharNum');
-  if (numEl) numEl.value = (st.aadhar && st.aadhar.aadharNum) ? st.aadhar.aadharNum : '';
+  // Aadhar number field removed
 
   const frontLbl = document.getElementById('popupAadharFrontLabel');
   if (frontLbl) {
@@ -15562,15 +15656,7 @@ function openMaidVerifyPopup() {
     frontLbl.innerHTML = '<i class="fas fa-' + (has ? 'check-circle' : 'upload') + '"></i> ' + (has ? 'Uploaded ✓' : 'Upload Front')
       + '<input type="file" id="popupAadharFront" accept="image/*" style="display:none;" onchange="handlePopupAadharSelect(event,\'front\')">';
   }
-  const backLbl = document.getElementById('popupAadharBackLabel');
-  if (backLbl) {
-    const has = st.aadhar && st.aadhar.backUrl;
-    backLbl.style.borderColor = has ? '#22c55e' : '#d1d5db';
-    backLbl.style.background = has ? '#f0fdf4' : '#f9fafb';
-    backLbl.style.color = has ? '#15803d' : '#6b7280';
-    backLbl.innerHTML = '<i class="fas fa-' + (has ? 'check-circle' : 'upload') + '"></i> ' + (has ? 'Uploaded ✓' : 'Upload Back')
-      + '<input type="file" id="popupAadharBack" accept="image/*" style="display:none;" onchange="handlePopupAadharSelect(event,\'back\')">';
-  }
+  // Back side hidden — no update needed
 
   const errEl = document.getElementById('popupVerifyError');
   if (errEl) errEl.style.display = 'none';
@@ -15594,6 +15680,11 @@ function closeMaidVerifyPopup() {
 
 // Called after maid login / on any page load — opens the popup only if needed.
 // Async: pehle Firebase se aadhar status sync karta hai, tab decide karta hai.
+// Debounce timer — multiple simultaneous Firebase listeners ek saath fire karte hain
+// (aadhar listener + admin_maids listener). Bina debounce ke race condition hoti hai
+// jisme stale localStorage se popup galat decision leta hai. 300ms baad sabka
+// combined latest state ek baar check hota hai.
+let _maybeShowPopupTimer = null;
 async function maybeShowMaidVerifyPopup() {
   // Upload in progress — don't interrupt
   if (window._maidVerifyBusy) return;
@@ -15603,33 +15694,39 @@ async function maybeShowMaidVerifyPopup() {
   const phone = getLoggedMaidPhone();
   if (!phone) return;
 
-  // Firebase se sabka latest data sync karo pehle, tab faisla karo
-  if (typeof window._fbGet === 'function') {
-    try {
-      // 1. Aadhar record
-      const fbAadhar = await window._fbGet('siteData', 'aadhar_' + phone);
-      if (fbAadhar && fbAadhar.aadharNum) {
-        localStorage.setItem('aadhar_' + phone, JSON.stringify(fbAadhar));
-      }
-      // 2. Admin maids (verified/available flags + photo)
-      const fbAdminMaids = await window._fbGet('adminData', 'ram_admin_maids');
-      if (fbAdminMaids && Array.isArray(fbAdminMaids)) {
-        localStorage.setItem('ram_admin_maids', JSON.stringify(fbAdminMaids));
-      }
-      // 3. Registered maids (maid ka own photo/data — fallback source)
-      const fbRegMaids = await window._fbGet('adminData', 'ram_registered_maids');
-      if (fbRegMaids && typeof fbRegMaids === 'object') {
-        // Merge carefully — don't overwrite newer local data
-        const local = {};
-        try { Object.assign(local, JSON.parse(localStorage.getItem('ram_registered_maids') || '{}')); } catch(e) {}
-        const merged = Object.assign({}, local, fbRegMaids);
-        localStorage.setItem('ram_registered_maids', JSON.stringify(merged));
-      }
-    } catch(e) { /* Firebase unavailable — localStorage data se kaam chalega */ }
-  }
+  // Debounce: 300ms ke andar multiple calls ko merge karo
+  if (_maybeShowPopupTimer) clearTimeout(_maybeShowPopupTimer);
+  _maybeShowPopupTimer = setTimeout(async function() {
+    _maybeShowPopupTimer = null;
+    if (window._maidVerifyBusy) return;
 
-  if (maidNeedsVerificationPopup()) openMaidVerifyPopup();
-  else closeMaidVerifyPopup();
+    // Firebase se sabka latest data sync karo pehle, tab faisla karo
+    if (typeof window._fbGet === 'function') {
+      try {
+        // 1. Aadhar record — sabse important: agar submitted hai toh popup band
+        const fbAadhar = await window._fbGet('siteData', 'aadhar_' + phone);
+        if (fbAadhar && fbAadhar.frontUrl) {
+          localStorage.setItem('aadhar_' + phone, JSON.stringify(fbAadhar));
+        }
+        // 2. Admin maids (verified/available flags + photo)
+        const fbAdminMaids = await window._fbGet('adminData', 'ram_admin_maids');
+        if (fbAdminMaids && Array.isArray(fbAdminMaids)) {
+          localStorage.setItem('ram_admin_maids', JSON.stringify(fbAdminMaids));
+        }
+        // 3. Registered maids (maid ka own photo/data — fallback source)
+        const fbRegMaids = await window._fbGet('adminData', 'ram_registered_maids');
+        if (fbRegMaids && typeof fbRegMaids === 'object') {
+          const local = {};
+          try { Object.assign(local, JSON.parse(localStorage.getItem('ram_registered_maids') || '{}')); } catch(e) {}
+          const merged = Object.assign({}, local, fbRegMaids);
+          localStorage.setItem('ram_registered_maids', JSON.stringify(merged));
+        }
+      } catch(e) { /* Firebase unavailable — localStorage data se kaam chalega */ }
+    }
+
+    if (maidNeedsVerificationPopup()) openMaidVerifyPopup();
+    else closeMaidVerifyPopup();
+  }, 300);
 }
 
 function handlePopupPhotoSelect(event) {
@@ -15670,15 +15767,12 @@ async function submitMaidVerifyPopup() {
   if (errEl) errEl.style.display = 'none';
 
   const st = getMaidVerifyStatus(phone);
-  const numEl = document.getElementById('popupAadharNum');
-  const aadharNum = numEl ? numEl.value.replace(/\s/g, '') : '';
+  const aadharNum = '';
 
   const hasPhotoNow = window._popupPhotoFile || st.hasPhoto;
   if (!hasPhotoNow) return showErr('⚠️ Profile photo upload karein.');
-  if (!/^\d{12}$/.test(aadharNum)) return showErr('⚠️ Valid 12-digit Aadhar number enter karein.');
   const hasFront = window._popupAadharFiles.front || (st.aadhar && st.aadhar.frontUrl);
-  const hasBack = window._popupAadharFiles.back || (st.aadhar && st.aadhar.backUrl);
-  if (!hasFront || !hasBack) return showErr('⚠️ Aadhar ke dono sides (front + back) upload karein.');
+  if (!hasFront) return showErr('⚠️ Aadhar ka front side upload karein.');
 
   window._maidVerifyBusy = true;
   const submitBtn = document.getElementById('popupVerifySubmitBtn');
@@ -15713,13 +15807,20 @@ async function submitMaidVerifyPopup() {
       if (typeof window._fbUploadPhoto === 'function') {
         try { frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + phone + '_front_' + Date.now() + '.jpg') || frontUrl; } catch(e) {}
       }
-      if (!frontUrl) frontUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(frontFile); });
+      if (!frontUrl) {
+        const compressed = typeof window._compressImage === 'function' ? await window._compressImage(frontFile, 800, 0.70) : frontFile;
+        frontUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(compressed); });
+      }
     }
+    // Back side optional — sirf upload karo agar select kiya ho
     if (backFile) {
       if (typeof window._fbUploadPhoto === 'function') {
         try { backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + phone + '_back_' + Date.now() + '.jpg') || backUrl; } catch(e) {}
       }
-      if (!backUrl) backUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(backFile); });
+      if (!backUrl) {
+        const compressed = typeof window._compressImage === 'function' ? await window._compressImage(backFile, 800, 0.70) : backFile;
+        backUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(compressed); });
+      }
     }
 
     const aadharData = { phone, aadharNum, frontUrl, backUrl, status: 'pending', submittedAt: new Date().toISOString() };
@@ -16014,22 +16115,30 @@ function showMaidProfile(id) {
   const stars = n => Array(Math.max(0, Math.round(n))).fill('<i class="fas fa-star" style="color:#facc15;font-size:12px;"></i>').join('');
 
   // Phone visibility logic
-  const sentReqs = readSentRequests();
+  const contactedMaids = readContactedMaids();
   const credit = getActiveCredit();
-  const alreadySent = sentReqs.includes(id);
+  const alreadySent = contactedMaids.includes(id);
   const isLoggedIn = !!getAuthToken();
   const canSeePhone = alreadySent;
 
   let phoneSection = '';
   if (!isLoggedIn) {
+    // Not logged in — login prompt
     phoneSection = `<div class="phone-locked"><i class="fas fa-lock"></i><div class="phone-locked-text"><strong>Phone Number Locked</strong>Login and subscribe to a plan to view this phone number</div><button class="btn btn-md btn-primary" style="margin-left:auto;white-space:nowrap;" onclick="openAuthModal('login')">Login</button></div>`;
-  } else if (alreadySent) {
+  } else if (alreadySent && credit.valid) {
+    // Plan active + already contacted → phone dikhao (free, no credit)
     phoneSection = `<div style="background:#dcfce7;border:2px solid #86efac;border-radius:14px;padding:20px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;"><i class="fas fa-circle-check" style="font-size:26px;color:#16a34a;"></i><div><div style="font-size:13px;color:#166534;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Phone Number Unlocked</div><div style="font-size:24px;font-weight:800;color:#166534;">+91 ${m.phone}</div></div><span class="req-sent-badge" style="margin-left:auto;"><i class="fas fa-check"></i> Request Sent</span></div>`;
+  } else if (alreadySent && !credit.valid) {
+    // Plan expired + is maid ko pehle request bheji thi → history dikhao, phone band, renew karne kaho
+    phoneSection = `<div style="background:#fef9c3;border:2px solid #fde68a;border-radius:14px;padding:20px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;"><i class="fas fa-clock" style="font-size:26px;color:#a16207;"></i><div style="flex:1;min-width:0;"><div style="font-size:13px;color:#92400e;font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;">Plan Expired — Request History</div><div style="font-size:14px;color:#78350f;margin-bottom:2px;">Aapne pehle is maid ko request bheji thi, lekin aapka plan expire ho gaya hai.</div><div style="font-size:13px;color:#92400e;">Phone number dekhne ke liye naya plan len aur phir se request bhejein.</div></div><button class="btn btn-md btn-primary" style="margin-left:auto;white-space:nowrap;flex-shrink:0;" onclick="showPage('subscription')"><i class="fas fa-crown"></i> Renew Plan</button></div>`;
   } else if (!credit.valid) {
+    // No plan at all → subscription required
     phoneSection = `<div class="phone-locked"><i class="fas fa-crown"></i><div class="phone-locked-text"><strong>Subscription Required</strong>You need an active plan to view this phone number and book this maid</div><button class="btn btn-md btn-primary" style="margin-left:auto;white-space:nowrap;" onclick="showPage('subscription')">View Plans</button></div>`;
   } else if (credit.credits <= 0) {
+    // Plan active lekin credits khatam
     phoneSection = `<div class="phone-locked"><i class="fas fa-triangle-exclamation" style="color:#f97316;"></i><div class="phone-locked-text"><strong>Requests Used Up!</strong>You've used all your requests on this plan. Upgrade to continue.</div><button class="btn btn-md btn-primary" style="margin-left:auto;white-space:nowrap;" onclick="showPage('subscription')">Upgrade Plan</button></div>`;
   } else {
+    // Plan active, credits hain, pehle contact nahi kiya → fresh request
     phoneSection = `<div class="phone-locked"><i class="fas fa-phone-volume" style="color:var(--green);"></i><div class="phone-locked-text"><strong>1 Request Will Be Used</strong>You have ${credit.isUnlimited ? 'unlimited' : credit.credits} request${credit.isUnlimited || credit.credits===1 ? '' : 's'} remaining on your plan</div><button class="btn btn-md btn-primary" style="margin-left:auto;white-space:nowrap;" onclick="sendRequestToMaid(${m.id})"><i class="fas fa-paper-plane"></i> Send Request</button></div>`;
   }
 
@@ -16298,25 +16407,19 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Aadhar -->
     <div style="background:#fff;border:2px dashed #fed7aa;border-radius:14px;padding:16px;margin-bottom:6px;">
       <div style="font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;margin-bottom:10px;display:flex;align-items:center;gap:8px;">🪪 Aadhar Verification <span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">Required</span></div>
-      <div class="form-group-v" style="margin-bottom:10px;">
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Number *</label>
-        <input type="text" id="popupAadharNum" maxlength="12" placeholder="12-digit Aadhar number" style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;background:#f9fafb;outline:none;">
+      <!-- Aadhar number field removed -->
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Front Side *</label>
+        <label id="popupAadharFrontLabel" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed #d1d5db;border-radius:8px;cursor:pointer;background:#f9fafb;font-size:13px;color:#6b7280;">
+          <i class="fas fa-upload"></i> Upload Front
+          <input type="file" id="popupAadharFront" accept="image/*" style="display:none;" onchange="handlePopupAadharSelect(event,'front')">
+        </label>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div>
-          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Front Side *</label>
-          <label id="popupAadharFrontLabel" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed #d1d5db;border-radius:8px;cursor:pointer;background:#f9fafb;font-size:13px;color:#6b7280;">
-            <i class="fas fa-upload"></i> Upload Front
-            <input type="file" id="popupAadharFront" accept="image/*" style="display:none;" onchange="handlePopupAadharSelect(event,'front')">
-          </label>
-        </div>
-        <div>
-          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Back Side *</label>
-          <label id="popupAadharBackLabel" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed #d1d5db;border-radius:8px;cursor:pointer;background:#f9fafb;font-size:13px;color:#6b7280;">
-            <i class="fas fa-upload"></i> Upload Back
-            <input type="file" id="popupAadharBack" accept="image/*" style="display:none;" onchange="handlePopupAadharSelect(event,'back')">
-          </label>
-        </div>
+      <!-- Back side hidden (optional, not shown to maid) -->
+      <div style="display:none;">
+        <label id="popupAadharBackLabel">
+          <input type="file" id="popupAadharBack" accept="image/*" style="display:none;" onchange="handlePopupAadharSelect(event,'back')">
+        </label>
       </div>
     </div>
 
@@ -17187,6 +17290,23 @@ async function rcSubmitLogin() {
                   <button class="action-btn action-btn-outline mt-16" onclick="document.getElementById('wc-logo-img').value='';updateLogoPreview();saveSiteContent('logo');"><i class="fas fa-rotate-left"></i> Remove Logo (use default "R")</button>
                 </div>
               </div>
+              <div class="settings-card" style="margin-top:18px;">
+                <h3><i class="fas fa-bookmark" style="color:var(--primary);margin-right:8px;"></i>Favicon (Browser Tab Icon)</h3>
+                <p style="font-size:13px;color:var(--text2);margin-bottom:14px;">Ye woh chhota icon hai jo browser tab aur Google search results mein dikhta hai. Square image best hoti hai (e.g. 32×32 ya 64×64 px, PNG).</p>
+                <div class="form-group"><label>Favicon Image URL</label><input type="text" id="wc-favicon-img" placeholder="https://..." oninput="updateFaviconPreview()"/></div>
+                <div class="form-group"><label>Ya Device se Upload Karo</label><input type="file" id="wc-favicon-img-file" accept="image/*" onchange="handleImageUpload(event,'wc-favicon-img')"/></div>
+                <div class="form-group">
+                  <label>Preview</label>
+                  <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2,#f8fafc);border-radius:8px;border:1px solid var(--border);">
+                    <div id="wc-favicon-preview-box" style="width:32px;height:32px;border-radius:4px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;background:#f97316;color:#fff;font-weight:700;font-size:14px;">R</div>
+                    <span style="font-size:12px;color:var(--text2);">← Browser tab mein aisa dikhega</span>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <button class="action-btn action-btn-primary mt-16" onclick="saveSiteContent('favicon')"><i class="fas fa-save"></i> Publish Favicon Changes</button>
+                  <button class="action-btn action-btn-outline mt-16" onclick="document.getElementById('wc-favicon-img').value='';updateFaviconPreview();saveSiteContent('favicon');"><i class="fas fa-rotate-left"></i> Remove (use default)</button>
+                </div>
+              </div>
             </div>
             <!-- STATS TAB -->
             <div class="settings-section" id="wtab-stats">
@@ -17785,6 +17905,14 @@ async function rcSubmitLogin() {
           <div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="mm-available" checked/><span class="toggle-slider"></span></label><span class="toggle-label">Available</span></div>
           <div class="toggle-wrap"><label class="toggle"><input type="checkbox" id="mm-verified"/><span class="toggle-slider"></span></label><span class="toggle-label">Verified</span></div>
         </div>
+      </div>
+      <div class="form-group" style="margin-top:8px;border-top:1px dashed var(--border,#e5e7eb);padding-top:14px;">
+        <label>Maid Login Password <span style="font-weight:400;color:var(--muted,#9ca3af);">(sirf tabhi bharein jab password change karna ho)</span></label>
+        <div style="position:relative;">
+          <input type="password" id="mm-password" placeholder="Naya password (min 8 characters)" minlength="8" style="padding-right:40px;"/>
+          <button type="button" onclick="var f=document.getElementById('mm-password'); f.type = f.type==='password' ? 'text' : 'password';" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <span style="font-size:11.5px;color:var(--muted,#9ca3af);">Yahan blank chhodne par maid ka current password waisa hi rahega. Bharne par yeh Firebase mein turant, permanently save ho jayega aur maid isi naye password se login kar payegi.</span>
       </div>
     </div>
     <div class="modal-footer">
@@ -20036,7 +20164,7 @@ function handleAdminMaidPhotoSelect(event) {
 function openAddMaidModal() {
   editingKey = null;
   document.getElementById('maidModalTitle').textContent = 'Add Maid';
-  ['mm-name','mm-phone','mm-city','mm-services','mm-langs','mm-photo'].forEach(id => document.getElementById(id).value = '');
+  ['mm-name','mm-phone','mm-city','mm-services','mm-langs','mm-photo','mm-password'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('mm-state').value = '';
   document.getElementById('mm-exp').value = 1;
   document.getElementById('mm-rating').value = 4.5;
@@ -20061,6 +20189,7 @@ function openEditMaidModal(id) {
   document.getElementById('mm-photo').value = m.photo||'';
   document.getElementById('mm-available').checked = m.available;
   document.getElementById('mm-verified').checked = m.verified;
+  document.getElementById('mm-password').value = ''; // security: password kabhi prefill nahi hota, sirf naya set karne ke liye khaali
   _resetAdminMaidPhotoUI(m.photo||'');
   openModal('maidModal');
 }
@@ -20076,7 +20205,9 @@ async function saveMaid() {
   const photoUrlField = document.getElementById('mm-photo').value.trim();
   const available = document.getElementById('mm-available').checked;
   const verified = document.getElementById('mm-verified').checked;
+  const newMaidPassword = document.getElementById('mm-password').value;
   if (!name || !city || !state) { showToast('Name, City and State required'); return; }
+  if (newMaidPassword && newMaidPassword.length < 8) { showToast('⚠️ Password kam se kam 8 characters ka hona chahiye'); return; }
 
   let maids = getMaids();
   const existingMaid = editingKey ? maids.find(m => m.id === editingKey) : null;
@@ -20119,14 +20250,25 @@ async function saveMaid() {
   // Sync ram_registered_maids: agar phone hai aur verified hai to login allow karo
   if (phone) {
     try {
-      const regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      const regMaids = readRegisteredMaids();
       if (verified) {
-        regMaids[phone] = { name: name, phone: phone, verified: true };
+        regMaids[phone] = Object.assign({}, regMaids[phone], { name: name, phone: phone, verified: true });
       } else if (regMaids[phone]) {
         regMaids[phone].verified = false;
       }
-      localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
-      if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_registered_maids", regMaids);
+      // ══ ADMIN PASSWORD CHANGE: agar admin ne naya password diya hai ══
+      // Hash karke save karo — writeRegisteredMaids() ise turant Firebase
+      // (poori collection + is maid ka alag document) dono jagah permanently
+      // save karta hai, taaki maid turant naye password se login kar sake.
+      if (newMaidPassword) {
+        if (!regMaids[phone]) regMaids[phone] = { name: name, phone: phone, verified: verified };
+        regMaids[phone].passwordHash = simpleHash(newMaidPassword);
+      }
+      writeRegisteredMaids(regMaids);
+      if (newMaidPassword) {
+        document.getElementById('mm-password').value = '';
+        showToast('✅ Password change ho gaya! Firebase mein save ho gaya, maid turant naye password se login kar sakti hai.');
+      }
     } catch(e) {}
   }
   // Website pe turant update
@@ -20960,6 +21102,9 @@ function applySiteContent(){
     const logoUrl = siteVal('site-logo');
     logoIcon.innerHTML = logoUrl ? `<img src="${logoUrl}" alt="Logo" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : 'R';
   }
+  // Favicon apply karo
+  const savedFavicon = siteVal('site-favicon');
+  if(savedFavicon) applyFavicon(savedFavicon);
   // Hero overlay color apply karo
   const overlayEl = document.querySelector('.hero-overlay');
   if (overlayEl) {
@@ -20984,6 +21129,7 @@ function loadWebsiteEditorForm(){
     'wc-hero-badge':'hero-badge','wc-hero-title':'hero-title','wc-hero-subtitle':'hero-subtitle',
     'wc-hero-cta-title':'hero-cta-title','wc-hero-cta-sub':'hero-cta-sub','wc-hero-img':'hero-img','wc-hero-video':'hero-video',
     'wc-logo-img':'site-logo',
+    'wc-favicon-img':'site-favicon',
     'wc-stat-helpers':'stat-helpers','wc-stat-families':'stat-families','wc-stat-cities':'stat-cities','wc-stat-years':'stat-years','wc-stat-placements':'stat-placements',
     'wc-footer-name':'footer-name','wc-footer-desc':'footer-desc','wc-footer-address':'footer-address',
     'wc-footer-phone':'footer-phone','wc-footer-email':'footer-email','wc-footer-copyright':'footer-copyright',
@@ -20991,6 +21137,7 @@ function loadWebsiteEditorForm(){
   };
   Object.keys(map).forEach(id => { const el=document.getElementById(id); if(el) el.value = siteVal(map[id]); });
   updateLogoPreview();
+  updateFaviconPreview();
   // Hero overlay load karo
   try {
     const savedColor = siteVal('hero-overlay-color') || 'rgba(51,65,85,0.86)';
@@ -21026,6 +21173,31 @@ function handleImageUpload(event, targetInputId){
   const reader = new FileReader();
   reader.onload = e => { document.getElementById(targetInputId).value = e.target.result; showToast('Image loaded — click Publish to go live'); if(targetInputId==='wc-logo-img') updateLogoPreview(); };
   reader.readAsDataURL(file);
+}
+function updateFaviconPreview(){
+  const box = document.getElementById('wc-favicon-preview-box');
+  const input = document.getElementById('wc-favicon-img');
+  if(!box || !input) return;
+  const url = input.value.trim();
+  if(url){
+    box.innerHTML = `<img src="${url}" alt="Favicon" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentElement.innerHTML='<span style=color:#ef4444;font-size:10px;>Error</span>'">`;
+  } else {
+    box.innerHTML = 'R';
+    box.style.background = '#f97316';
+  }
+}
+function applyFavicon(url){
+  // Browser tab icon live update
+  let link = document.querySelector("link[rel~='icon']");
+  if(!link){ link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+  if(url){ link.href = url; link.type = 'image/png'; }
+  else { link.href = ''; }
+  // Apple touch icon bhi update karo
+  let alink = document.querySelector("link[rel='apple-touch-icon']");
+  if(alink && url) alink.href = url;
+  // OG image bhi update karo
+  let ogImg = document.querySelector("meta[property='og:image']");
+  if(ogImg && url) ogImg.content = url;
 }
 function updateLogoPreview(){
   const box = document.getElementById('wc-logo-preview-box');
@@ -21077,6 +21249,14 @@ function saveSiteContent(section){
     keys = {'wc-hero-badge':'hero-badge','wc-hero-title':'hero-title','wc-hero-subtitle':'hero-subtitle','wc-hero-cta-title':'hero-cta-title','wc-hero-cta-sub':'hero-cta-sub','wc-hero-img':'hero-img','wc-hero-video':'hero-video'};
   }
   else if(section === 'logo') keys = {'wc-logo-img':'site-logo'};
+  else if(section === 'favicon') {
+    const favEl = document.getElementById('wc-favicon-img');
+    const favUrl = favEl ? favEl.value.trim() : '';
+    setSiteContentKey('site-favicon', favUrl);
+    applyFavicon(favUrl);
+    showToast('✅ Favicon live update ho gaya! Browser tab aur Google mein dikhega.');
+    return;
+  }
   else if(section === 'stats') keys = {'wc-stat-helpers':'stat-helpers','wc-stat-families':'stat-families','wc-stat-cities':'stat-cities','wc-stat-years':'stat-years','wc-stat-placements':'stat-placements'};
   else if(section === 'colours') {
     const p = document.getElementById('wc-color-primary'); const phex = document.getElementById('wc-color-primary-hex');
@@ -23153,7 +23333,7 @@ function setupRealtimeSync() {
         _currentAadharUnsub = onSnapshot(doc(_db, 'siteData', 'aadhar_' + phone), aSnap => {
           if (!aSnap.exists()) return;
           const newAadhar = aSnap.data();
-          if (!newAadhar || !newAadhar.aadharNum) return;
+          if (!newAadhar || !newAadhar.frontUrl) return;
           const prevRaw = localStorage.getItem('aadhar_' + phone);
           let prevStatus = 'none';
           try { prevStatus = (JSON.parse(prevRaw) || {}).status || 'none'; } catch(e) {}
@@ -23370,6 +23550,58 @@ async function setupAdminRealtimeSync() {
       snap.docs.forEach(d => {
         if (d.id.startsWith('aadhar_') && d.data().data !== undefined) {
           localStorage.setItem(d.id, JSON.stringify(d.data().data));
+        }
+
+        // Help Enquiries realtime sync
+        if (d.id.startsWith('help_')) {
+          const enquiry = d.data();
+          if (!enquiry || !enquiry.id) return;
+
+          // Admin panel: help_enquiries list update karo
+          try {
+            const allHelp = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+            const idx = allHelp.findIndex(e => e.id === enquiry.id);
+            if (idx !== -1) { allHelp[idx] = enquiry; }
+            else { allHelp.unshift(enquiry); }
+            allHelp.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+            localStorage.setItem('help_enquiries', JSON.stringify(allHelp));
+          } catch(e) {}
+
+          // User: apni enquiry update karo (phone match hone pe)
+          try {
+            const userPhone = localStorage.getItem('userPhone') || localStorage.getItem('authToken');
+            if (userPhone && enquiry.phone === userPhone) {
+              const myList = JSON.parse(localStorage.getItem('my_help_' + userPhone) || '[]');
+              const midx = myList.findIndex(e => e.id === enquiry.id);
+              if (midx !== -1) { myList[midx] = enquiry; }
+              else { myList.unshift(enquiry); }
+              myList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+              localStorage.setItem('my_help_' + userPhone, JSON.stringify(myList));
+
+              // Agar user Help page pe hai to live update karo
+              if (typeof window.loadMyHelpEnquiries === 'function') {
+                window.loadMyHelpEnquiries();
+              }
+
+              // Unread reply badge update karo
+              if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
+
+              // Admin reply aya to user ko toast dikhao
+              if (enquiry.adminReply && !enquiry.replyRead) {
+                if (typeof showToast === 'function') showToast('Admin ne aapki enquiry ka jawab de diya! Help section me dekho.');
+              }
+            }
+          } catch(e) {}
+
+          // Admin panel me live re-render karo
+          try {
+            const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
+            if (isAdmin && typeof renderHelpEnquiries === 'function') {
+              const allHelp = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+              renderHelpEnquiries(allHelp);
+              if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
+            }
+          } catch(e) {}
         }
       });
       // Update aadhar badge in admin navbar
