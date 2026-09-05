@@ -1683,6 +1683,13 @@ tr:hover td{background:#f8fafc;}
 .text-sm{font-size:13px;}
 .cursor-pointer{cursor:pointer;}
 
+/* ── Admin Live Chat responsive ── */
+@media (max-width: 700px) {
+  #adminChatLayout { grid-template-columns: 1fr !important; grid-template-rows: 200px 1fr; }
+}
+/* ── User chat bubbles scroll smooth ── */
+#userChatMessages, #adminChatMessages, #agChatMessages { scroll-behavior: smooth; }
+
 </style>
 
 <!-- ══ AI SEARCH OPTIMIZATION (Google AI, ChatGPT, Perplexity, Gemini, Bing Copilot) ══ -->
@@ -2504,6 +2511,66 @@ tr:hover td{background:#f8fafc;}
     imgEl.src = '';
   };
 
+  // ── Firebase + localStorage dual sync ──
+  var ANN_LS_KEY = 'rentamaid_ann_settings';
+  var ANN_FB_COLL = 'siteData';
+  var ANN_FB_KEY  = 'ram_announcement_bar';
+
+  // Apply settings object to the live bar
+  window.annApplySettings = function(s){
+    if(!s) return;
+    if(s.text){ currentText = s.text; span1.textContent = s.text; span2.textContent = s.text; }
+    pos = 0; track.style.transform = 'translateX(0px)';
+    if(s.fs) bar.style.fontSize = s.fs + 'px';
+    if(s.visible === false){ bar.style.height='0'; bar.style.borderBottom='none'; visible=false; }
+    else { visible=true; if(s.ht) bar.style.height = s.ht+'px'; bar.style.borderBottom='2px solid rgba(249,115,22,.5)'; }
+    if(s.ht){ imgEl.style.maxHeight = s.ht+'px'; }
+    if(s.spd) speed = parseFloat(s.spd) * 0.12;
+    if(s.tc){ span1.style.color = s.tc; span2.style.color = s.tc; }
+    if(s.b1 && s.b2) bar.style.background = 'linear-gradient(90deg,'+s.b1+','+s.b2+','+s.b1+')';
+    if(s.img){ imgEl.src = s.img; imgWrap.style.display='flex'; annImgData=s.img; }
+    else { imgWrap.style.display='none'; imgEl.src=''; }
+    // localStorage bhi update karo taaki page reload pe bhi rahe
+    try{ localStorage.setItem(ANN_LS_KEY, JSON.stringify(s)); }catch(e){}
+  };
+
+  // Page load: pehle localStorage se apply karo (instant), Firebase se override hoga jab aaye
+  (function(){
+    try{ var s=JSON.parse(localStorage.getItem(ANN_LS_KEY)); if(s) window.annApplySettings(s); }catch(e){}
+  })();
+
+  // Firebase real-time listener — har device pe turant update
+  // (Firebase module load hone ke baad fire karega)
+  window._annStartFirebaseListener = function(db, onSnapshotFn, docFn){
+    try{
+      onSnapshotFn(docFn(db, ANN_FB_COLL, ANN_FB_KEY), function(snap){
+        if(snap.exists() && snap.data() && snap.data().data){
+          window.annApplySettings(snap.data().data);
+        }
+      }, function(e){ console.warn('Announcement bar listener error:', e); });
+    }catch(e){ console.warn('Announcement bar listener setup failed:', e); }
+  };
+
+  // Initialize admin panel fields from saved settings
+  window.annInitAdminPanel = function(){
+    var s; try{ s=JSON.parse(localStorage.getItem(ANN_LS_KEY)); }catch(e){}
+    if(!s) return;
+    var tf = function(id, val){ var el=document.getElementById(id); if(el && val!==undefined) el.value=val; };
+    tf('ann-text', s.text||'');
+    tf('ann-font', s.fs||'14');
+    tf('ann-height', s.ht||'44');
+    tf('ann-speed', s.spd||'5');
+    tf('ann-text-color', s.tc||'#ffffff');
+    tf('ann-bg1', s.b1||'#1a3c5e');
+    tf('ann-bg2', s.b2||'#0f2940');
+    if(s.img){ annImgData=s.img; var p=document.getElementById('ann-img-preview'); if(p) p.src=s.img; var pw=document.getElementById('ann-img-preview-wrap'); if(pw) pw.style.display='flex'; }
+    var fv=document.getElementById('ann-font-val'); if(fv) fv.textContent=(s.fs||14)+'px';
+    var hv=document.getElementById('ann-height-val'); if(hv) hv.textContent=(s.ht||44)+'px';
+    var sl=document.getElementById('ann-speed-label'); if(sl){ var spd=parseInt(s.spd||5); var labels={1:'Bahut Slow',2:'Slow',3:'Slow',4:'Medium',5:'Medium',6:'Medium',7:'Fast',8:'Fast',9:'Bahut Fast',10:'Bahut Fast'}; sl.textContent=labels[spd]||'Medium'; }
+    var cb=document.getElementById('ann-enabled'); if(cb) cb.checked = (s.visible !== false);
+    annUpdatePreviewStrip();
+  };
+
   window.annApplyAll = function(){
     // 1. Text
     var newTxt = document.getElementById('ann-text').value.trim();
@@ -2511,44 +2578,72 @@ tr:hover td{background:#f8fafc;}
     span1.textContent = currentText;
     span2.textContent = currentText;
     pos = 0; track.style.transform = 'translateX(0px)';
-
-    // 2. Font size
+    // 2. Font
     var fs = document.getElementById('ann-font').value;
     bar.style.fontSize = fs + 'px';
-
-    // 3. Bar height
+    // 3. Height
     var ht = document.getElementById('ann-height').value;
-    if(visible){
-      bar.style.height = ht + 'px';
-      imgEl.style.maxHeight = ht + 'px';
-    }
-
+    if(visible){ bar.style.height = ht + 'px'; imgEl.style.maxHeight = ht + 'px'; }
     // 4. Speed
     speed = parseFloat(document.getElementById('ann-speed').value) * 0.12;
-
     // 5. Text color
     var tc = document.getElementById('ann-text-color').value;
     span1.style.color = tc; span2.style.color = tc;
-
-    // 6. BG gradient
+    // 6. BG
     var b1 = document.getElementById('ann-bg1').value;
     var b2 = document.getElementById('ann-bg2').value;
     bar.style.background = 'linear-gradient(90deg,'+b1+','+b2+','+b1+')';
-
     // 7. Image
-    if(annImgData){
-      imgEl.src = annImgData;
-      imgWrap.style.display = 'flex';
-    } else {
-      imgWrap.style.display = 'none';
-    }
+    if(annImgData){ imgEl.src = annImgData; imgWrap.style.display = 'flex'; }
+    else { imgWrap.style.display = 'none'; }
 
-    // 8. Toast
+    // 8. Settings object
+    var settings = {
+      text: currentText,
+      fs: fs, ht: ht,
+      spd: document.getElementById('ann-speed').value,
+      tc: tc, b1: b1, b2: b2,
+      visible: visible,
+      img: annImgData || ''
+    };
+
+    // 9. localStorage save (instant same-device sync)
+    try{ localStorage.setItem(ANN_LS_KEY, JSON.stringify(settings)); }catch(e){}
+
+    // 10. Firebase save — har device pe real-time update trigger karega
+    var fbSaved = false;
+    if(typeof window._fbSet === 'function'){
+      window._fbSet(ANN_FB_COLL, ANN_FB_KEY, settings)
+        .then(function(){
+          if(!fbSaved){ fbSaved=true; annShowToast('✅ Live ho gaya! Sab devices pe update!'); }
+        })
+        .catch(function(e){
+          console.warn('Announcement Firebase save failed:', e);
+          if(!fbSaved){ fbSaved=true; annShowToast('✅ Local update hua! (Firebase sync retry hogi)'); }
+        });
+    } else {
+      annShowToast('✅ Announcement bar update ho gaya!');
+    }
+    // Immediate toast in case Firebase is slow
+    setTimeout(function(){ if(!fbSaved){ fbSaved=true; annShowToast('✅ Announcement bar live ho gaya!'); } }, 1200);
+  };
+
+  function annShowToast(msg){
     var toast = document.createElement('div');
-    toast.textContent = '✅ Announcement bar update ho gaya!';
-    toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 24px;border-radius:10px;font-weight:700;font-size:14px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);';
+    toast.textContent = msg;
+    toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap;';
     document.body.appendChild(toast);
-    setTimeout(function(){ toast.remove(); }, 3000);
+    setTimeout(function(){ toast.remove(); }, 3500);
+  }
+
+  // Visibility toggle bhi Firebase mein save karo
+  var _origAnnToggleBar = window.annToggleBar;
+  window.annToggleBar = function(){
+    _origAnnToggleBar();
+    var s; try{ s=JSON.parse(localStorage.getItem(ANN_LS_KEY))||{}; }catch(e){ s={}; }
+    s.visible = document.getElementById('ann-enabled').checked;
+    try{ localStorage.setItem(ANN_LS_KEY, JSON.stringify(s)); }catch(e){}
+    if(typeof window._fbSet === 'function') window._fbSet(ANN_FB_COLL, ANN_FB_KEY, s).catch(function(){});
   };
 
 })();
@@ -13484,6 +13579,46 @@ async function submitLogin() {
             localStorage.setItem(contactedKeyLogin, JSON.stringify(mergedContacted));
           }
           refreshAllCreditBars();
+
+          // ══ PENDING PAYMENT RECOVERY ══
+          // Sirf tab recover karo jab pending payment ke BAAD Firebase mein
+          // nayi subscription aayi ho — matlab Razorpay ne actually payment
+          // complete ki thi lekin callback miss hui (phone lock etc.)
+          // Agar user sirf back kar gaya (pending bana, payment nahi ki),
+          // toh Firebase mein purani subscription hai jo pending se PEHLE
+          // create hui thi — isko recovery nahi manenge.
+          try {
+            var paymentsLog = getPaymentsLog();
+            var userPendingPayments = paymentsLog.filter(function(p){
+              return p.userPhone === phone && p.status === 'pending';
+            });
+            if (userPendingPayments.length > 0) {
+              var fbSubCheck = await window._fbGet('siteData', subKey);
+              if (fbSubCheck && fbSubCheck.planKey && fbSubCheck.expiry && new Date(fbSubCheck.expiry) > new Date()) {
+                // KEY CHECK: Firebase subscription ka activatedAt pending payment ke
+                // BAAD hona chahiye — tabhi maanenge ki Razorpay ne actual payment ki thi
+                var fbActivatedAt = fbSubCheck.activatedAt ? new Date(fbSubCheck.activatedAt) : new Date(0);
+                var matchedPending = userPendingPayments.find(function(p){
+                  var pendingCreatedAt = p.createdAt ? new Date(p.createdAt) : new Date(0);
+                  // Firebase subscription pending payment ke baad activate hui ho
+                  // aur same plan ho
+                  return p.planKey === fbSubCheck.planKey && fbActivatedAt > pendingCreatedAt;
+                });
+                if (matchedPending) {
+                  // ✅ Genuine recovery: Razorpay ne payment ki, callback miss hui
+                  updatePaymentStatus(matchedPending.id, 'success', {
+                    razorpay_payment_id: matchedPending.razorpay_payment_id || fbSubCheck.razorpay_payment_id || 'RECOVERED',
+                    error: ''
+                  });
+                  localStorage.setItem(subKey, JSON.stringify(fbSubCheck));
+                  refreshAllCreditBars();
+                }
+                // Agar matchedPending nahi mila = user ne back kiya tha, purani
+                // subscription already thi — kuch nahi karo, pending pending hi rahe
+              }
+            }
+          } catch(recoveryErr) { console.warn('Pending payment recovery check failed:', recoveryErr); }
+          // ══ END PENDING PAYMENT RECOVERY ══
         }
       } catch(e) { console.warn('Subscription Firebase sync failed on login:', e); }
     })();
@@ -14284,6 +14419,8 @@ async function submitReg() {
               const maidIdx = adminMaids.findIndex(m => m.phone === phone);
               if (maidIdx !== -1) {
                 adminMaids[maidIdx].agencyId = matchedAgency.id;
+                adminMaids[maidIdx].agencyPhone = matchedAgency.phone;
+                adminMaids[maidIdx].agencyName = matchedAgency.name;
                 localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
                 if (typeof window._fbSet === 'function') {
                   try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e5) {}
@@ -14293,12 +14430,28 @@ async function submitReg() {
               const updatedReg = (() => { try { return JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e){return {};} })();
               if (updatedReg[phone]) {
                 updatedReg[phone].agencyId = matchedAgency.id;
+                updatedReg[phone].agencyPhone = matchedAgency.phone;
+                updatedReg[phone].agencyName = matchedAgency.name;
                 localStorage.setItem('ram_registered_maids', JSON.stringify(updatedReg));
                 if (typeof window._fbSet === 'function') {
                   try { await window._fbSet('adminData', 'maid_' + phone, updatedReg[phone]); } catch(e6) {}
                   try { await window._fbSet('adminData', 'ram_registered_maids', updatedReg); } catch(e7) {}
                 }
               }
+              // ── Admin ko notification do: agency mein nayi maid ──
+              if (typeof addNotification === 'function') {
+                try {
+                  addNotification({
+                    audience: 'admin',
+                    title: '🏢 Agency Maid Registered',
+                    message: name + ' (' + phone + ') ne ' + matchedAgency.name + ' agency ke saath register kiya.',
+                    page: 'agencies'
+                  });
+                } catch(eN) {}
+              }
+              // Admin panel mein agency list live refresh karo
+              if (typeof window.renderAgencies === 'function') { try { window.renderAgencies(); } catch(eA) {} }
+              if (typeof window.renderAgencyMaids === 'function') { try { window.renderAgencyMaids(); } catch(eM) {} }
               // Agency dashboard ko bhi live update signal do
               if (typeof window.renderAgencyMaidsList === 'function') { try { window.renderAgencyMaidsList(); } catch(eR) {} }
               if (typeof window.renderAgencyDashboard === 'function') { try { const sess = (typeof agGetSession === 'function') ? agGetSession() : null; if(sess) window.renderAgencyDashboard(sess); } catch(eD) {} }
@@ -15479,50 +15632,45 @@ function dashTab(tab) {
       <p style="font-size:12px;color:var(--muted);margin-top:14px;"><i class="fas fa-shield-halved"></i> Your phone number is your login ID and cannot be changed here.</p>
     `;
   } else if (tab === 'help') {
-    // ── HELP & SUPPORT TAB — user apni enquiries dekhe + nayi submit kare ──
+    // ── HELP & SUPPORT TAB — LIVE CHAT UI ──
+    var userPhone2 = isMaid ? getLoggedMaidPhone() : getAuthToken();
+    var userLabel = isMaid ? '👩 Maid' : '👤 Customer';
     content.innerHTML = `
-      <div class="dash-section-title">Help & Support</div>
-      <!-- New Enquiry Form -->
-      <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:14px;padding:20px;margin-bottom:22px;">
-        <div style="font-size:15px;font-weight:700;color:var(--foreground);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
-          <i class="fas fa-circle-plus" style="color:var(--primary);"></i> Nayi Problem / Enquiry Submit Karo
+      <div class="dash-section-title">💬 Help &amp; Support — Live Chat</div>
+      <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:520px;max-height:70vh;">
+        <!-- Chat Header -->
+        <div style="background:linear-gradient(135deg,#064e3b,#0a7c5c);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+          <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:18px;">🎧</div>
+          <div style="flex:1;">
+            <div style="color:#fff;font-weight:700;font-size:14px;">Rent a Maid Support</div>
+            <div style="color:#a7f3d0;font-size:12px;" id="chatOnlineStatus">⚡ Online — Admin jald reply karenge</div>
+          </div>
+          <button onclick="loadUserLiveChat()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;"><i class="fas fa-rotate-right"></i> Refresh</button>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-          <div>
-            <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">Category *</label>
-            <select id="userHelpCategory" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;">
-              <option value="">-- Select --</option>
-              <option>Booking Problem</option>
-              <option>Payment Issue</option>
-              <option>Maid Related</option>
-              <option>Account Issue</option>
-              <option>Service Enquiry</option>
-              <option>Other</option>
+        <!-- Messages Area -->
+        <div id="userChatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--muted-bg,#f8fafc);">
+          <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Messages load ho rahe hain...</div>
+        </div>
+        <!-- Typing Input -->
+        <div style="padding:12px 14px;border-top:1.5px solid var(--border);background:var(--card-bg);flex-shrink:0;">
+          <div style="display:flex;gap:10px;align-items:flex-end;">
+            <select id="userChatCategory" style="flex-shrink:0;padding:9px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;background:var(--card-bg);color:var(--foreground);outline:none;max-width:130px;">
+              <option value="General">📋 General</option>
+              <option value="Booking Problem">📅 Booking</option>
+              <option value="Payment Issue">💳 Payment</option>
+              <option value="Maid Related">👩 Maid</option>
+              <option value="Account Issue">🔑 Account</option>
+              <option value="Other">❓ Other</option>
             </select>
+            <textarea id="userChatInput" rows="1" placeholder="Message likhein..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendUserChatMsg();}" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;resize:none;font-family:inherit;line-height:1.4;max-height:80px;overflow-y:auto;"></textarea>
+            <button onclick="sendUserChatMsg()" style="flex-shrink:0;background:linear-gradient(135deg,#064e3b,#0a7c5c);color:#fff;border:none;border-radius:10px;padding:9px 16px;font-size:15px;cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
           </div>
-          <div>
-            <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">City</label>
-            <input type="text" id="userHelpCity" placeholder="Aapka city" value="${(isMaid ? '' : (cust && cust.district ? cust.district : ''))}" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;"/>
-          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px;">Enter dabao bhejne ke liye · Shift+Enter nayi line ke liye</div>
         </div>
-        <div style="margin-bottom:12px;">
-          <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:4px;">Apni Problem Likhein *</label>
-          <textarea id="userHelpMessage" rows="3" placeholder="Yahan apni problem ya sawal detail mein likhein..." style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;resize:vertical;"></textarea>
-        </div>
-        <div id="userHelpSubmitStatus" style="display:none;font-size:13px;margin-bottom:8px;"></div>
-        <button class="btn btn-md btn-primary" onclick="submitUserHelpFromDash()"><i class="fas fa-paper-plane"></i> Submit Karo</button>
-      </div>
-      <!-- Past Enquiries -->
-      <div style="font-size:14px;font-weight:700;color:var(--foreground);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-clock-rotate-left" style="color:var(--muted);"></i> Purani Enquiries
-        <button onclick="loadUserHelpEnquiries()" style="margin-left:auto;background:none;border:1.5px solid var(--border);color:var(--muted);font-size:12px;padding:4px 10px;border-radius:6px;cursor:pointer;"><i class="fas fa-rotate-right"></i> Refresh</button>
-      </div>
-      <div id="userHelpList" style="display:flex;flex-direction:column;gap:12px;">
-        <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>
       </div>
     `;
-    loadUserHelpEnquiries();
-    startUserHelpRealtimeSync();
+    loadUserLiveChat();
+    startUserChatRealtimeSync();
   } else if (tab === 'maid-profile-edit') {
     // ── MAID COMPLETE PROFILE TAB ──
     var maidPhone2 = getLoggedMaidPhone();
@@ -18452,23 +18600,59 @@ async function rcSubmitLogin() {
         </div>
       </div>
 
-      <!-- ══ HELP & SUPPORT PAGE ══ -->
+      <!-- ══ HELP & SUPPORT PAGE — LIVE CHAT ADMIN VIEW ══ -->
       <div class="admin-page" id="pg-help">
         <div class="section-head">
-          <div><h2>Help & Support</h2><p>User enquiries aur problems — yahan reply karo</p></div>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <select id="helpFilterStatus" onchange="renderHelpEnquiries()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);">
-              <option value="">All Enquiries</option>
+          <div><h2>💬 Help &amp; Support — Live Chat</h2><p>Users ke saath real-time chat karo — Customer, Maid, Agency</p></div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <select id="helpFilterStatus" onchange="renderAdminLiveChat()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);">
+              <option value="">All Conversations</option>
               <option value="open">Open</option>
               <option value="replied">Replied</option>
               <option value="closed">Closed</option>
             </select>
+            <select id="helpFilterType" onchange="renderAdminLiveChat()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;background:var(--card-bg);color:var(--foreground);">
+              <option value="">All Users</option>
+              <option value="customer">👤 Customers</option>
+              <option value="maid">👩 Maids</option>
+              <option value="agency">🏢 Agencies</option>
+            </select>
             <button class="action-btn action-btn-outline" onclick="loadHelpEnquiries()"><i class="fas fa-rotate-right"></i> Refresh</button>
           </div>
         </div>
-        <div id="helpEnquiriesContainer" style="display:flex;flex-direction:column;gap:14px;">
-          <div style="text-align:center;padding:40px;color:var(--muted);font-size:14px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+        <!-- Two-pane chat layout: left=user list, right=chat window -->
+        <div id="adminChatLayout" style="display:grid;grid-template-columns:300px 1fr;gap:16px;height:calc(100vh - 220px);min-height:480px;">
+          <!-- Left: User List -->
+          <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;">
+            <div style="padding:14px;border-bottom:1.5px solid var(--border);font-size:13px;font-weight:700;color:var(--foreground);">💬 Conversations</div>
+            <div id="adminChatUserList" style="flex:1;overflow-y:auto;"></div>
+          </div>
+          <!-- Right: Chat Window -->
+          <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;">
+            <div id="adminChatHeader" style="background:linear-gradient(135deg,#064e3b,#0a7c5c);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+              <div style="color:#a7f3d0;font-size:13px;">⬅ Left se koi user select karo</div>
+            </div>
+            <div id="adminChatMessages" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:#f8fafc;">
+              <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">
+                <div style="font-size:40px;margin-bottom:12px;">💬</div>
+                <div style="font-weight:700;">Conversation select karo</div>
+                <div style="font-size:12px;margin-top:4px;">Left panel se kisi user ki chat open karo</div>
+              </div>
+            </div>
+            <div id="adminChatReplyBox" style="padding:12px 14px;border-top:1.5px solid var(--border);background:var(--card-bg);flex-shrink:0;display:none;">
+              <div style="display:flex;gap:10px;align-items:flex-end;">
+                <textarea id="adminChatReplyInput" rows="2" placeholder="Reply likhein... (Enter = send, Shift+Enter = nayi line)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAdminChatReply();}" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;background:var(--card-bg);color:var(--foreground);outline:none;resize:none;font-family:inherit;line-height:1.4;"></textarea>
+                <button onclick="sendAdminChatReply()" style="flex-shrink:0;background:linear-gradient(135deg,#064e3b,#0a7c5c);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:15px;cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button id="adminChatCloseBtn" onclick="adminCloseSelectedChat()" style="background:none;border:1.5px solid #22c55e;color:#16a34a;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;"><i class="fas fa-check"></i> Close Chat</button>
+                <button id="adminChatDeleteBtn" onclick="adminDeleteSelectedChat()" style="background:none;border:1.5px solid #ef4444;color:#dc2626;border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;"><i class="fas fa-trash"></i> Delete</button>
+              </div>
+            </div>
+          </div>
         </div>
+        <!-- Fallback container for old renderHelpEnquiries calls -->
+        <div id="helpEnquiriesContainer" style="display:none;"></div>
       </div>
 
       <!-- ══ SETTINGS PAGE ══ -->
@@ -19916,6 +20100,17 @@ function updateAgencyNavBadge() {
 let currentAgencyId = null;
 
 // ---- Render agency list ----
+// ── Helper: agency ke under aane wali SAARI maids (agencyId OR agencyPhone match) ──
+function getAgencyMaids(agency) {
+  const allMaids = getMaids();
+  const agPhone = (agency.phone||'').replace(/\D/g,'');
+  return allMaids.filter(function(m){
+    if (m.agencyId && m.agencyId === agency.id) return true;
+    if (agPhone && (m.agencyPhone||'').replace(/\D/g,'') === agPhone) return true;
+    return false;
+  });
+}
+
 function renderAgencies() {
   let agencies = getAgencies();
   const nameQ = (document.getElementById('agencySearchName')?.value || '').toLowerCase();
@@ -19927,16 +20122,28 @@ function renderAgencies() {
     (a.city||'').toLowerCase().includes(locQ) || (a.state||'').toLowerCase().includes(locQ)
   );
   document.getElementById('agencyCount').textContent = agencies.length + ' Agenc' + (agencies.length===1?'y':'ies');
-  const allMaids = getMaids();
   document.getElementById('agencyTbody').innerHTML = agencies.length ? agencies.map((a, i) => {
-    const maidCount = allMaids.filter(m => m.agencyId === a.id).length;
+    // ── FIX: agencyId OR agencyPhone dono se count karo ──
+    const agencyMaidList = getAgencyMaids(a);
+    const maidCount = agencyMaidList.length;
+    const verifiedCount = agencyMaidList.filter(m => m.verified).length;
+    const liveCount = agencyMaidList.filter(m => m.available).length;
     const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN') : '—';
     return `<tr>
       <td>${i+1}</td>
-      <td><strong>${escHtml(a.name)}</strong>${a.notes?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${escHtml(a.notes)}</div>`:''}</td>
+      <td>
+        <strong>${escHtml(a.name)}</strong>
+        ${a.notes?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${escHtml(a.notes)}</div>`:''}
+      </td>
       <td>${escHtml(a.phone||'—')}</td>
       <td>${escHtml(a.city||'')}${a.city&&a.state?', ':''}${escHtml(a.state||'')}</td>
-      <td><span class="badge badge-blue" style="cursor:pointer;" onclick="openAgencyMaids(${a.id})">${maidCount} Maid${maidCount!==1?'s':''}</span></td>
+      <td>
+        <span class="badge badge-blue" style="cursor:pointer;font-size:12px;" onclick="openAgencyMaids(${a.id})" title="Click to view all maids">
+          👩 ${maidCount} Maid${maidCount!==1?'s':''}
+        </span>
+        ${verifiedCount>0?`<span class="badge badge-green" style="font-size:11px;margin-left:4px;" title="Verified maids">✅ ${verifiedCount}</span>`:''}
+        ${liveCount>0?`<span class="badge" style="font-size:11px;margin-left:2px;background:#dcfce7;color:#15803d;" title="Live/Active maids">🟢 ${liveCount} Live</span>`:''}
+      </td>
       <td>${date}</td>
       <td>
         <div class="btn-group">
@@ -20030,6 +20237,9 @@ function openAgencyMaids(agencyId) {
   document.getElementById('agencyListView').style.display = 'none';
   document.getElementById('agencyMaidsView').style.display = 'block';
   document.getElementById('agencyMaidsTitle').textContent = agency.name + ' — Maids';
+  const agMaidCount = getAgencyMaids(agency).length;
+  const agVerified = getAgencyMaids(agency).filter(m=>m.verified).length;
+  const agLive = getAgencyMaids(agency).filter(m=>m.available).length;
   document.getElementById('agencyDetailHeader').innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
       <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;">${escHtml(agency.name[0].toUpperCase())}</div>
@@ -20041,6 +20251,11 @@ function openAgencyMaids(agencyId) {
           <i class="fas fa-map-marker-alt" style="margin-right:4px;color:#f97316;"></i>${escHtml(agency.city||'')}${agency.city&&agency.state?', ':''}${escHtml(agency.state||'')}
         </div>
         ${agency.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px;">${escHtml(agency.notes)}</div>`:''}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <span id="agencyMaidsCountBadge" class="badge badge-blue" style="font-size:12px;">👩 ${agMaidCount} Maid${agMaidCount!==1?'s':''}</span>
+          <span class="badge badge-green" style="font-size:12px;">✅ ${agVerified} Verified</span>
+          <span class="badge" style="font-size:12px;background:#dcfce7;color:#15803d;">🟢 ${agLive} Live</span>
+        </div>
       </div>
     </div>
   `;
@@ -20056,8 +20271,12 @@ function backToAgencyList() {
 
 function renderAgencyMaids() {
   if (!currentAgencyId) return;
-  const allMaids = getMaids();
-  const agencyMaids = allMaids.filter(m => m.agencyId === currentAgencyId);
+  const agency = getAgencies().find(a => a.id === currentAgencyId);
+  // ── FIX: agencyId OR agencyPhone dono se maids dhundho ──
+  const agencyMaids = agency ? getAgencyMaids(agency) : [];
+  // Update count in detail header badge
+  const cntEl = document.getElementById('agencyMaidsCountBadge');
+  if (cntEl) cntEl.textContent = agencyMaids.length + ' Maid' + (agencyMaids.length!==1?'s':'');
   const stars = r => '★'.repeat(Math.round(r||0));
   document.getElementById('agencyMaidsTbody').innerHTML = agencyMaids.length ? agencyMaids.map(m => `
     <tr>
@@ -20653,8 +20872,194 @@ async function loadHelpEnquiries() {
   updateHelpNavBadge();
 }
 
-// ── Admin: Render Help Enquiries ──
+// ── Admin Live Chat: currently selected phone ──
+var _adminSelectedChatPhone = null;
+
+// ── Admin: Render Live Chat Left Panel (User List) ──
+function renderAdminLiveChat(enquiriesParam) {
+  const listEl = document.getElementById('adminChatUserList');
+  if (!listEl) return;
+  const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
+  const filterType = document.getElementById('helpFilterType')?.value || '';
+  let all = enquiriesParam || JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  if (filterStatus) all = all.filter(e => e.status === filterStatus);
+  if (filterType) all = all.filter(e => (e.userType || 'customer') === filterType);
+
+  // Group by phone
+  const grouped = {};
+  all.forEach(e => {
+    const p = e.phone || 'unknown';
+    if (!grouped[p]) grouped[p] = { phone: p, name: e.name, userType: e.userType || 'customer', msgs: [], hasUnread: false, lastAt: e.submittedAt };
+    grouped[p].msgs.push(e);
+    if (new Date(e.submittedAt) > new Date(grouped[p].lastAt)) grouped[p].lastAt = e.submittedAt;
+    if (!e.adminReply && e.status === 'open') grouped[p].hasUnread = true;
+  });
+  const users = Object.values(grouped).sort((a,b) => new Date(b.lastAt) - new Date(a.lastAt));
+
+  if (!users.length) {
+    listEl.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;"><i class="fas fa-inbox" style="font-size:28px;display:block;margin-bottom:8px;opacity:.3;"></i>Koi conversation nahi mili.</div>';
+    return;
+  }
+  const typeIcons = { customer: '👤', maid: '👩', agency: '🏢' };
+  listEl.innerHTML = users.map(u => {
+    const lastMsg = u.msgs.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+    const isActive = _adminSelectedChatPhone === u.phone;
+    const unreadCount = u.msgs.filter(m => !m.adminReply && m.status === 'open').length;
+    return `<div onclick="openAdminChat('${u.phone}')" style="padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:${isActive ? 'linear-gradient(135deg,#f0fdf4,#dcfce7)' : 'var(--card-bg)'};${isActive ? 'border-left:3px solid #16a34a;' : ''}transition:background .15s;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:38px;height:38px;border-radius:50%;background:${u.hasUnread ? 'linear-gradient(135deg,#ef4444,#dc2626)' : 'linear-gradient(135deg,#064e3b,#0a7c5c)'};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${typeIcons[u.userType]||'👤'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;color:var(--foreground);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${u.name || u.phone}</div>
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${lastMsg.message.substring(0,40)}${lastMsg.message.length>40?'...':''}</div>
+        </div>
+        <div style="flex-shrink:0;text-align:right;">
+          ${unreadCount > 0 ? '<div style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-bottom:3px;">' + unreadCount + ' new</div>' : ''}
+          <div style="font-size:10px;color:var(--muted);">${new Date(u.lastAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAdminChat(phone) {
+  _adminSelectedChatPhone = phone;
+  const all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  const msgs = all.filter(e => e.phone === phone).sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+  const user = msgs[0] || {};
+  const typeIcons = { customer: '👤', maid: '👩', agency: '🏢' };
+  const hdr = document.getElementById('adminChatHeader');
+  const replyBox = document.getElementById('adminChatReplyBox');
+  if (hdr) hdr.innerHTML = `
+    <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${typeIcons[user.userType]||'👤'}</div>
+    <div style="flex:1;">
+      <div style="color:#fff;font-weight:700;font-size:14px;">${user.name || phone}</div>
+      <div style="color:#a7f3d0;font-size:12px;">${phone} · ${user.userType||'customer'}</div>
+    </div>
+  `;
+  if (replyBox) replyBox.style.display = 'block';
+  renderAdminChatWindow(msgs);
+  renderAdminLiveChat(); // Refresh left panel selection highlight
+}
+
+function renderAdminChatWindow(msgs) {
+  const el = document.getElementById('adminChatMessages');
+  if (!el) return;
+  if (!msgs.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);">Koi message nahi mila.</div>'; return; }
+  el.innerHTML = '';
+  msgs.forEach(m => {
+    // User message
+    const ts1 = new Date(m.submittedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    const catBadge = m.category ? `<div style="font-size:10px;font-weight:700;color:#16a34a;margin-bottom:3px;">📋 ${m.category}</div>` : '';
+    el.innerHTML += `<div style="display:flex;flex-direction:column;align-items:flex-start;">
+      <div style="max-width:75%;padding:10px 14px;border-radius:16px 16px 16px 4px;background:var(--card-bg,#fff);border:1.5px solid var(--border);font-size:13px;line-height:1.5;color:var(--foreground);word-break:break-word;">
+        ${catBadge}${m.message}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px;">${ts1}</div>
+    </div>`;
+    if (m.adminReply) {
+      const ts2 = m.repliedAt ? new Date(m.repliedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+      el.innerHTML += `<div style="display:flex;flex-direction:column;align-items:flex-end;">
+        <div style="max-width:75%;padding:10px 14px;border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#064e3b,#0a7c5c);color:#fff;font-size:13px;line-height:1.5;word-break:break-word;">
+          <div style="font-size:10px;font-weight:700;opacity:.7;margin-bottom:3px;">🎧 Admin</div>
+          ${m.adminReply}
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px;">${ts2}</div>
+      </div>`;
+    }
+  });
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendAdminChatReply() {
+  if (!_adminSelectedChatPhone) { showToast('Koi user select nahi hai.'); return; }
+  const inputEl = document.getElementById('adminChatReplyInput');
+  const reply = (inputEl?.value || '').trim();
+  if (!reply) { showToast('Reply likhna zaroori hai.'); return; }
+
+  let all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  // Find the latest open message from this user
+  const userMsgs = all.filter(e => e.phone === _adminSelectedChatPhone && e.status !== 'closed');
+  // Create a new "reply message" object linked to the conversation
+  // We'll reply to the most recent open message
+  const target = userMsgs.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+  if (!target) { showToast('Koi open message nahi mila.'); return; }
+
+  if (inputEl) inputEl.value = '';
+
+  const idx = all.findIndex(e => e.id === target.id);
+  if (idx !== -1) {
+    all[idx].adminReply = reply;
+    all[idx].repliedAt = new Date().toISOString();
+    all[idx].status = 'replied';
+    all[idx].replyRead = false;
+    localStorage.setItem('help_enquiries', JSON.stringify(all));
+    if (typeof window._fbSet === 'function') {
+      try { await window._fbSet('siteData', target.id, all[idx]); } catch(e) {}
+    }
+    // User personal list update
+    try {
+      const myList = JSON.parse(localStorage.getItem('my_help_' + target.phone) || '[]');
+      const midx = myList.findIndex(e => e.id === target.id);
+      if (midx !== -1) { myList[midx] = Object.assign({}, myList[midx], all[idx], { replyRead: false }); }
+      else { myList.unshift(Object.assign({}, all[idx], { replyRead: false })); }
+      localStorage.setItem('my_help_' + target.phone, JSON.stringify(myList));
+    } catch(e) {}
+    // Agency update if needed
+    if (target.userType === 'agency') {
+      try {
+        const agList = JSON.parse(localStorage.getItem('ag_help_' + target.phone) || '[]');
+        const aidx = agList.findIndex(e => e.id === target.id);
+        if (aidx !== -1) { agList[aidx] = Object.assign({}, agList[aidx], all[idx], { replyRead: false }); }
+        else { agList.unshift(Object.assign({}, all[idx], { replyRead: false })); }
+        localStorage.setItem('ag_help_' + target.phone, JSON.stringify(agList));
+      } catch(e) {}
+    }
+  }
+
+  showToast('✅ Reply bhej di — user ko turant milegi!');
+  openAdminChat(_adminSelectedChatPhone); // Refresh chat window
+  renderAdminLiveChat(); // Refresh user list
+  updateHelpNavBadge();
+}
+
+async function adminCloseSelectedChat() {
+  if (!_adminSelectedChatPhone) return;
+  let all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  all.forEach((e, i) => {
+    if (e.phone === _adminSelectedChatPhone && e.status !== 'closed') {
+      all[i].status = 'closed';
+      if (typeof window._fbSet === 'function') window._fbSet('siteData', e.id, all[i]).catch(()=>{});
+    }
+  });
+  localStorage.setItem('help_enquiries', JSON.stringify(all));
+  showToast('✅ Chat closed kar di.');
+  openAdminChat(_adminSelectedChatPhone);
+  renderAdminLiveChat();
+}
+
+async function adminDeleteSelectedChat() {
+  if (!_adminSelectedChatPhone || !confirm('Is user ki saari chat delete karo?')) return;
+  let all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  const toDelete = all.filter(e => e.phone === _adminSelectedChatPhone);
+  all = all.filter(e => e.phone !== _adminSelectedChatPhone);
+  localStorage.setItem('help_enquiries', JSON.stringify(all));
+  toDelete.forEach(e => {
+    if (typeof window._fbSet === 'function') window._fbSet('siteData', e.id, null).catch(()=>{});
+  });
+  _adminSelectedChatPhone = null;
+  const hdr = document.getElementById('adminChatHeader');
+  const replyBox = document.getElementById('adminChatReplyBox');
+  const chatEl = document.getElementById('adminChatMessages');
+  if (hdr) hdr.innerHTML = '<div style="color:#a7f3d0;font-size:13px;">⬅ Left se koi user select karo</div>';
+  if (replyBox) replyBox.style.display = 'none';
+  if (chatEl) chatEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;"><div style="font-size:40px;margin-bottom:12px;">💬</div>Conversation select karo</div>';
+  showToast('✅ Chat delete ho gayi.');
+  renderAdminLiveChat();
+}
+
+// ── Admin: Render Help Enquiries (alias for backward compat) ──
 function renderHelpEnquiries(enquiriesParam) {
+  renderAdminLiveChat(enquiriesParam);
   const container = document.getElementById('helpEnquiriesContainer');
   if (!container) return;
   const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
@@ -20797,12 +21202,189 @@ function updateHelpNavBadge() {
   } catch(e) {}
 }
 
-// ══ USER DASHBOARD — HELP TAB FUNCTIONS ══
+// ══ USER DASHBOARD — LIVE CHAT FUNCTIONS ══
 
-// ── User: Submit from Dashboard Help Tab ──
+// ── Send Chat Message (User → Admin) ──
+async function sendUserChatMsg() {
+  const isMaid = isMaidUser();
+  const phone = isMaid ? getLoggedMaidPhone() : getAuthToken();
+  if (!phone) return;
+  const customers = readCustomers();
+  const cust = (!isMaid && phone) ? customers[phone] : null;
+  const regMaids = readRegisteredMaids();
+  const maidRec = (isMaid && phone) ? regMaids[phone] : null;
+  const name = cust ? cust.name : (maidRec ? maidRec.name : (phone || 'User'));
+
+  const inputEl = document.getElementById('userChatInput');
+  const catEl = document.getElementById('userChatCategory');
+  const msg = (inputEl?.value || '').trim();
+  const category = catEl?.value || 'General';
+  if (!msg) return;
+
+  // Optimistic UI — turant dikhao
+  if (inputEl) inputEl.value = '';
+  appendUserChatBubble({ text: msg, from: 'user', ts: new Date().toISOString() });
+
+  const msgObj = {
+    id: 'chat_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
+    phone, name, category, message: msg,
+    userType: isMaid ? 'maid' : 'customer',
+    status: 'open',
+    submittedAt: new Date().toISOString(),
+    adminReply: '', repliedAt: '', replyRead: false,
+    isChat: true
+  };
+  // Legacy id prefix compat
+  msgObj.id = 'help_' + msgObj.id;
+
+  // Firebase
+  if (typeof window._fbSet === 'function') {
+    try { await window._fbSet('siteData', msgObj.id, msgObj); } catch(e) {}
+  }
+  // localStorage
+  try {
+    const all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    all.unshift(msgObj); localStorage.setItem('help_enquiries', JSON.stringify(all));
+  } catch(e) {}
+  try {
+    const myList = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+    myList.unshift(msgObj); localStorage.setItem('my_help_' + phone, JSON.stringify(myList));
+  } catch(e) {}
+  addNotification({ audience: 'admin', title: '💬 New Chat Message', message: name + ' (' + phone + '): ' + msg.substring(0,60), page: 'help' });
+  updateHelpNavBadge();
+}
+
+// Append a single bubble to chat
+function appendUserChatBubble(opts) {
+  const el = document.getElementById('userChatMessages');
+  if (!el) return;
+  const isUser = opts.from === 'user';
+  const timeStr = opts.ts ? new Date(opts.ts).toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'}) : '';
+  const bubble = document.createElement('div');
+  bubble.style.cssText = 'display:flex;flex-direction:column;align-items:' + (isUser ? 'flex-end' : 'flex-start') + ';';
+  bubble.innerHTML = `
+    <div style="max-width:78%;padding:10px 14px;border-radius:${isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};background:${isUser ? 'linear-gradient(135deg,#064e3b,#0a7c5c)' : 'var(--card-bg,#fff)'};color:${isUser ? '#fff' : 'var(--foreground)'};font-size:13px;line-height:1.5;box-shadow:0 1px 3px rgba(0,0,0,.1);border:${isUser ? 'none' : '1.5px solid var(--border)'};word-break:break-word;">
+      ${opts.label ? '<div style="font-size:10px;font-weight:700;opacity:.7;margin-bottom:3px;">' + opts.label + '</div>' : ''}
+      ${opts.text}
+    </div>
+    <div style="font-size:10px;color:var(--muted,#9ca3af);margin-top:3px;padding:0 4px;">${timeStr}</div>
+  `;
+  el.appendChild(bubble);
+  el.scrollTop = el.scrollHeight;
+}
+
+// Load full chat history
+async function loadUserLiveChat() {
+  const isMaid = isMaidUser();
+  const phone = isMaid ? getLoggedMaidPhone() : getAuthToken();
+  if (!phone) return;
+  const el = document.getElementById('userChatMessages');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted,#9ca3af);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>';
+
+  let msgs = [];
+  if (typeof window._fbGet === 'function') {
+    try {
+      const allSite = await window._fbGet('siteData', null);
+      if (allSite) Object.values(allSite).forEach(v => {
+        if (v && v.id && v.id.startsWith('help_') && v.phone === phone) msgs.push(v);
+      });
+    } catch(e) {}
+  }
+  try {
+    const local = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+    const fbIds = new Set(msgs.map(m => m.id));
+    local.forEach(m => { if (!fbIds.has(m.id)) msgs.push(m); });
+  } catch(e) {}
+  msgs.sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+  localStorage.setItem('my_help_' + phone, JSON.stringify([...msgs].reverse()));
+  renderUserChatMessages(msgs, phone);
+}
+
+function renderUserChatMessages(msgs, phone) {
+  const el = document.getElementById('userChatMessages');
+  if (!el) return;
+  if (!msgs || !msgs.length) {
+    el.innerHTML = `<div style="text-align:center;padding:30px;color:var(--muted,#9ca3af);font-size:13px;">
+      <div style="font-size:36px;margin-bottom:10px;">💬</div>
+      <div style="font-weight:700;margin-bottom:6px;">Namaskar! Kaise madad karein?</div>
+      <div style="font-size:12px;">Neeche apna message type karein — Admin turant reply karenge.</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = '';
+  msgs.forEach(m => {
+    appendUserChatBubble({ text: m.message, from: 'user', ts: m.submittedAt, label: m.category !== 'General' ? '📋 ' + m.category : '' });
+    if (m.adminReply) {
+      if (!m.replyRead) {
+        // Mark as read silently
+        try {
+          const myList = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
+          const idx = myList.findIndex(e => e.id === m.id);
+          if (idx !== -1) { myList[idx].replyRead = true; localStorage.setItem('my_help_' + phone, JSON.stringify(myList)); }
+        } catch(e) {}
+        if (typeof window._fbSet === 'function') {
+          try {
+            const all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+            const aidx = all.findIndex(e => e.id === m.id);
+            if (aidx !== -1) { all[aidx].replyRead = true; localStorage.setItem('help_enquiries', JSON.stringify(all)); window._fbSet('siteData', m.id, all[aidx]); }
+          } catch(e) {}
+        }
+      }
+      appendUserChatBubble({ text: m.adminReply, from: 'admin', ts: m.repliedAt || m.submittedAt, label: '🎧 Admin' });
+    }
+  });
+  el.scrollTop = el.scrollHeight;
+  // Update badge
+  const unread = msgs.filter(m => m.adminReply && !m.replyRead).length;
+  const badge = document.getElementById('helpUnreadBadge');
+  if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
+}
+
+// Realtime polling for new admin replies
+let _userChatTimer = null;
+function startUserChatRealtimeSync() {
+  if (_userChatTimer) clearInterval(_userChatTimer);
+  _userChatTimer = setInterval(async () => {
+    const el = document.getElementById('userChatMessages');
+    if (!el) { clearInterval(_userChatTimer); return; }
+    const isMaid2 = isMaidUser();
+    const phone2 = isMaid2 ? getLoggedMaidPhone() : getAuthToken();
+    if (!phone2 || typeof window._fbGet !== 'function') return;
+    try {
+      const allSite = await window._fbGet('siteData', null);
+      if (!allSite) return;
+      const myList = JSON.parse(localStorage.getItem('my_help_' + phone2) || '[]');
+      let changed = false;
+      Object.values(allSite).forEach(v => {
+        if (!v || !v.id || !v.id.startsWith('help_') || v.phone !== phone2) return;
+        const idx = myList.findIndex(e => e.id === v.id);
+        if (idx === -1) { myList.unshift(v); changed = true; }
+        else if (v.adminReply && myList[idx].adminReply !== v.adminReply) {
+          myList[idx] = Object.assign({}, myList[idx], v, { replyRead: false });
+          changed = true;
+        }
+      });
+      if (changed) {
+        myList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+        localStorage.setItem('my_help_' + phone2, JSON.stringify(myList));
+        renderUserChatMessages([...myList].reverse(), phone2);
+        const nr = myList.filter(m => m.adminReply && !m.replyRead).length;
+        if (nr > 0) {
+          const badge = document.getElementById('helpUnreadBadge');
+          if (badge) { badge.textContent = nr; badge.style.display = 'inline'; }
+          showToast('💬 Admin ne aapki chat ka jawab de diya!');
+        }
+      }
+    } catch(e) {}
+  }, 8000);
+}
+
+// Legacy compat — keep old functions working
 async function submitUserHelpFromDash() {
   const isMaid = isMaidUser();
   const phone = isMaid ? getLoggedMaidPhone() : getAuthToken();
+  if (!phone) return;
   const customers = readCustomers();
   const cust = (!isMaid && phone) ? customers[phone] : null;
   const regMaids = readRegisteredMaids();
@@ -21594,7 +22176,11 @@ function renderPaymentsLog() {
       <td><div class="tbl-name">${p.userName||'—'}</div><div class="tbl-sub">${p.userPhone||'—'}</div></td>
       <td>${p.planName||p.planKey||'—'}</td>
       <td>₹${p.amount!=null?p.amount:'—'}</td>
-      <td><span class="badge ${statusColors[p.status]||'badge-gray'}">${(p.status||'pending').charAt(0).toUpperCase()+(p.status||'pending').slice(1)}</span>${p.status==='failed'&&p.error?'<div class="tbl-sub" style="margin-top:3px;color:var(--red);">'+p.error+'</div>':''}</td>
+      <td>
+        <span class="badge ${statusColors[p.status]||'badge-gray'}">${(p.status||'pending').charAt(0).toUpperCase()+(p.status||'pending').slice(1)}</span>
+        ${p.status==='failed'&&p.error?'<div class="tbl-sub" style="margin-top:3px;color:var(--red);">'+p.error+'</div>':''}
+        ${(p.status==='pending'||p.status==='failed')?`<div style="margin-top:6px;"><button onclick="adminManuallyActivatePlan('${p.id}')" style="background:#166534;color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;"><i class='fas fa-check-circle' style='margin-right:4px;'></i>Manually Activate</button></div>`:''}
+      </td>
       <td style="font-size:12px;color:var(--text2);">${p.razorpay_payment_id||'—'}</td>
       <td style="font-size:12px;color:var(--text2);">${p.createdAt?new Date(p.createdAt).toLocaleString('en-IN'):'—'}</td>
     </tr>
@@ -21609,6 +22195,66 @@ function renderPaymentsLog() {
   }
 }
 window.renderPaymentsLog = renderPaymentsLog;
+
+// ══════════════════════════════════════
+// ADMIN: MANUALLY ACTIVATE PLAN
+// Jab customer ka payment Razorpay pe success ho gaya lekin
+// callback miss ho gayi (phone locked, internet cut, etc.)
+// Admin is button se directly plan activate kar sakta hai.
+// ══════════════════════════════════════
+window.adminManuallyActivatePlan = async function(paymentLogId) {
+  var log = getPaymentsLog();
+  var rec = log.find(function(r){ return r.id === paymentLogId; });
+  if (!rec) { showToast('❌ Payment record nahi mila.'); return; }
+  if (!rec.userPhone) { showToast('❌ Is payment mein user phone number nahi hai.'); return; }
+  if (!rec.planKey) { showToast('❌ Plan key missing hai.'); return; }
+
+  var confirmMsg = 'Kya aap confirm karte hain?\n\n' +
+    'Customer: ' + (rec.userName||rec.userPhone) + '\n' +
+    'Phone: ' + rec.userPhone + '\n' +
+    'Plan: ' + (rec.planName||rec.planKey) + '\n' +
+    'Amount: ₹' + (rec.amount||'?') + '\n\n' +
+    'Yeh plan turant activate ho jayega aur customer ko credit mil jayega.';
+  if (!window.confirm(confirmMsg)) return;
+
+  try {
+    var plan = getWebsitePlans()[rec.planKey] || PLANS[rec.planKey];
+    if (!plan) { showToast('❌ Plan details nahi mile. planKey: ' + rec.planKey); return; }
+
+    var now = new Date();
+    var expiry = new Date(now.getTime() + plan.days * 24 * 60 * 60 * 1000);
+    var subData = {
+      planKey: rec.planKey,
+      activatedAt: now.toISOString(),
+      expiry: expiry.toISOString(),
+      razorpay_payment_id: rec.razorpay_payment_id || '',
+      razorpay_order_id: rec.razorpay_order_id || '',
+      razorpay_signature: rec.razorpay_signature || '',
+      manuallyActivatedBy: 'admin',
+      manuallyActivatedAt: now.toISOString()
+    };
+
+    // Customer ke Firebase subscription key mein save karo
+    var subKey = 'userSubscription_' + rec.userPhone;
+    if (typeof window._fbSet === 'function') {
+      await window._fbSet('siteData', subKey, subData);
+    }
+    // localStorage mein bhi save karo (agar admin same device pe hai)
+    localStorage.setItem(subKey, JSON.stringify(subData));
+
+    // Payment log mein bhi success mark karo
+    updatePaymentStatus(paymentLogId, 'success', {
+      razorpay_payment_id: rec.razorpay_payment_id || 'MANUAL_ADMIN_ACTIVATE',
+      error: ''
+    });
+
+    showToast('✅ Plan activate ho gaya! ' + (rec.userName||rec.userPhone) + ' ko ' + plan.name + ' Plan mil gaya.');
+    renderPaymentsLog();
+  } catch(e) {
+    console.error('adminManuallyActivatePlan error:', e);
+    showToast('❌ Error: ' + (e.message || e));
+  }
+};
 
 // ══════════════════════════════════════
 // CITIES
@@ -22324,14 +22970,63 @@ function switchWebTab(tab){
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); wcLoadPopupToggle(); }
+  if(tab === 'announcement') { annInitAdminPanel(); }
 }
-function handleImageUpload(event, targetInputId){
+async function handleImageUpload(event, targetInputId){
   const file = event.target.files[0];
   if(!file) return;
-  if(file.size > 1.5*1024*1024){ showToast('Image too large — please use under 1.5MB or paste a URL instead'); return; }
-  const reader = new FileReader();
-  reader.onload = e => { document.getElementById(targetInputId).value = e.target.result; showToast('Image loaded — click Publish to go live'); if(targetInputId==='wc-logo-img') updateLogoPreview(); };
-  reader.readAsDataURL(file);
+  if(file.size > 5*1024*1024){ showToast('Image bahut badi hai — 5MB se kam rakho.'); return; }
+
+  // Firebase Storage available hai to seedha upload karo — URL milega, base64 nahi
+  if(typeof window._fbUploadPhoto === 'function'){
+    showToast('Image upload ho rahi hai...');
+    const inputEl = document.getElementById(targetInputId);
+    if(inputEl) inputEl.disabled = true;
+    const publishBtns = document.querySelectorAll('[onclick*="saveSiteContent"]');
+    publishBtns.forEach(b => b.disabled = true);
+    try {
+      const path = 'site-images/' + targetInputId + '_' + Date.now() + '.jpg';
+      const url = await window._fbUploadPhoto(file, path);
+      if(url){
+        if(inputEl){ inputEl.value = url; inputEl.disabled = false; }
+        publishBtns.forEach(b => b.disabled = false);
+        if(targetInputId==='wc-logo-img') updateLogoPreview();
+        // Hero image ke liye — URL Firebase Storage pe save hone ke baad auto-publish karo
+        if(targetInputId === 'wc-hero-img'){
+          showToast('✅ Image upload ho gayi! Website pe live ho rahi hai...');
+          // Thoda wait karo taaki input value set ho jaye, phir publish karo
+          setTimeout(() => saveSiteContent('hero'), 300);
+        } else {
+          showToast('Image upload ho gayi! Ab Publish dabao website pe live ho jayegi.');
+        }
+      } else {
+        throw new Error('URL nahi mili');
+      }
+    } catch(e){
+      if(inputEl) inputEl.disabled = false;
+      publishBtns.forEach(b => b.disabled = false);
+      console.warn('Firebase Storage upload failed, falling back to base64:', e);
+      if(file.size > 1.5*1024*1024){ showToast('Upload fail hua aur image 1.5MB se badi hai — URL paste karo.'); return; }
+      const reader = new FileReader();
+      reader.onload = ev => {
+        if(inputEl) inputEl.value = ev.target.result;
+        if(targetInputId==='wc-logo-img') updateLogoPreview();
+        showToast('Image loaded (local only) — click Publish to go live.');
+      };
+      reader.readAsDataURL(file);
+    }
+  } else {
+    // Firebase Storage abhi load nahi hua — base64 fallback
+    if(file.size > 1.5*1024*1024){ showToast('Image too large — please use under 1.5MB or paste a URL instead'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const inputEl = document.getElementById(targetInputId);
+      if(inputEl) inputEl.value = e.target.result;
+      if(targetInputId==='wc-logo-img') updateLogoPreview();
+      showToast('Image loaded — click Publish to go live');
+    };
+    reader.readAsDataURL(file);
+  }
 }
 function updateFaviconPreview(){
   const box = document.getElementById('wc-favicon-preview-box');
@@ -22392,7 +23087,7 @@ function updateHeroOverlayPreview(){
   const overlayEl = document.querySelector('.hero-overlay');
   if(overlayEl) overlayEl.style.background = `linear-gradient(to bottom, rgba(${r},${g},${b},${op}), rgba(${r},${g},${b},${(op*0.95).toFixed(2)}), rgba(${r},${g},${b},${op}))`;
 }
-function saveSiteContent(section){
+async function saveSiteContent(section){
   let keys;
   if(section === 'hero') {
     // Overlay color + opacity combine karke save karo
@@ -22404,6 +23099,39 @@ function saveSiteContent(section){
       const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
       setSiteContentKey('hero-overlay-color', `rgba(${r},${g},${b},${op})`);
       setSiteContentKey('hero-overlay-opacity', op);
+    }
+    // Hero image: agar base64 hai (data:image) to pehle Firebase Storage pe upload karo, phir save karo
+    const heroImgEl = document.getElementById('wc-hero-img');
+    if(heroImgEl && heroImgEl.value && heroImgEl.value.startsWith('data:image')){
+      if(typeof window._fbUploadPhoto !== 'function'){
+        showToast('⚠️ Firebase abhi load nahi hua — thoda wait karo aur dobara Publish dabao.');
+        return;
+      }
+      showToast('⏳ Image Firebase Storage pe upload ho rahi hai...');
+      // Publish button disable karo jab tak upload complete na ho
+      const publishBtns = document.querySelectorAll('[onclick*="saveSiteContent"]');
+      publishBtns.forEach(b => b.disabled = true);
+      heroImgEl.disabled = true;
+      try {
+        // base64 string ko Blob mein convert karo
+        const base64Data = heroImgEl.value;
+        const res = await fetch(base64Data);
+        const blob = await res.blob();
+        const path = 'site-images/wc-hero-img_' + Date.now() + '.jpg';
+        const url = await window._fbUploadPhoto(blob, path);
+        if(!url) throw new Error('URL nahi mili');
+        heroImgEl.value = url;
+        heroImgEl.disabled = false;
+        publishBtns.forEach(b => b.disabled = false);
+        showToast('✅ Image Firebase Storage pe save ho gayi! Ab publish ho raha hai...');
+        // Ab normal save flow chalao
+      } catch(e) {
+        heroImgEl.disabled = false;
+        publishBtns.forEach(b => b.disabled = false);
+        showToast('❌ Image upload fail hua — koi fresh image upload karo ya URL paste karo.');
+        console.warn('Hero image base64->Firebase upload failed:', e);
+        return;
+      }
     }
     keys = {'wc-hero-badge':'hero-badge','wc-hero-title':'hero-title','wc-hero-subtitle':'hero-subtitle','wc-hero-cta-title':'hero-cta-title','wc-hero-cta-sub':'hero-cta-sub','wc-hero-img':'hero-img','wc-hero-video':'hero-video'};
   }
@@ -24369,6 +25097,9 @@ function setupRealtimeSync() {
       if (typeof window.renderMaids === 'function') { try { window.renderMaids(); } catch(e) {} }
       if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
       if (typeof window.updateNavBadges === 'function') { try { window.updateNavBadges(); } catch(e) {} }
+      // ── Agency maid count live update: jab bhi koi maid register ho ya link ho ──
+      if (typeof window.renderAgencies === 'function') { try { window.renderAgencies(); } catch(e) {} }
+      if (typeof window.renderAgencyMaids === 'function') { try { window.renderAgencyMaids(); } catch(e) {} }
 
       // Notify the logged-in maid the moment her profile goes LIVE.
       if (myPhone) {
@@ -24545,6 +25276,17 @@ function setupRealtimeSync() {
     }
   });
 
+  // ── Announcement Bar — real-time sync (har device pe turant update) ──
+  try {
+    onSnapshot(doc(_db, 'siteData', 'ram_announcement_bar'), snap => {
+      if (snap.exists() && snap.data() && snap.data().data) {
+        if (typeof window.annApplySettings === 'function') {
+          window.annApplySettings(snap.data().data);
+        }
+      }
+    }, e => console.warn('Announcement bar listener error:', e));
+  } catch(e) { console.warn('Announcement bar listener setup failed:', e); }
+
   // ── Gallery — real-time sync ──
   onSnapshot(doc(_db, 'siteData', 'ram_site_gallery'), snap => {
     if (snap.exists() && snap.data().data) {
@@ -24561,6 +25303,9 @@ function setupRealtimeSync() {
     localStorage.setItem('ram_registered_maids', JSON.stringify(snap.data().data));
     if (typeof window.renderMaids === 'function') { try { window.renderMaids(); } catch(e) {} }
     if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
+    // ── Agency count live update jab bhi koi registered maid agency join kare ──
+    if (typeof window.renderAgencies === 'function') { try { window.renderAgencies(); } catch(e) {} }
+    if (typeof window.renderAgencyMaids === 'function') { try { window.renderAgencyMaids(); } catch(e) {} }
   });
 
   // ══ AGENCIES — Real-time sync ══
@@ -26379,19 +27124,93 @@ function agencyLogout() {
 // ══ AGENCY HELP FUNCTIONS ══
 
 /* Agency Help Submit */
+/* Agency Live Chat: load and render */
+async function agLoadLiveChat() {
+  var sess = null;
+  try { sess = JSON.parse(localStorage.getItem('rami_agency_session') || 'null'); } catch(e){}
+  if (!sess || !sess.phone) return;
+  var el = document.getElementById('agChatMessages');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>';
+
+  var msgs = [];
+  if (typeof window._fbGet === 'function') {
+    try {
+      var allSite = await window._fbGet('siteData', null);
+      if (allSite) Object.values(allSite).forEach(function(v) {
+        if (v && v.id && v.id.startsWith('help_') && v.phone === sess.phone) msgs.push(v);
+      });
+    } catch(e) {}
+  }
+  try {
+    var local = JSON.parse(localStorage.getItem('ag_help_' + sess.phone) || '[]');
+    var fbIds = new Set(msgs.map(function(m){ return m.id; }));
+    local.forEach(function(m){ if (!fbIds.has(m.id)) msgs.push(m); });
+  } catch(e) {}
+  msgs.sort(function(a,b){ return new Date(a.submittedAt) - new Date(b.submittedAt); });
+  localStorage.setItem('ag_help_' + sess.phone, JSON.stringify([...msgs].reverse()));
+  agRenderChatMessages(msgs, sess.phone);
+}
+
+function agRenderChatMessages(msgs, phone) {
+  var el = document.getElementById('agChatMessages');
+  if (!el) return;
+  if (!msgs || !msgs.length) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#9ca3af;font-size:13px;"><div style="font-size:34px;margin-bottom:8px;">💬</div><div style="font-weight:700;">Namaskar! Kaise madad karein?</div><div style="font-size:12px;margin-top:4px;">Neeche message type karein — Admin turant reply karenge.</div></div>';
+    return;
+  }
+  el.innerHTML = '';
+  msgs.forEach(function(m) {
+    var ts1 = new Date(m.submittedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    el.innerHTML += '<div style="display:flex;flex-direction:column;align-items:flex-start;margin-bottom:2px;"><div style="max-width:78%;padding:9px 13px;border-radius:16px 16px 16px 4px;background:#fff;border:1.5px solid #e2e8f0;font-size:13px;line-height:1.5;color:#374151;word-break:break-word;">' + (m.category && m.category !== 'General' ? '<div style="font-size:10px;font-weight:700;color:#8b5cf6;margin-bottom:2px;">📋 ' + m.category + '</div>' : '') + m.message + '</div><div style="font-size:10px;color:#9ca3af;margin-top:2px;padding:0 4px;">' + ts1 + '</div></div>';
+    if (m.adminReply) {
+      var ts2 = m.repliedAt ? new Date(m.repliedAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
+      // Mark as read
+      try {
+        var myList = JSON.parse(localStorage.getItem('ag_help_' + phone) || '[]');
+        var idx = myList.findIndex(function(e){ return e.id === m.id; });
+        if (idx !== -1 && !myList[idx].replyRead) { myList[idx].replyRead = true; localStorage.setItem('ag_help_' + phone, JSON.stringify(myList)); }
+      } catch(e) {}
+      el.innerHTML += '<div style="display:flex;flex-direction:column;align-items:flex-end;margin-bottom:2px;"><div style="max-width:78%;padding:9px 13px;border-radius:16px 16px 4px 16px;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;font-size:13px;line-height:1.5;word-break:break-word;"><div style="font-size:10px;font-weight:700;opacity:.75;margin-bottom:2px;">🎧 Admin</div>' + m.adminReply + '</div><div style="font-size:10px;color:#9ca3af;margin-top:2px;padding:0 4px;">' + ts2 + '</div></div>';
+    }
+  });
+  el.scrollTop = el.scrollHeight;
+  // Unread dot
+  var hasUnread = msgs.some(function(m){ return m.adminReply && !m.replyRead; });
+  var dot = document.getElementById('agHelpUnreadDot');
+  if (dot) dot.style.display = hasUnread ? 'block' : 'none';
+}
+
+/* Start realtime polling for agency chat */
+var _agChatTimer = null;
+function startAgencyChatSync() {
+  if (_agChatTimer) clearInterval(_agChatTimer);
+  _agChatTimer = setInterval(async function() {
+    var el = document.getElementById('agChatMessages');
+    if (!el) { clearInterval(_agChatTimer); return; }
+    await agLoadLiveChat();
+  }, 10000);
+}
+
 async function submitAgencyHelp() {
   var sess = null;
   try { sess = JSON.parse(localStorage.getItem('rami_agency_session') || 'null'); } catch(e){}
   if (!sess) { showToast('Session expire ho gayi, dobara login karo.'); return; }
 
-  var category = (document.getElementById('agHelpCategory') || {}).value || '';
+  var category = (document.getElementById('agHelpCategory') || {}).value || 'General';
   var message = ((document.getElementById('agHelpMessage') || {}).value || '').trim();
-  var statusEl = document.getElementById('agHelpSubmitStatus');
 
-  if (!category) { showToast('Category chunna zaroori hai.'); return; }
   if (!message) { showToast('Message likhna zaroori hai.'); return; }
 
-  if (statusEl) { statusEl.style.display='block'; statusEl.style.background='#fef3c7'; statusEl.style.color='#92400e'; statusEl.textContent='⏳ Submit ho rahi hai...'; }
+  // Optimistic UI
+  var inputEl = document.getElementById('agHelpMessage');
+  if (inputEl) inputEl.value = '';
+  var el = document.getElementById('agChatMessages');
+  if (el) {
+    var ts = new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    el.innerHTML += '<div style="display:flex;flex-direction:column;align-items:flex-start;margin-bottom:2px;"><div style="max-width:78%;padding:9px 13px;border-radius:16px 16px 16px 4px;background:#fff;border:1.5px solid #e2e8f0;font-size:13px;line-height:1.5;color:#374151;">' + message + '</div><div style="font-size:10px;color:#9ca3af;margin-top:2px;padding:0 4px;">' + ts + '</div></div>';
+    el.scrollTop = el.scrollHeight;
+  }
 
   var enquiry = {
     id: 'help_' + Date.now() + '_' + Math.random().toString(36).substr(2,5),
@@ -26406,38 +27225,28 @@ async function submitAgencyHelp() {
     submittedAt: new Date().toISOString(),
     adminReply: '',
     repliedAt: '',
-    replyRead: false
+    replyRead: false,
+    isChat: true
   };
 
-  // Firebase save
   if (typeof window._fbSet === 'function') {
     try { await window._fbSet('siteData', enquiry.id, enquiry); } catch(e) {}
   }
-  // localStorage global
   try {
     var all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
     all.unshift(enquiry);
     localStorage.setItem('help_enquiries', JSON.stringify(all));
   } catch(e) {}
-  // Agency ki apni list
   try {
     var myList = JSON.parse(localStorage.getItem('ag_help_' + sess.phone) || '[]');
     myList.unshift(enquiry);
     localStorage.setItem('ag_help_' + sess.phone, JSON.stringify(myList));
   } catch(e) {}
 
-  // Admin notification
   if (typeof addNotification === 'function') {
-    addNotification({ audience: 'admin', title: '🏢 Agency Help Enquiry', message: (sess.agencyName||'Agency') + ' (' + sess.phone + '): ' + category, page: 'help' });
+    addNotification({ audience: 'admin', title: '💬 Agency Chat', message: (sess.agencyName||'Agency') + ' (' + sess.phone + '): ' + message.substring(0,60), page: 'help' });
   }
   if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
-
-  if (statusEl) { statusEl.style.background='#f0fdf4'; statusEl.style.color='#166534'; statusEl.textContent='✅ Submit ho gayi! Admin jald jawab denge.'; }
-  if (document.getElementById('agHelpCategory')) document.getElementById('agHelpCategory').value = '';
-  if (document.getElementById('agHelpMessage')) document.getElementById('agHelpMessage').value = '';
-
-  showToast('✅ Help request submit ho gayi!');
-  loadAgencyHelpEnquiries();
 }
 
 /* Load agency's own help enquiries */
@@ -26589,7 +27398,7 @@ function agDashTab(tab, filter) {
     }
   }
   if (tab === 'profile') agLoadProfileForm();
-  if (tab === 'help') loadAgencyHelpEnquiries();
+  if (tab === 'help') { agLoadLiveChat(); startAgencyChatSync(); }
 }
 
 /* ── Get maids belonging to this agency ── */
@@ -26928,6 +27737,75 @@ function agSaveEditMaid() {
   renderAgencyMaidsList();
 }
 
+function agRespondEnquiry(reqId, newStatus) {
+  var sess = agGetSession(); if (!sess) return;
+  var agKey = 'ram_agency_enquiries_' + sess.phone;
+  var agList = [];
+  try { agList = JSON.parse(localStorage.getItem(agKey)||'[]'); } catch(e){}
+  var enq = agList.find(function(x){ return x.id === reqId; });
+  if (!enq) return;
+
+  enq.status = newStatus;
+  enq.respondedAt = new Date().toISOString();
+  localStorage.setItem(agKey, JSON.stringify(agList));
+
+  // Firebase mein bhi save karo
+  var fbAgKey = agKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+  if (typeof window._fbSetWhenReady === 'function') {
+    window._fbSetWhenReady('siteData', fbAgKey, agList).catch(function(e){});
+  } else if (typeof window._fbSet === 'function') {
+    window._fbSet('siteData', fbAgKey, agList).catch(function(e){});
+  }
+
+  // Maid ke inbox mein bhi status update karo
+  var maidPhone = enq._maidPhone || enq.maidPhone || '';
+  if (maidPhone) {
+    var maidKey = 'ram_maid_requests_' + maidPhone;
+    var maidReqs = [];
+    try { maidReqs = JSON.parse(localStorage.getItem(maidKey)||'[]'); } catch(e){}
+    var mReq = maidReqs.find(function(r){ return r.id === reqId; });
+    if (mReq) {
+      mReq.status = newStatus;
+      mReq.agencyRespondedAt = new Date().toISOString();
+      localStorage.setItem(maidKey, JSON.stringify(maidReqs));
+      var fbMaidKey = maidKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+      if (typeof window._fbSetWhenReady === 'function') {
+        window._fbSetWhenReady('siteData', fbMaidKey, maidReqs).catch(function(e){});
+      } else if (typeof window._fbSet === 'function') {
+        window._fbSet('siteData', fbMaidKey, maidReqs).catch(function(e){});
+      }
+    }
+  }
+
+  // Customer ke status key mein bhi update karo
+  var custPhone = enq.customerPhone || enq.customerId || '';
+  if (custPhone) {
+    var custKey = 'ram_cust_req_status_' + custPhone;
+    var custReqs = [];
+    try { custReqs = JSON.parse(localStorage.getItem(custKey)||'[]'); } catch(e){}
+    var cReq = custReqs.find(function(r){ return r.reqId === reqId || r.maidId === enq.maidId; });
+    if (cReq) {
+      cReq.status = newStatus;
+      cReq.respondedAt = new Date().toISOString();
+      // Agency accept hone par customer ko maid ka number bhi dikhao
+      if (newStatus === 'Accepted') cReq.maidPhoneUnlocked = maidPhone;
+      localStorage.setItem(custKey, JSON.stringify(custReqs));
+      var fbCustKey = custKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+      if (typeof window._fbSetWhenReady === 'function') {
+        window._fbSetWhenReady('siteData', fbCustKey, custReqs).catch(function(e){});
+      } else if (typeof window._fbSet === 'function') {
+        window._fbSet('siteData', fbCustKey, custReqs).catch(function(e){});
+      }
+    }
+  }
+
+  showToast(newStatus === 'Accepted' ? '✅ Request Accept kar li!' : '❌ Request Reject kar di.');
+
+  // Refresh dashboard stats and enquiry list
+  renderAgencyEnquiries();
+  if (typeof renderAgencyDashboard === 'function') { try { renderAgencyDashboard(sess); } catch(ex){} }
+}
+
 function renderAgencyEnquiries() {
   var sess = agGetSession(); if (!sess) return;
   var allEnqs = agGetEnquiries(sess.phone);
@@ -26966,14 +27844,40 @@ function renderAgencyEnquiries() {
     var dt = e.sentAt ? new Date(e.sentAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
     var statusColor = e.status==='Accepted'?'#15803d':e.status==='Rejected'?'#dc2626':'#92400e';
     var statusBg = e.status==='Accepted'?'#dcfce7':e.status==='Rejected'?'#fef2f2':'#fef9c3';
+    var custPhone = e.customerPhone || e.customerId || '';
+    var safeId = JSON.stringify(e.id);
+
+    // Phone number: Accepted hone par dikhe, warna lock
+    var phoneHtml = '';
+    if (e.status === 'Accepted' && custPhone) {
+      phoneHtml = '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
+        +'<a href="tel:'+custPhone+'" style="display:inline-flex;align-items:center;gap:5px;background:#f97316;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fas fa-phone"></i> '+custPhone+'</a>'
+        +'<a href="https://wa.me/91'+custPhone+'?text='+encodeURIComponent('Namaste! Main aapki maid request ke baare mein baat karna chahta/chahti hoon. (Rent a Maid India)')
+          +'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#25d366;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fab fa-whatsapp"></i> WhatsApp</a>'
+        +'</div>';
+    } else if (e.status !== 'Rejected') {
+      phoneHtml = '<div style="margin-top:6px;font-size:11px;color:#9ca3af;"><i class="fas fa-lock"></i> Accept karne par customer ka number dikhega</div>';
+    }
+
+    // Action buttons: sirf Pending pe dikhao
+    var actionHtml = '';
+    if (e.status === 'Pending') {
+      actionHtml = '<div style="display:flex;gap:8px;margin-top:10px;">'
+        +'<button onclick="agRespondEnquiry('+safeId+',\'Accepted\')" style="flex:1;padding:7px 0;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><i class="fas fa-check"></i> Accept</button>'
+        +'<button onclick="agRespondEnquiry('+safeId+',\'Rejected\')" style="flex:1;padding:7px 0;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><i class="fas fa-times"></i> Decline</button>'
+        +'</div>';
+    }
+
     return '<div style="padding:14px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#f9fafb;">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-        +'<div>'
+        +'<div style="flex:1;">'
           +'<div style="font-weight:700;font-size:14px;color:#111827;">'+(e.customerName||'Customer')+'</div>'
-          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">For: <strong>'+e._maidName+'</strong></div>'
+          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">For: <strong>'+(e._maidName||e.maidName||'—')+'</strong></div>'
           +'<div style="font-size:12px;color:#6b7280;">City: '+(e.customerCity||'—')+'</div>'
           +(e.service?'<div style="font-size:12px;color:#6b7280;">Service: '+e.service+'</div>':'')
           +'<div style="font-size:11px;color:#9ca3af;margin-top:4px;">'+dt+'</div>'
+          +phoneHtml
+          +actionHtml
         +'</div>'
         +'<span style="background:'+statusBg+';color:'+statusColor+';font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;">'+e.status+'</span>'
       +'</div>'
@@ -27497,47 +28401,38 @@ function submitAgencyAddMaid() {
       <div id="agEnquiryList"></div>
     </div>
 
-    <!-- Pane: Help & Support -->
+    <!-- Pane: Help & Support — LIVE CHAT -->
     <div id="agPane_help" class="ag-dash-pane" style="display:none;">
-      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Admin se madad maango — koi bhi problem ya sawaal yahan bhejo. Admin reply karega aur aapko turant notification milega.</div>
-
-      <!-- Submit New Help Request -->
-      <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:14px;padding:16px;margin-bottom:18px;">
-        <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;"><i class="fas fa-paper-plane" style="color:#8b5cf6;margin-right:6px;"></i>Naya Sawaal / Samasya Bhejo</div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;display:block;margin-bottom:5px;">Category *</label>
-          <select id="agHelpCategory" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:13px;background:#fff;outline:none;box-sizing:border-box;">
-            <option value="">— Category chunein —</option>
-            <option value="Maid Verification Issue">Maid Verification Issue</option>
-            <option value="Maid Profile Problem">Maid Profile Problem</option>
-            <option value="Login / Password Issue">Login / Password Issue</option>
-            <option value="Payment / Billing">Payment / Billing</option>
-            <option value="Account Issue">Account Issue</option>
-            <option value="Technical Problem">Technical Problem</option>
-            <option value="Other">Other</option>
-          </select>
+      <div style="font-weight:700;font-size:15px;color:#374151;margin-bottom:12px;display:flex;align-items:center;gap:8px;">💬 Admin se Live Chat <button onclick="agLoadLiveChat()" style="margin-left:auto;background:none;border:1px solid #e2e8f0;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;color:#6b7280;"><i class="fas fa-rotate-right"></i> Refresh</button></div>
+      <div style="background:#fff;border:1.5px solid #e2e8f0;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;height:480px;">
+        <!-- Chat Header -->
+        <div style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);padding:12px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <div style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:16px;">🎧</div>
+          <div style="flex:1;"><div style="color:#fff;font-weight:700;font-size:13px;">Rent a Maid Support</div><div style="color:#ddd6fe;font-size:11px;">⚡ Admin jald reply karenge</div></div>
         </div>
-        <div style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;display:block;margin-bottom:5px;">Message / Samasya *</label>
-          <textarea id="agHelpMessage" rows="3" placeholder="Apni problem ya sawaal yahan likhein..." style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:13px;background:#fff;outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+        <!-- Messages -->
+        <div id="agChatMessages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#faf5ff;">
+          <div style="text-align:center;padding:20px;color:#9ca3af;font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>
         </div>
-        <div id="agHelpSubmitStatus" style="display:none;font-size:12px;margin-bottom:8px;padding:8px 12px;border-radius:8px;"></div>
-        <button onclick="submitAgencyHelp()" style="width:100%;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.02em;">
-          <i class="fas fa-paper-plane"></i> Bhejo / Send
-        </button>
-      </div>
-
-      <!-- Previous Help Enquiries -->
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-        Purane Sawaal / Previous Requests
-        <button onclick="loadAgencyHelpEnquiries()" style="background:none;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;color:#6b7280;font-weight:600;"><i class="fas fa-rotate-right"></i> Refresh</button>
-      </div>
-      <div id="agHelpList">
-        <div style="text-align:center;padding:24px;color:#c4b5fd;font-size:13px;background:#f5f3ff;border-radius:10px;">
-          <i class="fas fa-headset" style="font-size:28px;display:block;margin-bottom:8px;opacity:.5;"></i>
-          Abhi koi help request nahi hai.<br><span style="font-size:12px;color:#9ca3af;">Upar form bharo aur "Bhejo" dabao.</span>
+        <!-- Input -->
+        <div style="padding:10px 12px;border-top:1.5px solid #e2e8f0;background:#fff;flex-shrink:0;">
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <select id="agHelpCategory" style="flex-shrink:0;padding:8px 8px;border:1.5px solid #d1d5db;border-radius:9px;font-size:11px;background:#fff;outline:none;max-width:110px;">
+              <option value="General">📋 General</option>
+              <option value="Maid Verification Issue">✅ Verification</option>
+              <option value="Maid Profile Problem">👩 Profile</option>
+              <option value="Login / Password Issue">🔑 Login</option>
+              <option value="Payment / Billing">💳 Payment</option>
+              <option value="Technical Problem">🔧 Technical</option>
+              <option value="Other">❓ Other</option>
+            </select>
+            <textarea id="agHelpMessage" rows="1" placeholder="Message likhein... (Enter = send)" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitAgencyHelp();}" style="flex:1;padding:8px 11px;border:1.5px solid #d1d5db;border-radius:9px;font-size:13px;background:#fff;outline:none;resize:none;font-family:inherit;max-height:70px;overflow-y:auto;"></textarea>
+            <button onclick="submitAgencyHelp()" style="flex-shrink:0;background:linear-gradient(135deg,#8b5cf6,#7c3aed);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:15px;cursor:pointer;"><i class="fas fa-paper-plane"></i></button>
+          </div>
         </div>
       </div>
+      <div id="agHelpSubmitStatus" style="display:none;"></div>
+      <div id="agHelpList" style="display:none;"></div>
     </div>
 
   </div>
