@@ -2393,6 +2393,12 @@ tr:hover td{background:#f8fafc;}
   var paused = false;
   var visible= true;
   var annImgData = '';
+  // Realtime Firebase listener speed update ke liye global expose karo
+  Object.defineProperty(window, '_annSpeed', {
+    set: function(v) { speed = v; },
+    get: function() { return speed; },
+    configurable: true
+  });
 
   // Default text
   var currentText = '🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! \u00a0|\u00a0 ✅ Verified & Background-Checked Maids \u00a0|\u00a0 🏠 Part-Time, Full-Time, Live-In Maid Service \u00a0|\u00a0 ⭐ 4.8 Rating | 4200+ Happy Families';
@@ -17875,21 +17881,20 @@ async function rcSubmitLogin() {
         </div>
         <div class="settings-grid">
           <div class="settings-nav">
-            <div class="settings-nav-item active" onclick="switchWebTab('hero')"><i class="fas fa-image"></i> Hero / Banner</div>
-            <div class="settings-nav-item" onclick="switchWebTab('logo')"><i class="fas fa-icons"></i> Logo</div>
-            <div class="settings-nav-item" onclick="switchWebTab('stats')"><i class="fas fa-chart-simple"></i> Stats Bar</div>
-            <div class="settings-nav-item" onclick="switchWebTab('footer')"><i class="fas fa-shoe-prints"></i> Footer</div>
-            <div class="settings-nav-item" onclick="switchWebTab('icons')"><i class="fas fa-icons"></i> Service Icons</div>
-            <div class="settings-nav-item" onclick="switchWebTab('colours')"><i class="fas fa-palette"></i> Colours & Theme</div>
-            <div class="settings-nav-item" onclick="switchWebTab('sectioncolours')"><i class="fas fa-fill-drip"></i> Section Colours</div>
-            <div class="settings-nav-item" onclick="switchWebTab('fonts')"><i class="fas fa-font"></i> Fonts</div>
-            <div class="settings-nav-item" onclick="switchWebTab('animations')"><i class="fas fa-wand-magic-sparkles"></i> Animations</div>
-            <div class="settings-nav-item" onclick="switchWebTab('gallery')"><i class="fas fa-images"></i> Photo Gallery</div>
-            <div class="settings-nav-item" onclick="switchWebTab('welcomepopup')"><i class="fas fa-door-open"></i> Welcome Popup</div>
-            <div class="settings-nav-item" onclick="switchWebTab('announcement')"><i class="fas fa-bullhorn"></i> Announcement Bar</div>
-            <div class="settings-nav-item" onclick="switchWebTab('sections')"><i class="fas fa-layer-group"></i> Sections Manager</div>
-            <div class="settings-nav-item" onclick="switchWebTab('customcss')"><i class="fas fa-code"></i> Custom CSS / Code</div>
-            <div class="settings-nav-item" onclick="switchWebTab('seo')"><i class="fas fa-magnifying-glass-chart"></i> SEO & Meta</div>
+            <div class="settings-nav-item active" onclick="switchWebTab('hero',this)"><i class="fas fa-image"></i> Hero / Banner</div>
+            <div class="settings-nav-item" onclick="switchWebTab('logo',this)"><i class="fas fa-icons"></i> Logo</div>
+            <div class="settings-nav-item" onclick="switchWebTab('stats',this)"><i class="fas fa-chart-simple"></i> Stats Bar</div>
+            <div class="settings-nav-item" onclick="switchWebTab('footer',this)"><i class="fas fa-shoe-prints"></i> Footer</div>
+            <div class="settings-nav-item" onclick="switchWebTab('icons',this)"><i class="fas fa-icons"></i> Service Icons</div>
+            <div class="settings-nav-item" onclick="switchWebTab('colours',this)"><i class="fas fa-palette"></i> Colours & Theme</div>
+            <div class="settings-nav-item" onclick="switchWebTab('sectioncolours',this)"><i class="fas fa-fill-drip"></i> Section Colours</div>
+            <div class="settings-nav-item" onclick="switchWebTab('fonts',this)"><i class="fas fa-font"></i> Fonts</div>
+            <div class="settings-nav-item" onclick="switchWebTab('animations',this)"><i class="fas fa-wand-magic-sparkles"></i> Animations</div>
+            <div class="settings-nav-item" onclick="switchWebTab('gallery',this)"><i class="fas fa-images"></i> Photo Gallery</div>
+            <div class="settings-nav-item" onclick="switchWebTab('welcomepopup',this)"><i class="fas fa-door-open"></i> Welcome Popup</div>
+            <div class="settings-nav-item" onclick="switchWebTab('announcement',this)"><i class="fas fa-bullhorn"></i> Announcement Bar</div>
+
+            <div class="settings-nav-item" onclick="switchWebTab('seo',this)"><i class="fas fa-magnifying-glass-chart"></i> SEO & Meta</div>
           </div>
           <div id="web-content-panel">
             <!-- HERO TAB -->
@@ -18440,56 +18445,7 @@ async function rcSubmitLogin() {
               </div>
             </div>
 
-            <!-- ══ SECTIONS MANAGER TAB ══ -->
-            <div class="settings-section" id="wtab-sections">
-              <div class="settings-card">
-                <h3><i class="fas fa-layer-group" style="color:var(--primary);margin-right:8px;"></i>Sections Manager</h3>
-                <p>Website ke kisi bhi section ko show/hide karo. Changes Firebase se har device pe live ho jaate hain.</p>
-                <hr class="settings-divider"/>
-                <div id="sectionsMgrList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
-                  <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Loading sections...</div>
-                </div>
-                <hr class="settings-divider"/>
-                <h3>&#10133; Naya Custom Section Add Karo</h3>
-                <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Apna custom HTML section website par add karo. Ye homepage par dikhega.</p>
-                <div class="form-group"><label>Section ID (unique, no spaces)</label><input type="text" id="smgr-new-id" placeholder="jaise: promo-section" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'"/></div>
-                <div class="form-group"><label>Section Title (admin mein dikhne ke liye)</label><input type="text" id="smgr-new-title" placeholder="jaise: Promo Banner" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;box-sizing:border-box;outline:none;" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'"/></div>
-                <div class="form-group"><label>HTML Content</label><textarea id="smgr-new-html" rows="6" placeholder="&lt;div style='...'&gt;Apna HTML yahan likho&lt;/div&gt;" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:monospace;" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'"></textarea></div>
-                <button onclick="smgrAddCustomSection()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;">
-                  &#10003; Custom Section Add Karo &amp; Live Karo
-                </button>
-              </div>
-            </div>
 
-            <!-- ══ CUSTOM CSS / CODE TAB ══ -->
-            <div class="settings-section" id="wtab-customcss">
-              <div class="settings-card">
-                <h3><i class="fas fa-code" style="color:var(--primary);margin-right:8px;"></i>Custom CSS &amp; Code</h3>
-                <p>Apna custom CSS ya JavaScript yahan likho — website par turant apply ho jaayega aur Firebase se sync rahega.</p>
-                <hr class="settings-divider"/>
-                <div class="form-group">
-                  <label>&#127912; Custom CSS</label>
-                  <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Ye CSS website ke &lt;head&gt; mein inject hoga. Koi bhi element ka rang, size, position change karo.</p>
-                  <textarea id="customcss-input" rows="12" placeholder="/* Yahan apna CSS likho */&#10;.hero-section { background: red !important; }&#10;.section-title { font-size: 40px; }" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:'Courier New',monospace;line-height:1.6;" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'"></textarea>
-                </div>
-                <button onclick="saveCustomCSS()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:16px;">
-                  &#10003; CSS Apply Karo — Website Par Live
-                </button>
-                <hr class="settings-divider"/>
-                <div class="form-group">
-                  <label>&#9889; Custom JavaScript (Advanced)</label>
-                  <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Custom JS inject karo — page load hone ke baad chalega. Dhyan se use karo.</p>
-                  <textarea id="customjs-input" rows="8" placeholder="// Yahan apna JS likho&#10;console.log('Hello from custom JS!');" style="width:100%;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:'Courier New',monospace;line-height:1.6;" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'"></textarea>
-                </div>
-                <button onclick="saveCustomJS()" style="width:100%;padding:13px;background:linear-gradient(135deg,#1a3c5e,#0f2940);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">
-                  &#9889; JS Apply Karo — Website Par Live
-                </button>
-                <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:12px 14px;margin-top:14px;font-size:12.5px;color:#92400e;">
-                  &#9888;&#65039; <strong>Warning:</strong> Galat JS se website break ho sakti hai. Agar kuch galat ho jaaye toh neeche "Reset Code" button dabaao.
-                  <button onclick="resetCustomCode()" style="display:block;margin-top:8px;padding:7px 16px;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">&#128465;&#65039; Reset Custom CSS + JS</button>
-                </div>
-              </div>
-            </div>
 
             <!-- ══ SEO & META TAB ══ -->
             <div class="settings-section" id="wtab-seo">
@@ -20115,11 +20071,11 @@ function renderAgencies() {
 
   document.getElementById('agencyTbody').innerHTML = agencies.length ? agencies.map((a, i) => {
     const _agPh = (a.phone||'').replace(/\D/g,'');
-    // Phone = primary identifier
+    // SIRF phone number se maid count — same logic jo renderAgencyMaids use karta hai
     const maidCount = _allMaidsForCount.filter(m => {
-      if (_agPh && m.agencyStatus === 'yes' && (m.agencyPhone||'').replace(/\D/g,'') === _agPh) return true;
-      if (m.agencyId == a.id) return true;
-      return false;
+      if (!_agPh) return false;
+      const mAgPh2 = (m.agencyPhone||'').replace(/\D/g,'');
+      return m.agencyStatus === 'yes' && mAgPh2 === _agPh;
     }).length;
 
     const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN') : '—';
@@ -20217,28 +20173,58 @@ function deleteAgency(id) {
 // ---- View Maids inside an Agency ----
 function openAgencyMaids(agencyId) {
   currentAgencyId = agencyId;
-  const agency = getAgencies().find(a => a.id == agencyId);
-  if (!agency) { showToast('Agency nahi mili. Please refresh karein.'); return; }
-  // Phone number = primary identifier (same logic as agency dashboard)
-  currentAgencyPhone = (agency.phone || '').replace(/\D/g, '');
+  // Show maids view immediately with loader
   document.getElementById('agencyListView').style.display = 'none';
   document.getElementById('agencyMaidsView').style.display = 'block';
-  document.getElementById('agencyMaidsTitle').textContent = agency.name + ' — Maids';
-  document.getElementById('agencyDetailHeader').innerHTML = `
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-      <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;">${escHtml(agency.name[0].toUpperCase())}</div>
-      <div>
-        <div style="font-size:18px;font-weight:700;color:var(--foreground);">${escHtml(agency.name)}</div>
-        <div style="font-size:13px;color:var(--text2);margin-top:2px;">
-          <i class="fas fa-phone" style="margin-right:4px;color:#f97316;"></i>${escHtml(agency.phone||'N/A')}
-          &nbsp;·&nbsp;
-          <i class="fas fa-map-marker-alt" style="margin-right:4px;color:#f97316;"></i>${escHtml(agency.city||'')}${agency.city&&agency.state?', ':''}${escHtml(agency.state||'')}
+  document.getElementById('agencyMaidsTitle').textContent = 'Maids';
+  document.getElementById('agencyDetailHeader').innerHTML = '';
+  const tbody = document.getElementById('agencyMaidsTbody');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p style="font-size:13px;color:var(--text3);margin-top:8px;">Agency data load ho raha hai...</p></div></td></tr>';
+
+  // Firebase se fresh agencies aur maids dono fetch karo simultaneously
+  const agFetch = (typeof window._fbGet === 'function')
+    ? Promise.all([
+        window._fbGet('adminData', 'ram_admin_agencies').catch(() => null),
+        window._fbGet('adminData', 'rami_agencies').catch(() => null)
+      ])
+    : Promise.resolve([null, null]);
+
+  agFetch.then(function(agResults) {
+    // Agencies localStorage update karo agar Firebase se fresh data aaya
+    if (agResults[0] && Array.isArray(agResults[0]) && agResults[0].length) {
+      localStorage.setItem('ram_admin_agencies', JSON.stringify(agResults[0]));
+    } else if (agResults[1] && Array.isArray(agResults[1]) && agResults[1].length) {
+      localStorage.setItem('ram_admin_agencies', JSON.stringify(agResults[1]));
+    }
+
+    const agency = getAgencies().find(a => a.id == agencyId);
+    if (!agency) { showToast('Agency nahi mili. Please refresh karein.'); return; }
+
+    // Phone number = ONLY identifier
+    currentAgencyPhone = (agency.phone || '').replace(/\D/g, '');
+
+    document.getElementById('agencyMaidsTitle').textContent = agency.name + ' — Maids';
+    document.getElementById('agencyDetailHeader').innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;">${escHtml(agency.name[0].toUpperCase())}</div>
+        <div>
+          <div style="font-size:18px;font-weight:700;color:var(--foreground);">${escHtml(agency.name)}</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px;">
+            <i class="fas fa-phone" style="margin-right:4px;color:#f97316;"></i>${escHtml(agency.phone||'N/A')}
+            &nbsp;·&nbsp;
+            <i class="fas fa-map-marker-alt" style="margin-right:4px;color:#f97316;"></i>${escHtml(agency.city||'')}${agency.city&&agency.state?', ':''}${escHtml(agency.state||'')}
+          </div>
+          ${agency.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px;">${escHtml(agency.notes)}</div>`:''}
         </div>
-        ${agency.notes?`<div style="font-size:12px;color:var(--text3);margin-top:4px;">${escHtml(agency.notes)}</div>`:''}
       </div>
-    </div>
-  `;
-  renderAgencyMaids();
+    `;
+    renderAgencyMaids();
+  }).catch(function() {
+    const agency = getAgencies().find(a => a.id == agencyId);
+    if (!agency) { showToast('Agency nahi mili.'); return; }
+    currentAgencyPhone = (agency.phone || '').replace(/\D/g, '');
+    renderAgencyMaids();
+  });
 }
 
 function backToAgencyList() {
@@ -20251,38 +20237,41 @@ function backToAgencyList() {
 
 function renderAgencyMaids() {
   if (!currentAgencyPhone && !currentAgencyId) return;
-  // ── Phone-first matching (same as agency dashboard agGetMyMaids) ──
-  // Step 1: ram_admin_maids se lo
-  const adminMaidsList = getMaids();
-  // Step 2: ram_registered_maids se bhi lo (self-registered)
-  let regMaidsObj = {};
-  try { regMaidsObj = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) {}
-  // Merge: phone duplicate nahi aaye
-  const seenPhones = new Set(adminMaidsList.map(m => m.phone));
-  const allMaids = [...adminMaidsList];
-  Object.values(regMaidsObj).forEach(m => { if (!seenPhones.has(m.phone)) allMaids.push(m); });
 
-  // Step 3: Filter by agency phone number (primary) ya agencyId (fallback)
-  const agencyMaids = allMaids.filter(m => {
-    const mPhone = (m.agencyPhone || '').replace(/\D/g,'');
-    if (currentAgencyPhone && m.agencyStatus === 'yes' && mPhone === currentAgencyPhone) return true;
-    if (currentAgencyId && m.agencyId == currentAgencyId) return true;
-    return false;
-  });
-  const stars = r => '★'.repeat(Math.round(r||0));
-  document.getElementById('agencyMaidsTbody').innerHTML = agencyMaids.length ? agencyMaids.map(m => `
-    <tr>
+  // ── Inner render function (called after fresh data is loaded) ──
+  const _doRender = function(adminMaidsList) {
+    // ram_registered_maids se bhi lo (self-registered)
+    let regMaidsObj = {};
+    try { regMaidsObj = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) {}
+    // Merge: phone duplicate nahi aaye
+    const seenPhones = new Set(adminMaidsList.map(m => m.phone));
+    const allMaids = [...adminMaidsList];
+    Object.values(regMaidsObj).forEach(m => { if (!seenPhones.has(m.phone)) allMaids.push(m); });
+
+    // SIRF phone number se match — yahi primary identifier hai
+    const agencyMaids = allMaids.filter(m => {
+      if (!currentAgencyPhone) return false;
+      const mAgPhone = (m.agencyPhone || '').replace(/\D/g,'');
+      return m.agencyStatus === 'yes' && mAgPhone === currentAgencyPhone;
+    });
+
+    const tbody = document.getElementById('agencyMaidsTbody');
+    if (!tbody) return;
+    tbody.innerHTML = agencyMaids.length ? agencyMaids.map(m => {
+      const av = m.available ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'linear-gradient(135deg,#94a3b8,#64748b)';
+      const svcs = (m.services || []).map(s => `<span class="badge badge-blue" style="font-size:10px;padding:2px 7px;">${escHtml(s)}</span>`).join('');
+      return `<tr>
       <td>
         <div class="tbl-name-col">
-          <div class="tbl-avatar" style="background:${m.available?'linear-gradient(135deg,#22c55e,#16a34a)':'linear-gradient(135deg,#94a3b8,#64748b)'};">
-            ${m.photo ? `<img src="${m.photo}" onerror="this.style.display='none'"/>` : escHtml(m.name[0])}
+          <div class="tbl-avatar" style="background:${av};">
+            ${m.photo ? `<img src="${m.photo}" onerror="this.style.display='none'"/>` : escHtml((m.name||'?')[0])}
           </div>
           <div><div class="tbl-name">${escHtml(m.name)}</div><div class="tbl-sub">${escHtml(m.phone||'')}</div></div>
         </div>
       </td>
       <td>${escHtml(m.phone||'—')}</td>
       <td>${escHtml(m.city||'')}${m.city&&m.state?', ':''}${escHtml(m.state||'')}</td>
-      <td style="max-width:160px;"><div style="display:flex;flex-wrap:wrap;gap:3px;">${(m.services||[]).map(s=>`<span class="badge badge-blue" style="font-size:10px;padding:2px 7px;">${escHtml(s)}</span>`).join('')}</div></td>
+      <td style="max-width:160px;"><div style="display:flex;flex-wrap:wrap;gap:3px;">${svcs}</div></td>
       <td><span class="badge ${m.available?'badge-green':'badge-gray'}">${m.available?'Available':'Busy'}</span></td>
       <td><span class="badge ${m.verified?'badge-blue':'badge-yellow'}">${m.verified?'Verified':'Pending'}</span></td>
       <td>
@@ -20292,8 +20281,36 @@ function renderAgencyMaids() {
           <button class="action-btn action-btn-danger action-btn-sm" onclick="removeMaidFromAgency(${m.id})" title="Remove from Agency"><i class="fas fa-unlink"></i></button>
         </div>
       </td>
-    </tr>
-  `).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>Is agency mein koi maid nahi hai</h3><p style="font-size:13px;color:var(--text3);">Upar "Add Maid to Agency" button se maid add karo</p></div></td></tr>';
+    </tr>`;
+    }).join('') :
+    '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>Is agency mein koi maid nahi hai</h3><p style="font-size:13px;color:var(--text3);">Upar \"Add Maid to Agency\" button se maid add karo</p></div></td></tr>';
+  };
+
+  // Firebase se fresh data fetch karo pehle, phir render karo
+  if (typeof window._fbGet === 'function') {
+    const tbody = document.getElementById('agencyMaidsTbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p style="font-size:13px;color:var(--text3);margin-top:8px;">Data load ho raha hai...</p></div></td></tr>';
+    Promise.all([
+      window._fbGet('adminData', 'ram_admin_maids').catch(() => null),
+      window._fbGet('adminData', 'ram_registered_maids').catch(() => null)
+    ]).then(function(results) {
+      if (results[0] && Array.isArray(results[0])) {
+        localStorage.setItem('ram_admin_maids', JSON.stringify(results[0]));
+      }
+      if (results[1] && typeof results[1] === 'object') {
+        localStorage.setItem('ram_registered_maids', JSON.stringify(results[1]));
+      }
+      _doRender(getMaids());
+    }).catch(function() {
+      _doRender(getMaids());
+    });
+    return;
+  }
+
+  // Firebase nahi hai — directly localStorage se render karo
+  _doRender(getMaids());
+
+
 }
 
 function removeMaidFromAgency(maidId) {
@@ -20856,10 +20873,17 @@ async function submitHelpEnquiry() {
     repliedAt: ''
   };
 
-  // Firebase mein save karo
+  // Firebase mein save karo — adminData/help_enquiries_all array mein
   if (typeof window._fbSet === 'function') {
     try {
-      await window._fbSet('siteData', enquiry.id, enquiry);
+      // Pehle existing list fetch karo, phir prepend karke save karo
+      let allHelp = [];
+      try {
+        const existing = await window._fbGet('adminData', 'help_enquiries_all');
+        if (existing && Array.isArray(existing)) allHelp = existing;
+      } catch(e2) {}
+      allHelp.unshift(enquiry);
+      await window._fbSet('adminData', 'help_enquiries_all', allHelp);
     } catch(e) { console.warn('Firebase help save failed:', e); }
   }
   // localStorage backup
@@ -20888,15 +20912,12 @@ async function loadHelpEnquiries() {
 
   let enquiries = [];
 
-  // Firebase se load karo
+  // Firebase se load karo — single array document (help_enquiries_all)
   if (typeof window._fbGet === 'function') {
     try {
-      // siteData se saari help_ keys fetch karo
-      const allSite = await window._fbGet('siteData', null);
-      if (allSite && typeof allSite === 'object') {
-        Object.values(allSite).forEach(v => {
-          if (v && typeof v === 'object' && v.id && v.id.startsWith('help_')) enquiries.push(v);
-        });
+      const fbHelp = await window._fbGet('adminData', 'help_enquiries_all');
+      if (fbHelp && Array.isArray(fbHelp)) {
+        enquiries = fbHelp;
       }
     } catch(e) { console.warn('Firebase help load failed:', e); }
   }
@@ -20984,9 +21005,9 @@ async function sendHelpReply(id) {
   enquiries[idx].replyRead = false; // User ne abhi nahi padha
   localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
 
-  // Firebase mein save karo (global help_enquiries)
+  // Firebase mein save karo — adminData/help_enquiries_all array update karo
   if (typeof window._fbSet === 'function') {
-    try { await window._fbSet('siteData', id, enquiries[idx]); } catch(e) {}
+    try { await window._fbSet('adminData', 'help_enquiries_all', enquiries); } catch(e) {}
   }
 
   // User ke personal my_help_<phone> key mein bhi update karo
@@ -21026,7 +21047,7 @@ async function closeHelpEnquiry(id) {
   enquiries[idx].status = 'closed';
   localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
   if (typeof window._fbSet === 'function') {
-    try { await window._fbSet('siteData', id, enquiries[idx]); } catch(e) {}
+    try { await window._fbSet('adminData', 'help_enquiries_all', enquiries); } catch(e) {}
   }
   showToast('Enquiry close ho gayi.');
   renderHelpEnquiries(enquiries);
@@ -21039,10 +21060,9 @@ async function deleteHelpEnquiry(id) {
   let enquiries = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
   enquiries = enquiries.filter(e => e.id !== id);
   localStorage.setItem('help_enquiries', JSON.stringify(enquiries));
-  if (typeof window._fbGet === 'function' && typeof window._fbSet === 'function') {
+  if (typeof window._fbSet === 'function') {
     try {
-      // Firebase se delete: null set karo
-      await window._fbSet('siteData', id, null);
+      await window._fbSet('adminData', 'help_enquiries_all', enquiries);
     } catch(e) {}
   }
   showToast('Enquiry delete ho gayi.');
@@ -21097,9 +21117,17 @@ async function submitUserHelpFromDash() {
     replyRead: false
   };
 
-  // Firebase save
+  // Firebase save — adminData/help_enquiries_all array mein
   if (typeof window._fbSet === 'function') {
-    try { await window._fbSet('siteData', enquiry.id, enquiry); } catch(e) {}
+    try {
+      let allHelpU = [];
+      try {
+        const existingU = await window._fbGet('adminData', 'help_enquiries_all');
+        if (existingU && Array.isArray(existingU)) allHelpU = existingU;
+      } catch(e2) {}
+      allHelpU.unshift(enquiry);
+      await window._fbSet('adminData', 'help_enquiries_all', allHelpU);
+    } catch(e) {}
   }
   // localStorage
   try {
@@ -21132,16 +21160,12 @@ async function loadUserHelpEnquiries() {
 
   let myEnquiries = [];
 
-  // Firebase se load
+  // Firebase se load — adminData/help_enquiries_all se apne phone ke tickets filter karo
   if (typeof window._fbGet === 'function') {
     try {
-      const allSite = await window._fbGet('siteData', null);
-      if (allSite && typeof allSite === 'object') {
-        Object.values(allSite).forEach(v => {
-          if (v && v.id && v.id.startsWith('help_') && v.phone === phone) {
-            myEnquiries.push(v);
-          }
-        });
+      const allHelp = await window._fbGet('adminData', 'help_enquiries_all');
+      if (allHelp && Array.isArray(allHelp)) {
+        myEnquiries = allHelp.filter(v => v && v.phone === phone);
       }
     } catch(e) {}
   }
@@ -21231,12 +21255,12 @@ function startUserHelpRealtimeSync() {
     if (!phone) return;
     if (typeof window._fbGet !== 'function') return;
     try {
-      const allSite = await window._fbGet('siteData', null);
-      if (!allSite) return;
+      const allHelpPoll = await window._fbGet('adminData', 'help_enquiries_all');
+      if (!allHelpPoll || !Array.isArray(allHelpPoll)) return;
       const myList = JSON.parse(localStorage.getItem('my_help_' + phone) || '[]');
       let changed = false;
-      Object.values(allSite).forEach(v => {
-        if (!v || !v.id || !v.id.startsWith('help_') || v.phone !== phone) return;
+      allHelpPoll.forEach(v => {
+        if (!v || !v.id || v.phone !== phone) return;
         const idx = myList.findIndex(e => e.id === v.id);
         if (idx === -1) { myList.unshift(v); changed = true; }
         else if (v.adminReply && myList[idx].adminReply !== v.adminReply) {
@@ -22118,11 +22142,16 @@ function openAddIconModal(){
 }
 function openEditIconModal(idx){
   editingKey = idx;
-  const s = getServiceIcons()[idx];
+  const icons = getServiceIcons();
+  if(!icons[idx]) { showToast('Icon not found'); return; }
+  const s = icons[idx];
   document.getElementById('iconModalTitle').textContent = 'Edit Service Icon';
-  document.getElementById('icm-name').value = s.name;
-  document.getElementById('icm-target').value = s.filterTarget || s.name;
-  document.getElementById('icm-icon').innerHTML = iconPickerOptionsHTML(s.icon);
+  document.getElementById('icm-name').value = s.name || '';
+  document.getElementById('icm-target').value = s.filterTarget || s.name || '';
+  // innerHTML set karo phir value explicitly set karo
+  const iconSel = document.getElementById('icm-icon');
+  iconSel.innerHTML = iconPickerOptionsHTML(s.icon || 'fa-star');
+  iconSel.value = s.icon || 'fa-star';
   document.getElementById('icm-color1').value = s.color1 || '#f97316';
   document.getElementById('icm-color2').value = s.color2 || '#fb923c';
   document.getElementById('icm-photo').value = s.photo || '';
@@ -22546,6 +22575,8 @@ function applySiteContent(){
   }
   if (typeof applySectionColors === 'function') applySectionColors();
   if (typeof applyPopupContent === 'function') applyPopupContent();
+  // Fonts, colours, animations bhi apply karo
+  if (typeof applySavedSiteExtras === 'function') { try { applySavedSiteExtras(); } catch(e) {} }
 }
 // Loads saved values into the ADMIN EDITOR form fields
 function loadWebsiteEditorForm(){
@@ -22585,12 +22616,14 @@ function loadWebsiteEditorForm(){
     }
   } catch(e) {}
 }
-function switchWebTab(tab){
+function switchWebTab(tab, clickedEl){
   document.querySelectorAll('#pg-website .settings-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('#pg-website .settings-nav-item').forEach(n=>n.classList.remove('active'));
   var tabEl = document.getElementById('wtab-'+tab);
   if(tabEl) tabEl.classList.add('active');
-  if(event && event.currentTarget) event.currentTarget.classList.add('active');
+  // clickedEl directly pass karo ya event.currentTarget use karo (safe fallback)
+  var navEl = clickedEl || (typeof event !== 'undefined' && event && event.currentTarget ? event.currentTarget : null);
+  if(navEl && navEl.classList) navEl.classList.add('active');
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); updatePopupCardPreview(); wcLoadPopupToggle(); loadWelcomePopupAdminImgs(); }
@@ -22605,27 +22638,55 @@ function handleImageUpload(event, targetInputId){
   const file = event.target.files[0];
   if(!file) return;
   if(file.size > 5*1024*1024){ showToast('Image bahut badi hai — 5MB se chhoti image use karein'); return; }
-  const doLoad = (src) => {
-    const el = document.getElementById(targetInputId);
-    if(el) el.value = src;
-    showToast('✅ Image load ho gayi — Publish karein');
-    if(targetInputId==='wc-logo-img') updateLogoPreview();
-    if(targetInputId==='wc-popup-customer-img' || targetInputId==='wc-popup-maid-img') updatePopupCardPreview();
+  // Firebase Storage pe upload karne ke liye helper
+  const tryFirebaseUpload = (fileOrBlob, localBase64) => {
+    if (typeof window._fbUploadPhoto === 'function') {
+      showToast('⏳ Image Firebase pe upload ho rahi hai...');
+      const path = targetInputId + '/' + Date.now() + '_' + (file.name || 'img.jpg');
+      window._fbUploadPhoto(fileOrBlob, path).then(url => {
+        if (url) {
+          const el = document.getElementById(targetInputId);
+          if(el) el.value = url;
+          showToast('✅ Image Firebase pe upload ho gayi! Publish karein.');
+          if(targetInputId==='wc-logo-img') updateLogoPreview();
+          if(targetInputId==='wc-popup-customer-img' || targetInputId==='wc-popup-maid-img') updatePopupCardPreview();
+        } else {
+          // Firebase upload fail — base64 use karo
+          const el = document.getElementById(targetInputId);
+          if(el) el.value = localBase64;
+          showToast('✅ Image load ho gayi (local) — Publish karein.');
+          if(targetInputId==='wc-logo-img') updateLogoPreview();
+          if(targetInputId==='wc-popup-customer-img' || targetInputId==='wc-popup-maid-img') updatePopupCardPreview();
+        }
+      }).catch(() => {
+        const el = document.getElementById(targetInputId);
+        if(el) el.value = localBase64;
+        showToast('✅ Image load ho gayi — Publish karein.');
+        if(targetInputId==='wc-logo-img') updateLogoPreview();
+        if(targetInputId==='wc-popup-customer-img' || targetInputId==='wc-popup-maid-img') updatePopupCardPreview();
+      });
+    } else {
+      const el = document.getElementById(targetInputId);
+      if(el) el.value = localBase64;
+      showToast('✅ Image load ho gayi — Publish karein.');
+      if(targetInputId==='wc-logo-img') updateLogoPreview();
+      if(targetInputId==='wc-popup-customer-img' || targetInputId==='wc-popup-maid-img') updatePopupCardPreview();
+    }
   };
   // Compress karo pehle agar _compressImage available hai
   if(typeof window._compressImage === 'function') {
     window._compressImage(file, 400, 0.82).then(compressed => {
       const reader = new FileReader();
-      reader.onload = e => doLoad(e.target.result);
+      reader.onload = e => tryFirebaseUpload(compressed, e.target.result);
       reader.readAsDataURL(compressed);
     }).catch(() => {
       const reader = new FileReader();
-      reader.onload = e => doLoad(e.target.result);
+      reader.onload = e => tryFirebaseUpload(file, e.target.result);
       reader.readAsDataURL(file);
     });
   } else {
     const reader = new FileReader();
-    reader.onload = e => doLoad(e.target.result);
+    reader.onload = e => tryFirebaseUpload(file, e.target.result);
     reader.readAsDataURL(file);
   }
 }
@@ -24876,11 +24937,85 @@ function setupRealtimeSync() {
     }
   });
 
+  // ── Help Enquiries — real-time sync (adminData/help_enquiries_all) ──
+  onSnapshot(doc(_db, 'adminData', 'help_enquiries_all'), snap => {
+    if (!snap.exists() || snap.data().data === undefined) return;
+    const helpList = snap.data().data;
+    if (!Array.isArray(helpList)) return;
+    localStorage.setItem('help_enquiries', JSON.stringify(helpList));
+
+    // ── Admin panel: live update ──
+    const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
+    if (isAdmin && typeof renderHelpEnquiries === 'function') {
+      try { renderHelpEnquiries(helpList); } catch(e) {}
+      if (typeof updateHelpNavBadge === 'function') { try { updateHelpNavBadge(); } catch(e) {} }
+    }
+
+    // ── Customer / Maid dashboard: apne tickets live update ──
+    try {
+      const userPhone = (typeof getAuthToken === 'function' ? getAuthToken() : null)
+                     || (typeof getLoggedMaidPhone === 'function' ? getLoggedMaidPhone() : null);
+      if (userPhone) {
+        const myTickets = helpList.filter(function(e) { return e.phone === userPhone; });
+        localStorage.setItem('my_help_' + userPhone, JSON.stringify(myTickets));
+        if (typeof loadUserHelpEnquiries === 'function') { try { loadUserHelpEnquiries(); } catch(e) {} }
+        if (typeof updateHelpNavBadge === 'function') { try { updateHelpNavBadge(); } catch(e) {} }
+        // Admin reply aaya to toast dikhao
+        myTickets.forEach(function(e) {
+          if (e.adminReply && !e.replyRead) {
+            if (typeof showToast === 'function') showToast('Admin ne aapki enquiry ka jawab de diya! Help section me dekho.');
+          }
+        });
+      }
+    } catch(e) {}
+
+    // ── Agency dashboard: apne tickets live update ──
+    try {
+      var agSess = JSON.parse(localStorage.getItem('rami_agency_session') || 'null');
+      if (agSess && agSess.phone) {
+        var myAgHelp = helpList.filter(function(e){ return e.phone === agSess.phone; });
+        localStorage.setItem('ag_help_' + agSess.phone, JSON.stringify(myAgHelp));
+        if (typeof window.renderAgencyHelpList === 'function') { try { window.renderAgencyHelpList(); } catch(e) {} }
+      }
+    } catch(e) {}
+  });
+
   // ── Admin settings — real-time sync ──
   onSnapshot(doc(_db, 'adminData', 'ram_admin_settings'), snap => {
     if (snap.exists() && snap.data().data) {
       localStorage.setItem('ram_admin_settings', JSON.stringify(snap.data().data));
     }
+  });
+
+  // ── Announcement Bar — real-time sync (admin changes turant website pe) ──
+  onSnapshot(doc(_db, 'siteSettings', 'ram_ann_settings'), snap => {
+    if (!snap.exists() || !snap.data().data) return;
+    const fbData = snap.data().data;
+    localStorage.setItem('ram_ann_settings', JSON.stringify(fbData));
+    // Live website pe announcement bar update karo
+    try {
+      const bar = document.getElementById('announcementBar') || document.querySelector('.announcement-bar, .ticker-bar, [id*="ticker"], [id*="announcement"]');
+      if (fbData.text) {
+        const spans = document.querySelectorAll('.ticker-span, .ann-span, [id*="ticker"] span');
+        spans.forEach(function(s) { s.textContent = fbData.text; });
+      }
+      if (bar) {
+        if (fbData.bg1 && fbData.bg2) bar.style.background = 'linear-gradient(90deg,' + fbData.bg1 + ',' + fbData.bg2 + ',' + fbData.bg1 + ')';
+        if (fbData.textColor) { const sp = bar.querySelectorAll('span'); sp.forEach(function(s){ s.style.color = fbData.textColor; }); }
+        if (fbData.fontSize) bar.style.fontSize = fbData.fontSize + 'px';
+        if (fbData.height) {
+          if (fbData.enabled === false || fbData.enabled === 'false') {
+            bar.style.height = '0'; bar.style.overflow = 'hidden'; bar.style.borderBottom = 'none';
+          } else {
+            bar.style.height = fbData.height + 'px'; bar.style.overflow = '';
+          }
+        }
+        if (fbData.speed !== undefined) {
+          // Speed update — ann script ka global speed variable update karo
+          try { window._annSpeed = parseFloat(fbData.speed) * 0.12; } catch(e) {}
+        }
+      }
+    } catch(e) { console.warn('Ann realtime apply failed:', e); }
   });
 
   // ── Gallery — real-time sync ──
@@ -25183,56 +25318,7 @@ async function setupAdminRealtimeSync() {
           localStorage.setItem(d.id, JSON.stringify(d.data().data));
         }
 
-        // Help Enquiries realtime sync
-        if (d.id.startsWith('help_')) {
-          const enquiry = d.data();
-          if (!enquiry || !enquiry.id) return;
-
-          // Admin panel: help_enquiries list update karo
-          try {
-            const allHelp = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
-            const idx = allHelp.findIndex(e => e.id === enquiry.id);
-            if (idx !== -1) { allHelp[idx] = enquiry; }
-            else { allHelp.unshift(enquiry); }
-            allHelp.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-            localStorage.setItem('help_enquiries', JSON.stringify(allHelp));
-          } catch(e) {}
-
-          // User: apni enquiry update karo (phone match hone pe)
-          try {
-            const userPhone = localStorage.getItem('userPhone') || localStorage.getItem('authToken');
-            if (userPhone && enquiry.phone === userPhone) {
-              const myList = JSON.parse(localStorage.getItem('my_help_' + userPhone) || '[]');
-              const midx = myList.findIndex(e => e.id === enquiry.id);
-              if (midx !== -1) { myList[midx] = enquiry; }
-              else { myList.unshift(enquiry); }
-              myList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
-              localStorage.setItem('my_help_' + userPhone, JSON.stringify(myList));
-
-              // Agar user Help page pe hai to live update karo
-              if (typeof window.loadMyHelpEnquiries === 'function') {
-                window.loadMyHelpEnquiries();
-              }
-
-              // Unread reply badge update karo
-              if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
-
-              // Admin reply aya to user ko toast dikhao
-              if (enquiry.adminReply && !enquiry.replyRead) {
-                if (typeof showToast === 'function') showToast('Admin ne aapki enquiry ka jawab de diya! Help section me dekho.');
-              }
-            }
-          } catch(e) {}
-
-          // Admin panel me live re-render karo
-          try {
-            const isAdmin = localStorage.getItem('adminLoggedIn') === 'true';
-            if (isAdmin && typeof renderHelpEnquiries === 'function') {
-              const allHelp = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
-              renderHelpEnquiries(allHelp);
-              if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
-            }
-          } catch(e) {}
+        // Help Enquiries: ab adminData/help_enquiries_all se handle hoti hai (onSnapshot above)
         }
       });
       // Update aadhar badge in admin navbar
@@ -26782,9 +26868,17 @@ async function submitAgencyHelp() {
     replyRead: false
   };
 
-  // Firebase save
+  // Firebase save — adminData/help_enquiries_all array mein
   if (typeof window._fbSet === 'function') {
-    try { await window._fbSet('siteData', enquiry.id, enquiry); } catch(e) {}
+    try {
+      var allHelpAg = [];
+      try {
+        var existingAg = await window._fbGet('adminData', 'help_enquiries_all');
+        if (existingAg && Array.isArray(existingAg)) allHelpAg = existingAg;
+      } catch(e2) {}
+      allHelpAg.unshift(enquiry);
+      await window._fbSet('adminData', 'help_enquiries_all', allHelpAg);
+    } catch(e) {}
   }
   // localStorage global
   try {
@@ -26844,15 +26938,15 @@ async function loadAgencyHelpEnquiries() {
     });
   } catch(e) {}
 
-  // Firebase se bhi try karo (background)
+  // Firebase se fresh data lo — adminData/help_enquiries_all se apne phone ke tickets
   if (typeof window._fbGet === 'function') {
     try {
-      var allSite = await window._fbGet('siteData', null);
-      if (allSite && typeof allSite === 'object') {
-        var fbIds = new Set(myEnq.map(function(e){return e.id;}));
-        Object.values(allSite).forEach(function(v) {
-          if (v && v.id && v.id.startsWith('help_') && v.phone === sess.phone) {
-            if (fbIds.has(v.id)) {
+      var allHelpFb = await window._fbGet('adminData', 'help_enquiries_all');
+      if (allHelpFb && Array.isArray(allHelpFb)) {
+        var fbIds2 = new Set(myEnq.map(function(e){return e.id;}));
+        allHelpFb.forEach(function(v) {
+          if (v && v.phone === sess.phone) {
+            if (fbIds2.has(v.id)) {
               var idx = myEnq.findIndex(function(e){ return e.id === v.id; });
               if (idx !== -1) myEnq[idx] = Object.assign({}, myEnq[idx], v);
             } else {
