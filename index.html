@@ -19643,6 +19643,7 @@ function gotoPage(page) {
   // Help page khulte hi enquiries load karo
   if (page === 'help') {
     setTimeout(() => { if (typeof loadHelpEnquiries === 'function') loadHelpEnquiries(); }, 100);
+    setTimeout(() => { if (typeof startAdminChatRealtimeSync === 'function') startAdminChatRealtimeSync(); }, 200);
   }
   // Jab website editor khule, extras load karo
   if (page === 'website') {
@@ -20102,11 +20103,21 @@ let currentAgencyId = null;
 // ---- Render agency list ----
 // ── Helper: agency ke under aane wali SAARI maids (agencyId OR agencyPhone match) ──
 function getAgencyMaids(agency) {
-  const allMaids = getMaids();
+  // ram_admin_maids (approved) + ram_registered_maids (self-registered) dono se lo
+  let allMaids = getMaids();
   const agPhone = (agency.phone||'').replace(/\D/g,'');
+  // ram_registered_maids se bhi merge karo — jo maid ne agency phone daali ho
+  try {
+    const reg = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+    Object.values(reg).forEach(function(m){
+      if (!allMaids.find(function(x){ return x.phone === m.phone; })) allMaids.push(m);
+    });
+  } catch(e) {}
   return allMaids.filter(function(m){
-    if (m.agencyId && m.agencyId === agency.id) return true;
+    if (m.agencyId && String(m.agencyId) === String(agency.id)) return true;
     if (agPhone && (m.agencyPhone||'').replace(/\D/g,'') === agPhone) return true;
+    // maid ne "yes" select kiya aur agency ka phone number diya
+    if (agPhone && m.agencyStatus === 'yes' && (m.agencyPhone||'').replace(/\D/g,'') === agPhone) return true;
     return false;
   });
 }
@@ -20123,23 +20134,49 @@ function renderAgencies() {
   );
   document.getElementById('agencyCount').textContent = agencies.length + ' Agenc' + (agencies.length===1?'y':'ies');
   document.getElementById('agencyTbody').innerHTML = agencies.length ? agencies.map((a, i) => {
-    // ── FIX: agencyId OR agencyPhone dono se count karo ──
     const agencyMaidList = getAgencyMaids(a);
     const maidCount = agencyMaidList.length;
     const verifiedCount = agencyMaidList.filter(m => m.verified).length;
     const liveCount = agencyMaidList.filter(m => m.available).length;
     const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN') : '—';
-    return `<tr>
+    const displayName = escHtml(a.name || a.ownerName || '—');
+    // Inline maid rows
+    const maidRowsHtml = agencyMaidList.length ? agencyMaidList.map(m => `
+      <tr style="background:#f0fdf4;">
+        <td colspan="2" style="padding:8px 16px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:${m.available?'linear-gradient(135deg,#22c55e,#16a34a)':'linear-gradient(135deg,#94a3b8,#64748b)'};display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">
+              ${m.photo ? `<img src="${m.photo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'"/>` : escHtml((m.name||'?')[0])}
+            </div>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:#111827;">${escHtml(m.name||'—')}</div>
+              <div style="font-size:11px;color:#6b7280;">${escHtml(m.phone||'')}</div>
+            </div>
+          </div>
+        </td>
+        <td style="padding:8px;font-size:12px;color:#374151;">${escHtml(m.city||'')}${m.city&&m.state?', ':''}${escHtml(m.state||'')}</td>
+        <td style="padding:8px;"><div style="display:flex;flex-wrap:wrap;gap:3px;">${(m.services||[]).slice(0,2).map(s=>`<span style="background:#dbeafe;color:#1d4ed8;font-size:10px;padding:2px 6px;border-radius:99px;">${escHtml(s)}</span>`).join('')}${(m.services||[]).length>2?`<span style="font-size:10px;color:#6b7280;">+${(m.services||[]).length-2}</span>`:''}</div></td>
+        <td style="padding:8px;"><span style="background:${m.available?'#dcfce7':'#f3f4f6'};color:${m.available?'#15803d':'#6b7280'};font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;">${m.available?'🟢 Active':'⚫ Busy'}</span></td>
+        <td style="padding:8px;"><span style="background:${m.verified?'#dbeafe':'#fef9c3'};color:${m.verified?'#1d4ed8':'#92400e'};font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;">${m.verified?'✅ Verified':'⏳ Pending'}</span></td>
+        <td style="padding:8px;">
+          <div style="display:flex;gap:4px;">
+            <button class="action-btn action-btn-outline action-btn-sm" onclick="viewMaid(${m.id})" title="View"><i class="fas fa-eye"></i></button>
+            <button class="action-btn action-btn-outline action-btn-sm" onclick="openEditMaidModal(${m.id})" title="Edit"><i class="fas fa-edit"></i></button>
+          </div>
+        </td>
+      </tr>
+    `).join('') : `<tr style="background:#fafafa;"><td colspan="7" style="padding:10px 16px;font-size:12px;color:#9ca3af;text-align:center;">Is agency mein koi maid nahi hai</td></tr>`;
+    return `<tr id="agRow_${a.id}">
       <td>${i+1}</td>
       <td>
-        <strong>${escHtml(a.name)}</strong>
+        <strong>${displayName}</strong>
         ${a.notes?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${escHtml(a.notes)}</div>`:''}
       </td>
       <td>${escHtml(a.phone||'—')}</td>
       <td>${escHtml(a.city||'')}${a.city&&a.state?', ':''}${escHtml(a.state||'')}</td>
       <td>
-        <span class="badge badge-blue" style="cursor:pointer;font-size:12px;" onclick="openAgencyMaids(${a.id})" title="Click to view all maids">
-          👩 ${maidCount} Maid${maidCount!==1?'s':''}
+        <span class="badge badge-blue" style="cursor:pointer;font-size:12px;" onclick="toggleAgencyMaidsInline(${a.id})" title="Maids dekhne ke liye click karo">
+          👩 ${maidCount} Maid${maidCount!==1?'s':''} <i class="fas fa-chevron-down" id="agChev_${a.id}" style="font-size:10px;margin-left:3px;transition:transform .2s;"></i>
         </span>
         ${verifiedCount>0?`<span class="badge badge-green" style="font-size:11px;margin-left:4px;" title="Verified maids">✅ ${verifiedCount}</span>`:''}
         ${liveCount>0?`<span class="badge" style="font-size:11px;margin-left:2px;background:#dcfce7;color:#15803d;" title="Live/Active maids">🟢 ${liveCount} Live</span>`:''}
@@ -20147,13 +20184,39 @@ function renderAgencies() {
       <td>${date}</td>
       <td>
         <div class="btn-group">
-          <button class="action-btn action-btn-outline action-btn-sm" onclick="openAgencyMaids(${a.id})" title="View Maids"><i class="fas fa-users"></i></button>
+          <button class="action-btn action-btn-outline action-btn-sm" onclick="openAgencyMaids(${a.id})" title="Full Detail View"><i class="fas fa-users"></i></button>
           <button class="action-btn action-btn-outline action-btn-sm" onclick="openEditAgencyModal(${a.id})" title="Edit"><i class="fas fa-edit"></i></button>
           <button class="action-btn action-btn-danger action-btn-sm" onclick="deleteAgency(${a.id})" title="Delete"><i class="fas fa-trash"></i></button>
         </div>
       </td>
+    </tr>
+    <tr id="agMaidsInline_${a.id}" style="display:none;">
+      <td colspan="7" style="padding:0;border-top:none;">
+        <table style="width:100%;border-collapse:collapse;">
+          <thead>
+            <tr style="background:#dcfce7;">
+              <th colspan="2" style="padding:6px 16px;font-size:11px;color:#374151;text-align:left;font-weight:700;">MAID</th>
+              <th style="padding:6px 8px;font-size:11px;color:#374151;text-align:left;">CITY</th>
+              <th style="padding:6px 8px;font-size:11px;color:#374151;text-align:left;">SERVICES</th>
+              <th style="padding:6px 8px;font-size:11px;color:#374151;text-align:left;">STATUS</th>
+              <th style="padding:6px 8px;font-size:11px;color:#374151;text-align:left;">VERIFIED</th>
+              <th style="padding:6px 8px;font-size:11px;color:#374151;text-align:left;">ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody>${maidRowsHtml}</tbody>
+        </table>
+      </td>
     </tr>`;
   }).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-building"></i><h3>No agencies found</h3></div></td></tr>';
+}
+
+function toggleAgencyMaidsInline(agencyId) {
+  const row = document.getElementById('agMaidsInline_' + agencyId);
+  const chev = document.getElementById('agChev_' + agencyId);
+  if (!row) return;
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : 'table-row';
+  if (chev) chev.style.transform = isOpen ? '' : 'rotate(180deg)';
 }
 
 function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
@@ -20236,15 +20299,15 @@ function openAgencyMaids(agencyId) {
   if (!agency) return;
   document.getElementById('agencyListView').style.display = 'none';
   document.getElementById('agencyMaidsView').style.display = 'block';
-  document.getElementById('agencyMaidsTitle').textContent = agency.name + ' — Maids';
+  document.getElementById('agencyMaidsTitle').textContent = (agency.name || agency.ownerName || agency.phone || 'Agency') + ' — Maids';
   const agMaidCount = getAgencyMaids(agency).length;
   const agVerified = getAgencyMaids(agency).filter(m=>m.verified).length;
   const agLive = getAgencyMaids(agency).filter(m=>m.available).length;
   document.getElementById('agencyDetailHeader').innerHTML = `
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-      <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;">${escHtml(agency.name[0].toUpperCase())}</div>
+      <div style="width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;">${escHtml((agency.name||agency.ownerName||'A')[0].toUpperCase())}</div>
       <div>
-        <div style="font-size:18px;font-weight:700;color:var(--foreground);">${escHtml(agency.name)}</div>
+        <div style="font-size:18px;font-weight:700;color:var(--foreground);">${escHtml(agency.name||agency.ownerName||agency.phone||'—')}</div>
         <div style="font-size:13px;color:var(--text2);margin-top:2px;">
           <i class="fas fa-phone" style="margin-right:4px;color:#f97316;"></i>${escHtml(agency.phone||'N/A')}
           &nbsp;·&nbsp;
@@ -20875,13 +20938,45 @@ async function loadHelpEnquiries() {
 // ── Admin Live Chat: currently selected phone ──
 var _adminSelectedChatPhone = null;
 
+// ── Admin: Firebase se saare chat messages fetch karo aur localStorage sync karo ──
+async function _adminFetchAllChatsFromFirebase() {
+  if (typeof window._fbGet !== 'function') return null;
+  try {
+    const allSite = await window._fbGet('siteData', null);
+    if (!allSite) return null;
+    const msgs = Object.values(allSite).filter(v => v && v.id && v.id.startsWith('help_'));
+    if (!msgs.length) return null;
+    // localStorage ke saath merge karo
+    const local = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+    const fbMap = {};
+    msgs.forEach(m => { fbMap[m.id] = m; });
+    local.forEach(m => { if (!fbMap[m.id]) fbMap[m.id] = m; else fbMap[m.id] = Object.assign({}, m, fbMap[m.id]); });
+    const merged = Object.values(fbMap);
+    localStorage.setItem('help_enquiries', JSON.stringify(merged));
+    return merged;
+  } catch(e) { return null; }
+}
+
 // ── Admin: Render Live Chat Left Panel (User List) ──
 function renderAdminLiveChat(enquiriesParam) {
   const listEl = document.getElementById('adminChatUserList');
   if (!listEl) return;
   const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
   const filterType = document.getElementById('helpFilterType')?.value || '';
+
+  // Firebase se fresh data fetch karo (async), phir render karo
+  if (!enquiriesParam) {
+    _adminFetchAllChatsFromFirebase().then(fbData => {
+      if (fbData) _renderAdminLiveChatUI(fbData, filterStatus, filterType, listEl);
+    });
+  }
+
   let all = enquiriesParam || JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  _renderAdminLiveChatUI(all, filterStatus, filterType, listEl);
+}
+
+function _renderAdminLiveChatUI(all, filterStatus, filterType, listEl) {
+  if (!listEl) { listEl = document.getElementById('adminChatUserList'); if (!listEl) return; }
   if (filterStatus) all = all.filter(e => e.status === filterStatus);
   if (filterType) all = all.filter(e => (e.userType || 'customer') === filterType);
 
@@ -20923,22 +21018,40 @@ function renderAdminLiveChat(enquiriesParam) {
 
 function openAdminChat(phone) {
   _adminSelectedChatPhone = phone;
-  const all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
-  const msgs = all.filter(e => e.phone === phone).sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
-  const user = msgs[0] || {};
   const typeIcons = { customer: '👤', maid: '👩', agency: '🏢' };
   const hdr = document.getElementById('adminChatHeader');
   const replyBox = document.getElementById('adminChatReplyBox');
-  if (hdr) hdr.innerHTML = `
-    <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${typeIcons[user.userType]||'👤'}</div>
-    <div style="flex:1;">
-      <div style="color:#fff;font-weight:700;font-size:14px;">${user.name || phone}</div>
-      <div style="color:#a7f3d0;font-size:12px;">${phone} · ${user.userType||'customer'}</div>
-    </div>
-  `;
-  if (replyBox) replyBox.style.display = 'block';
-  renderAdminChatWindow(msgs);
-  renderAdminLiveChat(); // Refresh left panel selection highlight
+  const el = document.getElementById('adminChatMessages');
+
+  function _renderHeader(user) {
+    if (hdr) hdr.innerHTML = `
+      <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">${typeIcons[user.userType]||'👤'}</div>
+      <div style="flex:1;">
+        <div style="color:#fff;font-weight:700;font-size:14px;">${user.name || phone}</div>
+        <div style="color:#a7f3d0;font-size:12px;">${phone} · ${user.userType||'customer'}</div>
+      </div>
+    `;
+    if (replyBox) replyBox.style.display = 'block';
+  }
+
+  // Pehle localStorage se turant dikhao (instant UI)
+  const localAll = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+  const localMsgs = localAll.filter(e => e.phone === phone).sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+  if (localMsgs.length) {
+    _renderHeader(localMsgs[0]);
+    renderAdminChatWindow(localMsgs);
+  } else {
+    if (el) el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:13px;"><i class="fas fa-spinner fa-spin"></i> Load ho raha hai...</div>';
+  }
+
+  // Firebase se fresh data fetch karo aur update karo
+  _adminFetchAllChatsFromFirebase().then(fbData => {
+    const source = fbData || localAll;
+    const msgs = source.filter(e => e.phone === phone).sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+    if (msgs.length) _renderHeader(msgs[0]);
+    renderAdminChatWindow(msgs);
+    _renderAdminLiveChatUI(source, document.getElementById('helpFilterStatus')?.value||'', document.getElementById('helpFilterType')?.value||'', document.getElementById('adminChatUserList'));
+  });
 }
 
 function renderAdminChatWindow(msgs) {
@@ -20976,13 +21089,20 @@ async function sendAdminChatReply() {
   const reply = (inputEl?.value || '').trim();
   if (!reply) { showToast('Reply likhna zaroori hai.'); return; }
 
-  let all = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
-  // Find the latest open message from this user
+  // Firebase se fresh data fetch karo pehle (cross-device sync)
+  const fbData = await _adminFetchAllChatsFromFirebase();
+  let all = fbData || JSON.parse(localStorage.getItem('help_enquiries') || '[]');
+
+  // Find the latest message from this user
   const userMsgs = all.filter(e => e.phone === _adminSelectedChatPhone && e.status !== 'closed');
-  // Create a new "reply message" object linked to the conversation
-  // We'll reply to the most recent open message
-  const target = userMsgs.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
-  if (!target) { showToast('Koi open message nahi mila.'); return; }
+  let target = userMsgs.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+  if (!target) {
+    target = all.filter(e => e.phone === _adminSelectedChatPhone)
+                 .sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt))[0];
+  }
+  if (!target) { showToast('Koi message nahi mila. Pehle user ka message aane do.'); return; }
+
+
 
   if (inputEl) inputEl.value = '';
 
@@ -21339,6 +21459,31 @@ function renderUserChatMessages(msgs, phone) {
   const unread = msgs.filter(m => m.adminReply && !m.replyRead).length;
   const badge = document.getElementById('helpUnreadBadge');
   if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
+}
+
+// ── Admin: Realtime polling — Firebase se nayi messages auto-fetch karo ──
+let _adminChatTimer = null;
+function startAdminChatRealtimeSync() {
+  if (_adminChatTimer) clearInterval(_adminChatTimer);
+  _adminChatTimer = setInterval(async () => {
+    const listEl = document.getElementById('adminChatUserList');
+    if (!listEl) { clearInterval(_adminChatTimer); return; }
+    const fbData = await _adminFetchAllChatsFromFirebase();
+    if (!fbData) return;
+    const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
+    const filterType = document.getElementById('helpFilterType')?.value || '';
+    _renderAdminLiveChatUI(fbData, filterStatus, filterType, listEl);
+    // Agar koi user selected hai toh uski chat bhi refresh karo
+    if (_adminSelectedChatPhone) {
+      const msgs = fbData.filter(e => e.phone === _adminSelectedChatPhone)
+                         .sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+      renderAdminChatWindow(msgs);
+    }
+    // Admin badge update karo
+    const unread = fbData.filter(m => !m.adminReply && m.status === 'open').length;
+    const badge = document.getElementById('helpNavBadge');
+    if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
+  }, 7000); // Har 7 second mein Firebase check karo
 }
 
 // Realtime polling for new admin replies
@@ -22970,7 +23115,18 @@ function switchWebTab(tab){
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); wcLoadPopupToggle(); }
-  if(tab === 'announcement') { annInitAdminPanel(); }
+  if(tab === 'announcement') {
+    annInitAdminPanel();
+    // Agar localStorage empty hai — Firebase se seedha fetch karo aur panel fill karo
+    if(typeof window._fbGet === 'function'){
+      window._fbGet('siteData', 'ram_announcement_bar').then(function(s){
+        if(!s || typeof s !== 'object') return;
+        try { localStorage.setItem('rentamaid_ann_settings', JSON.stringify(s)); } catch(e){}
+        if(typeof window.annApplySettings === 'function') window.annApplySettings(s);
+        annInitAdminPanel(); // panel fields dobara fill karo ab data ke saath
+      }).catch(function(){});
+    }
+  }
 }
 async function handleImageUpload(event, targetInputId){
   const file = event.target.files[0];
@@ -22986,7 +23142,23 @@ async function handleImageUpload(event, targetInputId){
     publishBtns.forEach(b => b.disabled = true);
     try {
       const path = 'site-images/' + targetInputId + '_' + Date.now() + '.jpg';
-      const url = await window._fbUploadPhoto(file, path);
+      let url;
+      if(targetInputId === 'wc-hero-img') {
+        // Hero background ke liye 1920px compress karo (500px nahi)
+        try {
+          const { ref: _ref2, uploadBytes: _ub2, getDownloadURL: _gdl2 } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js');
+          let heroFile = file;
+          try { const c = await window._compressImage(file, 1920, 0.85); if(c) heroFile = c; } catch(e){}
+          const sRef = _ref2(window._st, path);
+          await _ub2(sRef, heroFile);
+          url = await _gdl2(sRef);
+        } catch(heroErr) {
+          console.warn('Hero direct upload failed, falling back to _fbUploadPhoto:', heroErr);
+          url = await window._fbUploadPhoto(file, path);
+        }
+      } else {
+        url = await window._fbUploadPhoto(file, path);
+      }
       if(url){
         if(inputEl){ inputEl.value = url; inputEl.disabled = false; }
         publishBtns.forEach(b => b.disabled = false);
@@ -23113,12 +23285,26 @@ async function saveSiteContent(section){
       publishBtns.forEach(b => b.disabled = true);
       heroImgEl.disabled = true;
       try {
-        // base64 string ko Blob mein convert karo
+        // base64 string ko Blob mein convert karo (atob method — fetch se zyada reliable)
         const base64Data = heroImgEl.value;
-        const res = await fetch(base64Data);
-        const blob = await res.blob();
+        const base64String = base64Data.split(',')[1];
+        const mimeType = base64Data.split(',')[0].split(':')[1].split(';')[0] || 'image/jpeg';
+        const byteChars = atob(base64String);
+        const byteArr = new Uint8Array(byteChars.length);
+        for(let i = 0; i < byteChars.length; i++) byteArr[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArr], { type: mimeType });
         const path = 'site-images/wc-hero-img_' + Date.now() + '.jpg';
-        const url = await window._fbUploadPhoto(blob, path);
+        // Hero ke liye 1920px compress karo (500px nahi) — seedha Firebase Storage pe upload
+        let heroBlob = blob;
+        try {
+          const compressedHero = await window._compressImage(blob, 1920, 0.85);
+          if(compressedHero) heroBlob = compressedHero;
+        } catch(compErr) { /* compression fail to original blob use karo */ }
+        const { ref: _ref, uploadBytes: _ub, getDownloadURL: _gdl } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-storage.js');
+        const _storage = window._st;
+        const storageRef = _ref(_storage, path);
+        await _ub(storageRef, heroBlob);
+        const url = await _gdl(storageRef);
         if(!url) throw new Error('URL nahi mili');
         heroImgEl.value = url;
         heroImgEl.disabled = false;
@@ -24887,6 +25073,7 @@ window._auth = _auth;
 window.RecaptchaVerifier = RecaptchaVerifier;
 window.signInWithPhoneNumber = signInWithPhoneNumber;
 window._db = _db; // siteSettings real-time listener ke liye expose
+window._st = _st; // Firebase Storage — hero image upload ke liye zaroori
 
 // Forgot password flow regular <script> mein hai — getter/setter se module variables expose karo
 Object.defineProperty(window, '_forgotRecaptchaVerifier', {
@@ -25667,44 +25854,97 @@ loadFromFirebase().then(() => {
   setupRealtimeSync();
   setupAdminRealtimeSync();
 
+  // ── Announcement bar Firebase real-time listener start karo ──
+  // Jab bhi admin koi change kare, har device pe turant update ho
+  try {
+    if(typeof window._annStartFirebaseListener === 'function'){
+      window._annStartFirebaseListener(_db, onSnapshot, doc);
+    }
+  } catch(annErr){ console.warn('Announcement bar listener failed:', annErr); }
+
   // Agency enquiry onSnapshot: jab bhi koi customer agency ki maid ko request bheje,
   // agency dashboard TURANT update ho — chahe koi bhi browser/device ho
   (function setupAgencyEnquirySync() {
     // Logged-in agency ka phone lo aur uski enquiries watch karo
+    var _agencySnapshotUnsubs = [];
     function attachAgencyEnqListener() {
       try {
+        // Pehle purane listeners hatao
+        _agencySnapshotUnsubs.forEach(function(u){ try{ u(); }catch(e){} });
+        _agencySnapshotUnsubs = [];
+
         var sess = null;
         try { sess = JSON.parse(localStorage.getItem('rami_agency_session')||'null'); } catch(e){}
         if (!sess || !sess.phone) return;
         var cleanPhone = (sess.phone||'').replace(/\D/g,'');
         if (!cleanPhone) return;
+
+        function _agRefreshDash() {
+          var agModal = document.getElementById('agencyDashModal');
+          if (agModal && agModal.style.display !== 'none') {
+            if (typeof renderAgencyEnquiries === 'function') { try { renderAgencyEnquiries(); } catch(ex){} }
+            if (typeof renderAgencyDashboard === 'function') {
+              try { var s = JSON.parse(localStorage.getItem('rami_agency_session')||'null'); if(s) renderAgencyDashboard(s); } catch(ex){}
+            }
+          }
+        }
+
+        // 1) ram_agency_enquiries_<phone> watch karo
         var fbKey = ('ram_agency_enquiries_' + cleanPhone).replace(/[^a-zA-Z0-9_-]/g,'_');
-        onSnapshot(doc(_db, 'siteData', fbKey), function(snap) {
+        var unsub1 = onSnapshot(doc(_db, 'siteData', fbKey), function(snap) {
           if (!snap.exists()) return;
           var data = snap.data().data;
           if (!Array.isArray(data)) return;
-          // localStorage update karo
           var localKey = 'ram_agency_enquiries_' + cleanPhone;
           var local = [];
           try { local = JSON.parse(localStorage.getItem(localKey)||'[]'); } catch(e){}
-          var localIds = new Set(local.map(function(r){ return r.id; }));
-          var newOnes = data.filter(function(r){ return !localIds.has(r.id); });
-          if (newOnes.length > 0) {
-            var merged = newOnes.concat(local);
-            merged.sort(function(a,b){ return new Date(b.sentAt||0)-new Date(a.sentAt||0); });
-            localStorage.setItem(localKey, JSON.stringify(merged));
-            // Toast: naya request aaya
-            if (typeof showToast === 'function') showToast('🔔 Nayi customer request aayi! Enquiries tab check karein.');
-            // Agency dashboard open ho to refresh karo
-            var agModal = document.getElementById('agencyDashModal');
-            if (agModal && agModal.style.display !== 'none') {
-              if (typeof renderAgencyEnquiries === 'function') { try { renderAgencyEnquiries(); } catch(ex){} }
-              if (typeof renderAgencyDashboard === 'function') {
-                try { var s = JSON.parse(localStorage.getItem('rami_agency_session')||'null'); if(s) renderAgencyDashboard(s); } catch(ex){}
-              }
-            }
-          }
+          // Status properly merge karo (Firebase zyada fresh)
+          var localMap = {};
+          local.forEach(function(r){ localMap[r.id] = r; });
+          var hasNew = false;
+          data.forEach(function(r){
+            if (!localMap[r.id]) { localMap[r.id] = r; hasNew = true; }
+            else { localMap[r.id] = Object.assign({}, localMap[r.id], r); }
+          });
+          var merged = Object.values(localMap);
+          merged.sort(function(a,b){ return new Date(b.sentAt||0)-new Date(a.sentAt||0); });
+          localStorage.setItem(localKey, JSON.stringify(merged));
+          if (hasNew && typeof showToast === 'function') showToast('🔔 Nayi customer request aayi! Enquiries tab check karein.');
+          _agRefreshDash();
         });
+        _agencySnapshotUnsubs.push(unsub1);
+
+        // 2) Har maid ki request inbox bhi watch karo (status update ke liye)
+        if (typeof agGetMyMaids === 'function') {
+          var myMaids = agGetMyMaids(cleanPhone);
+          myMaids.forEach(function(m) {
+            if (!m.phone) return;
+            var mFbKey = ('ram_maid_requests_' + m.phone).replace(/[^a-zA-Z0-9_-]/g,'_');
+            try {
+              var unsubM = onSnapshot(doc(_db, 'siteData', mFbKey), function(snap) {
+                if (!snap.exists()) return;
+                var data = snap.data().data;
+                if (!Array.isArray(data)) return;
+                var localKey = 'ram_maid_requests_' + m.phone;
+                var local = [];
+                try { local = JSON.parse(localStorage.getItem(localKey)||'[]'); } catch(e){}
+                var localMap = {};
+                local.forEach(function(r){ localMap[r.id] = r; });
+                var hasNew = false;
+                data.forEach(function(r){
+                  if (!localMap[r.id]) { localMap[r.id] = r; hasNew = true; }
+                  else { localMap[r.id] = Object.assign({}, localMap[r.id], r); }
+                });
+                var merged = Object.values(localMap);
+                merged.sort(function(a,b){ return new Date(b.sentAt||0)-new Date(a.sentAt||0); });
+                localStorage.setItem(localKey, JSON.stringify(merged));
+                if (hasNew && typeof showToast === 'function') showToast('🔔 ' + m.name + ' ke liye nayi request aayi!');
+                _agRefreshDash();
+              });
+              _agencySnapshotUnsubs.push(unsubM);
+            } catch(ex){}
+          });
+        }
       } catch(e){ console.warn('Agency enquiry listener setup failed:', e); }
     }
     // Abhi try karo, aur har 5s mein bhi try karo jab tak session mile
@@ -27477,9 +27717,14 @@ async function syncAgencyEnquiriesFromFirebase(agPhone) {
           var localKey = 'ram_maid_requests_' + m.phone;
           var local = [];
           try { local = JSON.parse(localStorage.getItem(localKey)||'[]'); } catch(ex){}
-          var localIds = new Set(local.map(function(r){ return r.id; }));
-          var merged = local.slice();
-          fbReqs.forEach(function(r){ if (!localIds.has(r.id)) merged.push(r); });
+          // Firebase ka status hamesha fresh — properly merge (status overwrite karo)
+          var localMap = {};
+          local.forEach(function(r){ localMap[r.id] = r; });
+          fbReqs.forEach(function(r){
+            if (localMap[r.id]) { localMap[r.id] = Object.assign({}, localMap[r.id], r); }
+            else { localMap[r.id] = r; }
+          });
+          var merged = Object.values(localMap);
           merged.sort(function(a,b){ return new Date(b.sentAt||0)-new Date(a.sentAt||0); });
           localStorage.setItem(localKey, JSON.stringify(merged));
         }
@@ -27493,9 +27738,14 @@ async function syncAgencyEnquiriesFromFirebase(agPhone) {
         var agLocalKey = 'ram_agency_enquiries_' + cleanPhone;
         var agLocal = [];
         try { agLocal = JSON.parse(localStorage.getItem(agLocalKey)||'[]'); } catch(ex){}
-        var agLocalIds = new Set(agLocal.map(function(r){ return r.id; }));
-        var agMerged = agLocal.slice();
-        fbAgList.forEach(function(r){ if (!agLocalIds.has(r.id)) agMerged.push(r); });
+        // Firebase ka status properly merge karo
+        var agLocalMap = {};
+        agLocal.forEach(function(r){ agLocalMap[r.id] = r; });
+        fbAgList.forEach(function(r){
+          if (agLocalMap[r.id]) { agLocalMap[r.id] = Object.assign({}, agLocalMap[r.id], r); }
+          else { agLocalMap[r.id] = r; }
+        });
+        var agMerged = Object.values(agLocalMap);
         agMerged.sort(function(a,b){ return new Date(b.sentAt||0)-new Date(a.sentAt||0); });
         localStorage.setItem(agLocalKey, JSON.stringify(agMerged));
       }
@@ -27743,10 +27993,32 @@ function agRespondEnquiry(reqId, newStatus) {
   var agList = [];
   try { agList = JSON.parse(localStorage.getItem(agKey)||'[]'); } catch(e){}
   var enq = agList.find(function(x){ return x.id === reqId; });
-  if (!enq) return;
+
+  // Agar agency list mein nahi mila — maid ke inbox mein dhundho
+  if (!enq) {
+    var myMaids = agGetMyMaids(sess.phone);
+    for (var mi = 0; mi < myMaids.length; mi++) {
+      var mKey = 'ram_maid_requests_' + myMaids[mi].phone;
+      var mReqs = [];
+      try { mReqs = JSON.parse(localStorage.getItem(mKey)||'[]'); } catch(e){}
+      var found = mReqs.find(function(r){ return r.id === reqId; });
+      if (found) {
+        enq = Object.assign({}, found, { _maidPhone: myMaids[mi].phone, _maidName: myMaids[mi].name });
+        // Agency list mein bhi add karo taaki aage track ho
+        agList.push(enq);
+        localStorage.setItem(agKey, JSON.stringify(agList));
+        break;
+      }
+    }
+  }
+  if (!enq) { showToast('❌ Enquiry nahi mili — page refresh karo.'); return; }
 
   enq.status = newStatus;
   enq.respondedAt = new Date().toISOString();
+
+  // Agency list update karo
+  var agIdx = agList.findIndex(function(x){ return x.id === reqId; });
+  if (agIdx >= 0) agList[agIdx] = enq; else agList.push(enq);
   localStorage.setItem(agKey, JSON.stringify(agList));
 
   // Firebase mein bhi save karo
@@ -27801,9 +28073,16 @@ function agRespondEnquiry(reqId, newStatus) {
 
   showToast(newStatus === 'Accepted' ? '✅ Request Accept kar li!' : '❌ Request Reject kar di.');
 
-  // Refresh dashboard stats and enquiry list
+  // Turant render karo
   renderAgencyEnquiries();
   if (typeof renderAgencyDashboard === 'function') { try { renderAgencyDashboard(sess); } catch(ex){} }
+
+  // Firebase se bhi sync karo taaki maid aur customer ko bhi turant dikhe
+  setTimeout(function() {
+    if (typeof syncAgencyEnquiriesFromFirebase === 'function') {
+      syncAgencyEnquiriesFromFirebase(sess.phone);
+    }
+  }, 500);
 }
 
 function renderAgencyEnquiries() {
@@ -27847,16 +28126,14 @@ function renderAgencyEnquiries() {
     var custPhone = e.customerPhone || e.customerId || '';
     var safeId = JSON.stringify(e.id);
 
-    // Phone number: Accepted hone par dikhe, warna lock
+    // Phone number: Agency ko hamesha dikhao (maid ki tarah) — Pending mein bhi
     var phoneHtml = '';
-    if (e.status === 'Accepted' && custPhone) {
+    if (custPhone) {
       phoneHtml = '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
         +'<a href="tel:'+custPhone+'" style="display:inline-flex;align-items:center;gap:5px;background:#f97316;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fas fa-phone"></i> '+custPhone+'</a>'
         +'<a href="https://wa.me/91'+custPhone+'?text='+encodeURIComponent('Namaste! Main aapki maid request ke baare mein baat karna chahta/chahti hoon. (Rent a Maid India)')
           +'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#25d366;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fab fa-whatsapp"></i> WhatsApp</a>'
         +'</div>';
-    } else if (e.status !== 'Rejected') {
-      phoneHtml = '<div style="margin-top:6px;font-size:11px;color:#9ca3af;"><i class="fas fa-lock"></i> Accept karne par customer ka number dikhega</div>';
     }
 
     // Action buttons: sirf Pending pe dikhao
