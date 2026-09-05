@@ -1652,6 +1652,13 @@ tr:hover td{background:#f8fafc;}
 .settings-nav-item i{width:16px;text-align:center;}
 .settings-section{display:none;}
 .settings-section.active{display:block;}
+@media(max-width:700px){
+  #pg-website .settings-grid{grid-template-columns:1fr;gap:0;}
+  #pg-website .settings-nav{border-radius:12px;margin-bottom:0;}
+  #pg-website .settings-nav-item{font-size:14px;padding:11px 14px;}
+  #pg-website .settings-nav-item.active{background:var(--primary,#f97316);color:#fff;font-weight:700;}
+  #pg-website #web-content-panel{margin-top:16px;}
+}
 .settings-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;}
 .settings-card h3{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
 .settings-card p{font-size:13px;color:var(--text2);margin-bottom:16px;}
@@ -2543,9 +2550,28 @@ tr:hover td{background:#f8fafc;}
       imgWrap.style.display = 'none';
     }
 
-    // 8. Toast
+    // 8. Save to localStorage + Firebase
+    var annSaveData = {
+      text: currentText,
+      fontSize: document.getElementById('ann-font').value,
+      height: document.getElementById('ann-height').value,
+      speed: document.getElementById('ann-speed').value,
+      textColor: document.getElementById('ann-text-color').value,
+      bg1: document.getElementById('ann-bg1').value,
+      bg2: document.getElementById('ann-bg2').value,
+      imgData: annImgData || '',
+      enabled: (document.getElementById('ann-enabled') || {checked:true}).checked,
+    };
+    localStorage.setItem('ram_ann_settings', JSON.stringify(annSaveData));
+    if (typeof window._fbSetWhenReady === 'function') {
+      window._fbSetWhenReady('siteSettings', 'ram_ann_settings', annSaveData).catch(function(e){ console.warn('Ann Firebase save failed:', e); });
+    } else if (typeof window._fbSet === 'function') {
+      window._fbSet('siteSettings', 'ram_ann_settings', annSaveData).catch(function(e){ console.warn('Ann Firebase save failed:', e); });
+    }
+
+    // 9. Toast
     var toast = document.createElement('div');
-    toast.textContent = '✅ Announcement bar update ho gaya!';
+    toast.textContent = '✅ Announcement bar update ho gaya aur Firebase pe save ho gaya!';
     toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 24px;border-radius:10px;font-weight:700;font-size:14px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.2);';
     document.body.appendChild(toast);
     setTimeout(function(){ toast.remove(); }, 3000);
@@ -11568,6 +11594,11 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="footer-brand">
         <h3 id="site-footer-brand-name">Rent a Maid</h3>
         <p id="site-footer-brand-desc" data-i18n="footer_desc">India's premier domestic helper placement platform. We connect busy urban families with verified, reliable, and professional household staff.</p>
+        <div style="margin:10px 0;font-size:13px;color:rgba(255,255,255,0.75);line-height:1.8;">
+          <div id="site-footer-address" style="margin-bottom:4px;"><i class="fas fa-map-marker-alt" style="margin-right:6px;color:var(--primary,#f97316);"></i>Kota, Rajasthan, India</div>
+          <div id="site-footer-phone" style="margin-bottom:4px;"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary,#f97316);"></i>+91 9530112346</div>
+          <div id="site-footer-email"><i class="fas fa-envelope" style="margin-right:6px;color:var(--primary,#f97316);"></i>rentamaidindia@gmail.com</div>
+        </div>
         <div class="footer-socials">
           <a id="footer-social-fb" href="https://www.facebook.com/rentamaidindia" target="_blank" rel="noopener noreferrer" title="Facebook"><i class="fab fa-facebook-f"></i></a>
           <a id="footer-social-ig" href="https://www.instagram.com/rentamaidindia" target="_blank" rel="noopener noreferrer" title="Instagram"><i class="fab fa-instagram"></i></a>
@@ -17832,7 +17863,14 @@ async function rcSubmitLogin() {
       <!-- ══ WEBSITE EDITOR PAGE ══ -->
       <div class="admin-page" id="pg-website">
         <div class="section-head">
-          <div><h2>Website Editor</h2><p>Edit text, photos & videos on your live website — changes appear instantly</p></div>
+          <div>
+            <h2>Website Editor</h2>
+            <p>Edit text, photos &amp; videos on your live website — changes appear instantly</p>
+            <div id="fb-save-status" style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;">
+              <span id="fb-status-dot" style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span>
+              <span id="fb-status-text">Firebase status check ho raha hai...</span>
+            </div>
+          </div>
           <button class="action-btn action-btn-outline" onclick="resetSiteContent()"><i class="fas fa-rotate-left"></i> Reset Section Defaults</button>
         </div>
         <div class="settings-grid">
@@ -17853,7 +17891,7 @@ async function rcSubmitLogin() {
             <div class="settings-nav-item" onclick="switchWebTab('customcss')"><i class="fas fa-code"></i> Custom CSS / Code</div>
             <div class="settings-nav-item" onclick="switchWebTab('seo')"><i class="fas fa-magnifying-glass-chart"></i> SEO & Meta</div>
           </div>
-          <div>
+          <div id="web-content-panel">
             <!-- HERO TAB -->
             <div class="settings-section active" id="wtab-hero">
               <div class="settings-card">
@@ -18276,6 +18314,7 @@ async function rcSubmitLogin() {
                   <button class="btn" style="background:var(--muted-bg);color:var(--secondary);" onclick="document.getElementById('welcomeRolePopup').style.display='flex'; loadPopupLogo();"><i class="fas fa-eye" style="margin-right:8px;"></i>Preview Popup</button>
                 </div>
               </div>
+            </div>
             <!-- ══ ANNOUNCEMENT BAR TAB ══ -->
             <div class="settings-section" id="wtab-announcement">
               <div class="settings-card">
@@ -19568,6 +19607,38 @@ function gotoPage(page) {
   // Jab website editor khule, extras load karo
   if (page === 'website') {
     setTimeout(() => { if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras(); }, 100);
+    // Firebase connection status badge update karo
+    setTimeout(function() {
+      var dot  = document.getElementById('fb-status-dot');
+      var text = document.getElementById('fb-status-text');
+      var badge = document.getElementById('fb-save-status');
+      if (!dot || !text || !badge) return;
+      var fbOk = (typeof window._fbSet === 'function' || typeof window._fbSetWhenReady === 'function');
+      if (fbOk) {
+        dot.style.background   = '#22c55e';
+        badge.style.background = '#dcfce7';
+        badge.style.color      = '#15803d';
+        badge.style.borderColor= '#bbf7d0';
+        text.textContent = '🔥 Firebase Connected — Changes live ho rahe hain';
+      } else {
+        dot.style.background   = '#ef4444';
+        badge.style.background = '#fee2e2';
+        badge.style.color      = '#b91c1c';
+        badge.style.borderColor= '#fecaca';
+        text.textContent = '⚠️ Firebase load nahi hua — page refresh karein';
+      }
+      // 3 seconds baad dobara check karo (Firebase async load hota hai)
+      setTimeout(function() {
+        var fbOk2 = (typeof window._fbSet === 'function' || typeof window._fbSetWhenReady === 'function');
+        if (fbOk2 && !fbOk) {
+          dot.style.background   = '#22c55e';
+          badge.style.background = '#dcfce7';
+          badge.style.color      = '#15803d';
+          badge.style.borderColor= '#bbf7d0';
+          text.textContent = '🔥 Firebase Connected — Changes live ho rahe hain';
+        }
+      }, 3000);
+    }, 500);
   }
   // Agency page khulte hi render karo
   if (page === 'agencies') {
@@ -19576,6 +19647,7 @@ function gotoPage(page) {
         if (document.getElementById('agencyListView')) document.getElementById('agencyListView').style.display = 'block';
         if (document.getElementById('agencyMaidsView')) document.getElementById('agencyMaidsView').style.display = 'none';
         currentAgencyId = null;
+        currentAgencyPhone = '';
         renderAgencies();
       }
     }, 50);
@@ -20018,7 +20090,8 @@ function updateAgencyNavBadge() {
 }
 
 // ---- Current agency being viewed ----
-let currentAgencyId = null;
+let currentAgencyId = null;   // backward compat (still used for editId etc)
+let currentAgencyPhone = '';  // PRIMARY identifier — phone number se hi maids match hongi
 
 // ---- Render agency list ----
 function renderAgencies() {
@@ -20032,9 +20105,23 @@ function renderAgencies() {
     (a.city||'').toLowerCase().includes(locQ) || (a.state||'').toLowerCase().includes(locQ)
   );
   document.getElementById('agencyCount').textContent = agencies.length + ' Agenc' + (agencies.length===1?'y':'ies');
-  const allMaids = getMaids();
+  // Dono sources merge karo for accurate maid count
+  const _adminMaidsForCount = getMaids();
+  let _regMaidsForCount = {};
+  try { _regMaidsForCount = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) {}
+  const _seenPhonesForCount = new Set(_adminMaidsForCount.map(m => m.phone));
+  const _allMaidsForCount = [..._adminMaidsForCount];
+  Object.values(_regMaidsForCount).forEach(m => { if (!_seenPhonesForCount.has(m.phone)) _allMaidsForCount.push(m); });
+
   document.getElementById('agencyTbody').innerHTML = agencies.length ? agencies.map((a, i) => {
-    const maidCount = allMaids.filter(m => m.agencyId === a.id).length;
+    const _agPh = (a.phone||'').replace(/\D/g,'');
+    // Phone = primary identifier
+    const maidCount = _allMaidsForCount.filter(m => {
+      if (_agPh && m.agencyStatus === 'yes' && (m.agencyPhone||'').replace(/\D/g,'') === _agPh) return true;
+      if (m.agencyId == a.id) return true;
+      return false;
+    }).length;
+
     const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString('en-IN') : '—';
     return `<tr>
       <td>${i+1}</td>
@@ -20130,8 +20217,10 @@ function deleteAgency(id) {
 // ---- View Maids inside an Agency ----
 function openAgencyMaids(agencyId) {
   currentAgencyId = agencyId;
-  const agency = getAgencies().find(a => a.id === agencyId);
-  if (!agency) return;
+  const agency = getAgencies().find(a => a.id == agencyId);
+  if (!agency) { showToast('Agency nahi mili. Please refresh karein.'); return; }
+  // Phone number = primary identifier (same logic as agency dashboard)
+  currentAgencyPhone = (agency.phone || '').replace(/\D/g, '');
   document.getElementById('agencyListView').style.display = 'none';
   document.getElementById('agencyMaidsView').style.display = 'block';
   document.getElementById('agencyMaidsTitle').textContent = agency.name + ' — Maids';
@@ -20154,15 +20243,32 @@ function openAgencyMaids(agencyId) {
 
 function backToAgencyList() {
   currentAgencyId = null;
+  currentAgencyPhone = '';
   document.getElementById('agencyMaidsView').style.display = 'none';
   document.getElementById('agencyListView').style.display = 'block';
   renderAgencies();
 }
 
 function renderAgencyMaids() {
-  if (!currentAgencyId) return;
-  const allMaids = getMaids();
-  const agencyMaids = allMaids.filter(m => m.agencyId === currentAgencyId);
+  if (!currentAgencyPhone && !currentAgencyId) return;
+  // ── Phone-first matching (same as agency dashboard agGetMyMaids) ──
+  // Step 1: ram_admin_maids se lo
+  const adminMaidsList = getMaids();
+  // Step 2: ram_registered_maids se bhi lo (self-registered)
+  let regMaidsObj = {};
+  try { regMaidsObj = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) {}
+  // Merge: phone duplicate nahi aaye
+  const seenPhones = new Set(adminMaidsList.map(m => m.phone));
+  const allMaids = [...adminMaidsList];
+  Object.values(regMaidsObj).forEach(m => { if (!seenPhones.has(m.phone)) allMaids.push(m); });
+
+  // Step 3: Filter by agency phone number (primary) ya agencyId (fallback)
+  const agencyMaids = allMaids.filter(m => {
+    const mPhone = (m.agencyPhone || '').replace(/\D/g,'');
+    if (currentAgencyPhone && m.agencyStatus === 'yes' && mPhone === currentAgencyPhone) return true;
+    if (currentAgencyId && m.agencyId == currentAgencyId) return true;
+    return false;
+  });
   const stars = r => '★'.repeat(Math.round(r||0));
   document.getElementById('agencyMaidsTbody').innerHTML = agencyMaids.length ? agencyMaids.map(m => `
     <tr>
@@ -20192,9 +20298,29 @@ function renderAgencyMaids() {
 
 function removeMaidFromAgency(maidId) {
   if (!confirm('Is maid ko agency se remove karna chahte ho? Maid ka record delete nahi hoga.')) return;
-  let maids = getMaids().map(m => { if (m.id===maidId) { delete m.agencyId; delete m.agencyPhone; delete m.agencyName; } return m; });
+  // 1) ram_admin_maids update
+  let maids = getMaids().map(m => {
+    if (m.id == maidId) { delete m.agencyId; m.agencyPhone = ''; m.agencyName = ''; m.agencyStatus = 'no'; }
+    return m;
+  });
   localStorage.setItem('ram_admin_maids', JSON.stringify(maids));
-  // ── Firebase live sync: admin panel + website + agency dashboard ──
+  // 2) ram_registered_maids bhi update karo (self-registered maid ke liye)
+  const removedMaid = maids.find(m => m.id == maidId);
+  if (removedMaid && removedMaid.phone) {
+    try {
+      let regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      if (regMaids[removedMaid.phone]) {
+        regMaids[removedMaid.phone].agencyStatus = 'no';
+        regMaids[removedMaid.phone].agencyPhone = '';
+        regMaids[removedMaid.phone].agencyName = '';
+        delete regMaids[removedMaid.phone].agencyId;
+        localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
+        if (typeof window._fbSet === 'function') window._fbSet('adminData', 'ram_registered_maids', regMaids).catch(function(){});
+        if (typeof window._fbSet === 'function') window._fbSet('adminData', 'maid_' + removedMaid.phone, regMaids[removedMaid.phone]).catch(function(){});
+      }
+    } catch(eR) {}
+  }
+  // ── Firebase live sync ──
   if (typeof window._fbSet === 'function') {
     window._fbSet('adminData', 'ram_admin_maids', maids).catch(function(e){ console.warn('removeMaidFromAgency Firebase sync failed:', e); });
   } else if (typeof window._fbSetWhenReady === 'function') {
@@ -20208,14 +20334,28 @@ function removeMaidFromAgency(maidId) {
 
 // ---- Add existing maid to agency ----
 function openAddMaidToAgencyModal() {
-  if (!currentAgencyId) return;
-  const allMaids = getMaids();
-  const agencyMaidIds = new Set(allMaids.filter(m => m.agencyId===currentAgencyId).map(m=>m.id));
-  const available = allMaids.filter(m => !m.agencyId);
+  if (!currentAgencyPhone && !currentAgencyId) return;
+  const thisAgency = getAgencies().find(a => a.id == currentAgencyId);
+  const agPh = currentAgencyPhone || (thisAgency ? (thisAgency.phone||'').replace(/\D/g,'') : '');
+
+  // Dono sources se maids lo
+  const adminMaids = getMaids();
+  let regMaidsObj = {};
+  try { regMaidsObj = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) {}
+  const seenPh = new Set(adminMaids.map(m => m.phone));
+  const allMaids = [...adminMaids];
+  Object.values(regMaidsObj).forEach(m => { if (!seenPh.has(m.phone)) allMaids.push(m); });
+
+  // Jo maids already kisi agency mein hain (by phone or agencyId) unhe hata do
+  const available = allMaids.filter(m => {
+    if (m.agencyStatus === 'yes' && (m.agencyPhone||'').replace(/\D/g,'')) return false; // already in some agency
+    if (m.agencyId) return false;
+    return true;
+  });
   if (!available.length) { showToast('Saari maids already kisi agency mein hain ya koi maid registered nahi hai.'); return; }
   const sel = `<select id="addMaidToAgencySelect" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:9px;font-size:14px;">
     <option value="">-- Maid chuniye --</option>
-    ${available.map(m=>`<option value="${m.id}">${escHtml(m.name)} — ${escHtml(m.phone||'')} (${escHtml(m.city||'')})</option>`).join('')}
+    ${available.map(m=>`<option value="${escHtml(m.phone)}">${escHtml(m.name)} — ${escHtml(m.phone||'')} (${escHtml(m.city||m.district||'')})</option>`).join('')}
   </select>`;
   const html = `<div style="padding:24px;">
     <p style="font-size:14px;color:var(--text2);margin-bottom:12px;">Agency mein add karne ke liye maid chuniye:</p>
@@ -20230,20 +20370,41 @@ function openAddMaidToAgencyModal() {
 
 function confirmAddMaidToAgency() {
   const selEl = document.getElementById('addMaidToAgencySelect');
-  const maidId = selEl ? parseInt(selEl.value) : null;
-  if (!maidId) { showToast('Pehle maid chuniye!'); return; }
-  // Agency ka info bhi attach karo taaki agency dashboard mein dikh sake
-  const agencies = getAgencies();
-  const thisAgency = agencies.find(function(a){ return a.id === currentAgencyId; });
+  const maidPhone = selEl ? selEl.value.trim() : '';
+  if (!maidPhone) { showToast('Pehle maid chuniye!'); return; }
+  const thisAgency = getAgencies().find(a => a.id == currentAgencyId);
+  if (!thisAgency) { showToast('Agency nahi mili.'); return; }
+  const agPh = (thisAgency.phone || '').replace(/\D/g, '');
+
+  // 1) ram_admin_maids update (agencyPhone + agencyStatus primary, agencyId bonus)
   let maids = getMaids().map(m => {
-    if (m.id===maidId) {
+    if (m.phone === maidPhone) {
       m.agencyId = currentAgencyId;
-      if (thisAgency) { m.agencyPhone = thisAgency.phone; m.agencyName = thisAgency.name; }
+      m.agencyPhone = agPh;
+      m.agencyName = thisAgency.name;
+      m.agencyStatus = 'yes';
     }
     return m;
   });
   localStorage.setItem('ram_admin_maids', JSON.stringify(maids));
-  // ── Firebase live sync: website + agency dashboard turant update ho ──
+
+  // 2) ram_registered_maids bhi update karo
+  try {
+    let regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+    if (regMaids[maidPhone]) {
+      regMaids[maidPhone].agencyPhone = agPh;
+      regMaids[maidPhone].agencyName = thisAgency.name;
+      regMaids[maidPhone].agencyStatus = 'yes';
+      regMaids[maidPhone].agencyId = currentAgencyId;
+      localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
+      if (typeof window._fbSet === 'function') {
+        window._fbSet('adminData', 'ram_registered_maids', regMaids).catch(function(){});
+        window._fbSet('adminData', 'maid_' + maidPhone, regMaids[maidPhone]).catch(function(){});
+      }
+    }
+  } catch(eR) {}
+
+  // ── Firebase live sync ──
   if (typeof window._fbSet === 'function') {
     window._fbSet('adminData', 'ram_admin_maids', maids).catch(function(e){ console.warn('confirmAddMaidToAgency Firebase sync failed:', e); });
   } else if (typeof window._fbSetWhenReady === 'function') {
@@ -22308,7 +22469,10 @@ function setSiteContentKey(key, val){
   data[key] = val;
   setLS('ram_site_content', data);
   // Firebase me bhi save karo — har device pe live update hoga
-  if (typeof window._fbSet === 'function') {
+  // _fbSetWhenReady use karo taaki Firebase load hone se pehle bhi queue ho jaaye
+  if (typeof window._fbSetWhenReady === 'function') {
+    window._fbSetWhenReady('siteSettings', 'ram_site_content', data).catch(e => console.warn('SiteContent Firebase save failed:', e));
+  } else if (typeof window._fbSet === 'function') {
     window._fbSet('siteSettings', 'ram_site_content', data).catch(e => console.warn('SiteContent Firebase save failed:', e));
   }
 }
@@ -22424,19 +22588,46 @@ function loadWebsiteEditorForm(){
 function switchWebTab(tab){
   document.querySelectorAll('#pg-website .settings-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('#pg-website .settings-nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('wtab-'+tab).classList.add('active');
-  event.currentTarget.classList.add('active');
+  var tabEl = document.getElementById('wtab-'+tab);
+  if(tabEl) tabEl.classList.add('active');
+  if(event && event.currentTarget) event.currentTarget.classList.add('active');
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); updatePopupCardPreview(); wcLoadPopupToggle(); loadWelcomePopupAdminImgs(); }
+  // Mobile: content panel pe scroll karo
+  var isMobile = window.innerWidth <= 700;
+  if(isMobile){
+    var panel = document.getElementById('web-content-panel');
+    if(panel){ setTimeout(function(){ panel.scrollIntoView({behavior:'smooth', block:'start'}); }, 60); }
+  }
 }
 function handleImageUpload(event, targetInputId){
   const file = event.target.files[0];
   if(!file) return;
-  if(file.size > 1.5*1024*1024){ showToast('Image too large — please use under 1.5MB or paste a URL instead'); return; }
-  const reader = new FileReader();
-  reader.onload = e => { document.getElementById(targetInputId).value = e.target.result; showToast('Image loaded — click Publish to go live'); if(targetInputId==='wc-logo-img') updateLogoPreview(); };
-  reader.readAsDataURL(file);
+  if(file.size > 5*1024*1024){ showToast('Image bahut badi hai — 5MB se chhoti image use karein'); return; }
+  const doLoad = (src) => {
+    const el = document.getElementById(targetInputId);
+    if(el) el.value = src;
+    showToast('✅ Image load ho gayi — Publish karein');
+    if(targetInputId==='wc-logo-img') updateLogoPreview();
+    if(targetInputId==='wc-popup-customer-img' || targetInputId==='wc-popup-maid-img') updatePopupCardPreview();
+  };
+  // Compress karo pehle agar _compressImage available hai
+  if(typeof window._compressImage === 'function') {
+    window._compressImage(file, 400, 0.82).then(compressed => {
+      const reader = new FileReader();
+      reader.onload = e => doLoad(e.target.result);
+      reader.readAsDataURL(compressed);
+    }).catch(() => {
+      const reader = new FileReader();
+      reader.onload = e => doLoad(e.target.result);
+      reader.readAsDataURL(file);
+    });
+  } else {
+    const reader = new FileReader();
+    reader.onload = e => doLoad(e.target.result);
+    reader.readAsDataURL(file);
+  }
 }
 function updateFaviconPreview(){
   const box = document.getElementById('wc-favicon-preview-box');
@@ -22583,7 +22774,12 @@ function saveSiteContent(section){
   else keys = {'wc-footer-name':'footer-name','wc-footer-desc':'footer-desc','wc-footer-address':'footer-address','wc-footer-phone':'footer-phone','wc-footer-email':'footer-email','wc-footer-copyright':'footer-copyright','wc-social-fb':'social-fb','wc-social-ig':'social-ig','wc-social-tw':'social-tw'};
   Object.keys(keys).forEach(id => { const el=document.getElementById(id); if(el) setSiteContentKey(keys[id], el.value); });
   applySiteContent();
-  showToast('Website updated live! Check your homepage.');
+  // Firebase save status check karo
+  if (typeof window._fbSetWhenReady === 'function' || typeof window._fbSet === 'function') {
+    showToast('✅ Website live update ho gayi! Firebase mein save ho raha hai...');
+  } else {
+    showToast('⚠️ Locally save hua. Firebase load nahi hua — refresh karke dobara try karein.');
+  }
 }
 
 // Apply saved popup values to the live welcome popup
@@ -27143,16 +27339,34 @@ function renderAgencyEnquiries() {
     var dt = e.sentAt ? new Date(e.sentAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
     var statusColor = e.status==='Accepted'?'#15803d':e.status==='Rejected'?'#dc2626':'#92400e';
     var statusBg = e.status==='Accepted'?'#dcfce7':e.status==='Rejected'?'#fef2f2':'#fef9c3';
+    var custPhone = (e.customerPhone || e.phone || '').replace(/\D/g,'');
+    // Customer ka phone number har haal mein dikhao
+    var phoneHtml = custPhone
+      ? '<div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+          +'<a href="tel:+91'+custPhone+'" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;background:#3b82f6;color:#fff;font-weight:700;font-size:12px;text-decoration:none;"><i class="fas fa-phone"></i> +91 '+custPhone+'</a>'
+          +'<a href="https://wa.me/91'+custPhone+'?text='+encodeURIComponent('Namaste! Rent a Maid India se baat kar rahe hain. Aapki enquiry ke baare mein baat karni thi.')+'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;background:#25d366;color:#fff;font-weight:700;font-size:12px;text-decoration:none;"><i class="fab fa-whatsapp"></i> WhatsApp</a>'
+        +'</div>'
+      : '<div style="font-size:12px;color:#9ca3af;margin-top:6px;">📵 Customer phone unavailable</div>';
+    // Accept / Reject buttons — sirf Pending par dikhao
+    var maidPh = (e._maidPhone||'').replace(/['"]/g,'');
+    var actionHtml = e.status === 'Pending'
+      ? '<div style="display:flex;gap:8px;margin-top:10px;">'
+          +'<button onclick="agencyRespondEnquiry(\''+e.id+'\',\''+maidPh+'\',\'Accepted\')" style="flex:1;padding:8px;border-radius:8px;background:#16a34a;color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;">✅ Accept</button>'
+          +'<button onclick="agencyRespondEnquiry(\''+e.id+'\',\''+maidPh+'\',\'Rejected\')" style="flex:1;padding:8px;border-radius:8px;background:#dc2626;color:#fff;font-weight:700;font-size:13px;border:none;cursor:pointer;">❌ Reject</button>'
+        +'</div>'
+      : '';
     return '<div style="padding:14px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#f9fafb;">'
       +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-        +'<div>'
+        +'<div style="flex:1;">'
           +'<div style="font-weight:700;font-size:14px;color:#111827;">'+(e.customerName||'Customer')+'</div>'
-          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">For: <strong>'+e._maidName+'</strong></div>'
+          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">For: <strong>'+(e._maidName||'—')+'</strong></div>'
           +'<div style="font-size:12px;color:#6b7280;">City: '+(e.customerCity||'—')+'</div>'
           +(e.service?'<div style="font-size:12px;color:#6b7280;">Service: '+e.service+'</div>':'')
           +'<div style="font-size:11px;color:#9ca3af;margin-top:4px;">'+dt+'</div>'
+          +phoneHtml
+          +actionHtml
         +'</div>'
-        +'<span style="background:'+statusBg+';color:'+statusColor+';font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;">'+e.status+'</span>'
+        +'<span style="background:'+statusBg+';color:'+statusColor+';font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;flex-shrink:0;">'+e.status+'</span>'
       +'</div>'
     +'</div>';
   }).join('');
@@ -27161,6 +27375,57 @@ function renderAgencyEnquiries() {
 function agSetEnqFilter(f) {
   _agEnqFilter = f;
   renderAgencyEnquiries();
+}
+
+/* ── Agency: Enquiry Accept / Reject ── */
+function agencyRespondEnquiry(reqId, maidPhone, newStatus) {
+  var sess = agGetSession(); if (!sess) return;
+  var agPhone = (sess.phone||'').replace(/\D/g,'');
+
+  // 1) ram_maid_requests_<maidPhone> update
+  var mKey = 'ram_maid_requests_' + maidPhone;
+  var mReqs = []; try { mReqs = JSON.parse(localStorage.getItem(mKey)||'[]'); } catch(ex){}
+  mReqs = mReqs.map(function(r){ return r.id==reqId ? Object.assign({},r,{status:newStatus}) : r; });
+  localStorage.setItem(mKey, JSON.stringify(mReqs));
+
+  // 2) ram_agency_enquiries_<agPhone> update
+  var agKey = 'ram_agency_enquiries_' + agPhone;
+  var agList = []; try { agList = JSON.parse(localStorage.getItem(agKey)||'[]'); } catch(ex){}
+  agList = agList.map(function(r){ return r.id==reqId ? Object.assign({},r,{status:newStatus}) : r; });
+  localStorage.setItem(agKey, JSON.stringify(agList));
+
+  // 3) Customer ka status bhi update karo
+  var updatedReq = mReqs.find(function(r){ return r.id==reqId; }) || agList.find(function(r){ return r.id==reqId; });
+  if (updatedReq && (updatedReq.customerPhone || updatedReq.phone)) {
+    var custPh = (updatedReq.customerPhone || updatedReq.phone || '').replace(/\D/g,'');
+    if (custPh) {
+      var cKey = 'ram_cust_req_status_' + custPh;
+      var cList = []; try { cList = JSON.parse(localStorage.getItem(cKey)||'[]'); } catch(ex){}
+      var found = false;
+      cList = cList.map(function(r){ if(r.id==reqId){ found=true; return Object.assign({},r,{status:newStatus}); } return r; });
+      if (!found) cList.unshift(Object.assign({},updatedReq,{status:newStatus}));
+      localStorage.setItem(cKey, JSON.stringify(cList));
+      var cFbKey = cKey.replace(/[^a-zA-Z0-9_-]/g,'_');
+      if (typeof window._fbSetWhenReady==='function') window._fbSetWhenReady('siteData',cFbKey,cList).catch(function(){});
+      else if (typeof window._fbSet==='function') window._fbSet('siteData',cFbKey,cList).catch(function(){});
+    }
+  }
+
+  // 4) Firebase sync
+  var fbMKey = mKey.replace(/[^a-zA-Z0-9_-]/g,'_');
+  var fbAgKey = agKey.replace(/[^a-zA-Z0-9_-]/g,'_');
+  if (typeof window._fbSetWhenReady==='function') {
+    window._fbSetWhenReady('siteData',fbMKey,mReqs).catch(function(){});
+    window._fbSetWhenReady('siteData',fbAgKey,agList).catch(function(){});
+  } else if (typeof window._fbSet==='function') {
+    window._fbSet('siteData',fbMKey,mReqs).catch(function(){});
+    window._fbSet('siteData',fbAgKey,agList).catch(function(){});
+  }
+
+  var msg = newStatus==='Accepted' ? '✅ Request accept! Customer se contact karein.' : '❌ Request reject kar di.';
+  if (typeof showToast==='function') showToast(msg);
+  renderAgencyEnquiries();
+  if (typeof renderAgencyDashboard==='function') { try { renderAgencyDashboard(sess); } catch(ex){} }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -27874,7 +28139,9 @@ function smgrGetData() {
 }
 function smgrSetData(data) {
   localStorage.setItem('ram_sections_mgr', JSON.stringify(data));
-  if (typeof window._fbSet === 'function') {
+  if (typeof window._fbSetWhenReady === 'function') {
+    window._fbSetWhenReady('siteSettings', 'ram_sections_mgr', data).catch(e => console.warn('SectionsMgr Firebase save failed:', e));
+  } else if (typeof window._fbSet === 'function') {
     window._fbSet('siteSettings', 'ram_sections_mgr', data).catch(e => console.warn('SectionsMgr Firebase save failed:', e));
   }
 }
@@ -28025,6 +28292,11 @@ window.switchWebTab = function(tab) {
     var el = document.getElementById('wtab-'+tab);
     if (el) el.classList.add('active');
     if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    // Mobile scroll
+    if(window.innerWidth <= 700){
+      var panel = document.getElementById('web-content-panel');
+      if(panel){ setTimeout(function(){ panel.scrollIntoView({behavior:'smooth',block:'start'}); }, 60); }
+    }
   }
   if (tab === 'sections') { smgrRenderAdminList(); }
   if (tab === 'customcss') { loadCustomCodeInputs(); }
@@ -28037,7 +28309,9 @@ function getCustomCode() {
 }
 function setCustomCode(data) {
   localStorage.setItem('ram_custom_code', JSON.stringify(data));
-  if (typeof window._fbSet === 'function') {
+  if (typeof window._fbSetWhenReady === 'function') {
+    window._fbSetWhenReady('siteSettings', 'ram_custom_code', data).catch(e => console.warn('CustomCode Firebase save failed:', e));
+  } else if (typeof window._fbSet === 'function') {
     window._fbSet('siteSettings', 'ram_custom_code', data).catch(e => console.warn('CustomCode Firebase save failed:', e));
   }
 }
@@ -28096,7 +28370,9 @@ function getSEOData() {
 }
 function setSEOData(data) {
   localStorage.setItem('ram_seo_data', JSON.stringify(data));
-  if (typeof window._fbSet === 'function') {
+  if (typeof window._fbSetWhenReady === 'function') {
+    window._fbSetWhenReady('siteSettings', 'ram_seo_data', data).catch(e => console.warn('SEO Firebase save failed:', e));
+  } else if (typeof window._fbSet === 'function') {
     window._fbSet('siteSettings', 'ram_seo_data', data).catch(e => console.warn('SEO Firebase save failed:', e));
   }
 }
@@ -28184,6 +28460,37 @@ function loadSEOFromFirebase() {
     }
   };
   setTimeout(function() { tryLoad(10); }, 1000);
+})();
+
+// ── Announcement Bar: Firebase se load karo on startup ──
+(function loadAnnFromFirebase() {
+  var tryAnn = function(attempts) {
+    if (typeof window._fbGet === 'function') {
+      window._fbGet('siteSettings', 'ram_ann_settings').then(function(fbData) {
+        if (fbData && typeof fbData === 'object') {
+          localStorage.setItem('ram_ann_settings', JSON.stringify(fbData));
+          // Apply saved announcement settings to live bar
+          var bar = document.getElementById('announcementBar') || document.querySelector('.announcement-bar, .ticker-bar, [id*="ticker"], [id*="announcement"]');
+          if (fbData.text) {
+            var spans = document.querySelectorAll('.ticker-span, .ann-span, [id*="ticker"] span');
+            spans.forEach(function(s) { s.textContent = fbData.text; });
+          }
+          if (bar) {
+            if (fbData.bg1 && fbData.bg2) bar.style.background = 'linear-gradient(90deg,' + fbData.bg1 + ',' + fbData.bg2 + ',' + fbData.bg1 + ')';
+            if (fbData.textColor) { var spans2 = bar.querySelectorAll('span'); spans2.forEach(function(s){ s.style.color = fbData.textColor; }); }
+            if (fbData.fontSize) bar.style.fontSize = fbData.fontSize + 'px';
+            if (fbData.height) {
+              if (fbData.enabled === false || fbData.enabled === 'false') { bar.style.height = '0'; bar.style.overflow = 'hidden'; }
+              else { bar.style.height = fbData.height + 'px'; }
+            }
+          }
+        }
+      }).catch(function(e) {});
+    } else if (attempts > 0) {
+      setTimeout(function() { tryAnn(attempts - 1); }, 600);
+    }
+  };
+  setTimeout(function() { tryAnn(10); }, 1200);
 })();
 </script>
 
