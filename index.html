@@ -2470,17 +2470,7 @@ tr:hover td{background:#f8fafc;}
     }
   }
 
-  // Wire up live preview on color pickers & sliders
-  ['ann-bg1','ann-bg2','ann-text-color'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.addEventListener('input', annUpdatePreviewStrip);
-  });
-  ['ann-font','ann-height'].forEach(function(id){
-    var el = document.getElementById(id);
-    if(el) el.addEventListener('input', annUpdatePreviewStrip);
-  });
-  var annTxtEl = document.getElementById('ann-text');
-  if(annTxtEl) annTxtEl.addEventListener('input', annUpdatePreviewStrip);
+  // Note: Live preview event listeners are wired in annInitAdminPanel (called on tab open)
 
   window.annImgPreview = function(){
     var url = document.getElementById('ann-img-url').value.trim();
@@ -2554,7 +2544,7 @@ tr:hover td{background:#f8fafc;}
   // Initialize admin panel fields from saved settings
   window.annInitAdminPanel = function(){
     var s; try{ s=JSON.parse(localStorage.getItem(ANN_LS_KEY)); }catch(e){}
-    if(!s) return;
+    if(!s) s = { text: currentText||'', fs:14, ht:44, spd:5, tc:'#ffffff', b1:'#1a3c5e', b2:'#0f2940', visible:true, img:'' };
     var tf = function(id, val){ var el=document.getElementById(id); if(el && val!==undefined) el.value=val; };
     tf('ann-text', s.text||'');
     tf('ann-font', s.fs||'14');
@@ -2568,6 +2558,19 @@ tr:hover td{background:#f8fafc;}
     var hv=document.getElementById('ann-height-val'); if(hv) hv.textContent=(s.ht||44)+'px';
     var sl=document.getElementById('ann-speed-label'); if(sl){ var spd=parseInt(s.spd||5); var labels={1:'Bahut Slow',2:'Slow',3:'Slow',4:'Medium',5:'Medium',6:'Medium',7:'Fast',8:'Fast',9:'Bahut Fast',10:'Bahut Fast'}; sl.textContent=labels[spd]||'Medium'; }
     var cb=document.getElementById('ann-enabled'); if(cb) cb.checked = (s.visible !== false);
+    // Live preview event listeners wire up (har baar tab open hone par)
+    ['ann-bg1','ann-bg2','ann-text-color'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){ el.removeEventListener('input',annUpdatePreviewStrip); el.addEventListener('input',annUpdatePreviewStrip); }
+    });
+    ['ann-font','ann-height'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el){ el.removeEventListener('input',annUpdatePreviewStrip); el.addEventListener('input',annUpdatePreviewStrip); }
+    });
+    var annTxtEl2=document.getElementById('ann-text');
+    if(annTxtEl2){ annTxtEl2.removeEventListener('input',annUpdatePreviewStrip); annTxtEl2.addEventListener('input',annUpdatePreviewStrip); }
+    var annSpEl=document.getElementById('ann-speed');
+    if(annSpEl){ annSpEl.removeEventListener('input',annSpeedLabel); annSpEl.addEventListener('input',annSpeedLabel); }
     annUpdatePreviewStrip();
   };
 
@@ -12567,6 +12570,66 @@ function addNotification(notif) {
   list.unshift({ ...notif, id: Date.now() + Math.random().toString(16).slice(2), createdAt: new Date().toISOString(), read: false });
   writeNotifications(list);
 }
+
+// ── Cross-device Notification Sync: Firebase se admin notifications pull karo ──
+// Yeh function admin panel pe kisi bhi device se notifications dikhata hai
+let _adminNotifSyncTimer = null;
+async function _syncAdminNotificationsFromFirebase() {
+  if (typeof window._fbGet !== 'function') return;
+  try {
+    // Step 1: Quick alert key check karo — pura siteData load karne se pehle
+    const quickAlert = await window._fbGet('siteData', 'admin_new_msg_alert').catch(() => null);
+    if (quickAlert && quickAlert.sentAt) {
+      const alertTime = new Date(quickAlert.sentAt).getTime();
+      const lastSeen = parseInt(localStorage.getItem('_adminAlertLastSeen') || '0');
+      if (alertTime > lastSeen) {
+        // Nayi message aayi — notification add karo agar pehle se nahi hai
+        localStorage.setItem('_adminAlertLastSeen', String(alertTime));
+        const existing = readNotifications();
+        const alreadyHas = existing.some(n => n._alertMsgId === quickAlert.msgId);
+        if (!alreadyHas) {
+          const list = existing;
+          list.unshift({
+            audience: 'admin',
+            title: '💬 New Chat Message',
+            message: (quickAlert.name || quickAlert.phone) + ': ' + (quickAlert.preview || ''),
+            page: 'help',
+            id: 'alert_' + quickAlert.msgId,
+            _alertMsgId: quickAlert.msgId,
+            createdAt: quickAlert.sentAt,
+            read: false
+          });
+          localStorage.setItem('notifications', JSON.stringify(list));
+          if (typeof renderNotifications === 'function') renderNotifications();
+        }
+      }
+    }
+
+    // Step 2: Firebase stored notifications bhi sync karo
+    const fbNotifs = await window._fbGet('siteData', 'notifications').catch(() => null);
+    if (!fbNotifs || !Array.isArray(fbNotifs)) return;
+    const local = readNotifications();
+    const localIds = new Set(local.map(n => n.id));
+    let changed = false;
+    fbNotifs.forEach(n => {
+      if (n && n.id && !localIds.has(n.id)) {
+        local.unshift(n);
+        changed = true;
+      }
+    });
+    if (changed) {
+      local.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      localStorage.setItem('notifications', JSON.stringify(local));
+      if (typeof renderNotifications === 'function') renderNotifications();
+    }
+  } catch(e) {}
+}
+function startAdminNotificationSync() {
+  if (_adminNotifSyncTimer) clearInterval(_adminNotifSyncTimer);
+  _syncAdminNotificationsFromFirebase(); // Turant ek baar
+  _adminNotifSyncTimer = setInterval(_syncAdminNotificationsFromFirebase, 10000); // Har 10 sec
+}
+
 function sendSmsDemo(toPhone, message) {
   console.log('[DEMO SMS] to +91' + toPhone + ': ' + message);
 }
@@ -14958,6 +15021,60 @@ function sendRequestToMaid(maidId) {
   // Save to maid's inbox — key: ram_maid_requests_<maidPhone>
   const maidPhone = maid ? maid.phone : String(maidId);
   saveMaidRequest(maidPhone, requestData);
+
+  // ── AGENCY NOTIFICATION: Agar maid kisi agency ke under hai ──
+  // Customer ki request agency ke dashboard mein bhi turant aaye
+  // aur agency accept/decline kar sake
+  try {
+    // Maid ka agencyPhone check karo (MAIDS array mein hoga agar agency linked hai)
+    var _agPhone = '';
+    if (maid && maid.agencyStatus === 'yes' && maid.agencyPhone) {
+      _agPhone = (maid.agencyPhone || '').replace(/\D/g, '');
+    }
+    // Agar MAIDS mein nahi mila, ram_admin_maids ya ram_registered_maids check karo
+    if (!_agPhone) {
+      try {
+        var _adminMaidsArr = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
+        var _foundMaid = _adminMaidsArr.find(function(x){ return x.phone === maidPhone; });
+        if (_foundMaid && _foundMaid.agencyStatus === 'yes' && _foundMaid.agencyPhone) {
+          _agPhone = (_foundMaid.agencyPhone || '').replace(/\D/g, '');
+        }
+      } catch(eL1) {}
+    }
+    if (!_agPhone) {
+      try {
+        var _regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+        var _regM = _regMaids[maidPhone];
+        if (_regM && _regM.agencyStatus === 'yes' && _regM.agencyPhone) {
+          _agPhone = (_regM.agencyPhone || '').replace(/\D/g, '');
+        }
+      } catch(eL2) {}
+    }
+    if (_agPhone) {
+      // Agency enquiry list mein request add karo
+      var _agEnqKey = 'ram_agency_enquiries_' + _agPhone;
+      var _agEnqList = [];
+      try { _agEnqList = JSON.parse(localStorage.getItem(_agEnqKey) || '[]'); } catch(eLx) {}
+      // Duplicate check
+      if (!_agEnqList.find(function(x){ return x.id === requestData.id; })) {
+        var _agEnqEntry = Object.assign({}, requestData, {
+          _maidName: maid ? maid.name : (requestData.maidName || ''),
+          _maidPhone: maidPhone,
+          maidName: maid ? maid.name : (requestData.maidName || ''),
+          maidPhone: maidPhone
+        });
+        _agEnqList.unshift(_agEnqEntry);
+        localStorage.setItem(_agEnqKey, JSON.stringify(_agEnqList));
+        // Firebase pe save karo — agency dashboard ka onSnapshot listener turant trigger hoga
+        var _fbAgEnqKey = _agEnqKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+        if (typeof window._fbSetWhenReady === 'function') {
+          window._fbSetWhenReady('siteData', _fbAgEnqKey, _agEnqList).catch(function(eF){ console.warn('Agency enquiry FB save failed:', eF); });
+        } else if (typeof window._fbSet === 'function') {
+          window._fbSet('siteData', _fbAgEnqKey, _agEnqList).catch(function(eF){ console.warn('Agency enquiry FB save failed:', eF); });
+        }
+      }
+    }
+  } catch(eAg) { console.warn('Agency notify on request error:', eAg); }
 
   // ── Write initial Pending status to customer-readable key ──
   try {
@@ -18514,7 +18631,7 @@ async function rcSubmitLogin() {
                   <label>Ya Device se Upload karo</label>
                   <input type="file" id="ann-img-file" accept="image/*" onchange="annImgFromFile(this)">
                 </div>
-                <div id="ann-img-preview-wrap" style="display:none;margin-bottom:8px;display:flex;align-items:center;gap:10px;">
+                <div id="ann-img-preview-wrap" style="display:none;margin-bottom:8px;align-items:center;gap:10px;">
                   <img id="ann-img-preview" src="" alt="preview" style="height:44px;border-radius:8px;border:1px solid var(--border);object-fit:cover;">
                   <button onclick="annRemoveImg()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">✕ Image Hatao</button>
                 </div>
@@ -19223,6 +19340,10 @@ function openAdminPanel() {
   setTimeout(function() {
     if (typeof adminCheckAuth === 'function') adminCheckAuth();
   }, 50);
+  // Cross-device notification sync shuru karo
+  setTimeout(function() {
+    if (typeof startAdminNotificationSync === 'function') startAdminNotificationSync();
+  }, 2000);
 }
 function closeAdminPanel() {
   document.getElementById('adminPanelOverlay').classList.remove('open');
@@ -20276,10 +20397,10 @@ function saveAgency() {
 // ---- Delete Agency ----
 function deleteAgency(id) {
   if (!confirm('Is agency ko delete karna chahte ho? Isse linked maids ka agency link bhi hatega.')) return;
-  let agencies = getAgencies().filter(a => a.id !== id);
+  let agencies = getAgencies().filter(a => String(a.id) !== String(id));
   saveAgencies(agencies);
   // Remove agencyId from maids too
-  let maids = getMaids().map(m => { if (m.agencyId===id) { delete m.agencyId; delete m.agencyPhone; delete m.agencyName; } return m; });
+  let maids = getMaids().map(m => { if (String(m.agencyId)===String(id)) { delete m.agencyId; delete m.agencyPhone; delete m.agencyName; } return m; });
   localStorage.setItem('ram_admin_maids', JSON.stringify(maids));
   // ── Firebase live sync ──
   if (typeof window._fbSet === 'function') {
@@ -20294,8 +20415,9 @@ function deleteAgency(id) {
 
 // ---- View Maids inside an Agency ----
 function openAgencyMaids(agencyId) {
+  // String/Number dono match ho sake isliye loose compare karo
   currentAgencyId = agencyId;
-  const agency = getAgencies().find(a => a.id === agencyId);
+  const agency = getAgencies().find(a => String(a.id) === String(agencyId));
   if (!agency) return;
   document.getElementById('agencyListView').style.display = 'none';
   document.getElementById('agencyMaidsView').style.display = 'block';
@@ -20334,7 +20456,7 @@ function backToAgencyList() {
 
 function renderAgencyMaids() {
   if (!currentAgencyId) return;
-  const agency = getAgencies().find(a => a.id === currentAgencyId);
+  const agency = getAgencies().find(a => String(a.id) === String(currentAgencyId));
   // ── FIX: agencyId OR agencyPhone dono se maids dhundho ──
   const agencyMaids = agency ? getAgencyMaids(agency) : [];
   // Update count in detail header badge
@@ -20386,13 +20508,31 @@ function removeMaidFromAgency(maidId) {
 // ---- Add existing maid to agency ----
 function openAddMaidToAgencyModal() {
   if (!currentAgencyId) return;
-  const allMaids = getMaids();
-  const agencyMaidIds = new Set(allMaids.filter(m => m.agencyId===currentAgencyId).map(m=>m.id));
-  const available = allMaids.filter(m => !m.agencyId);
-  if (!available.length) { showToast('Saari maids already kisi agency mein hain ya koi maid registered nahi hai.'); return; }
+  const agency = getAgencies().find(a => String(a.id) === String(currentAgencyId));
+  const agPhone = agency ? (agency.phone||'').replace(/\D/g,'') : '';
+
+  // ram_admin_maids + ram_registered_maids dono se maids lo
+  let allMaids = getMaids();
+  try {
+    const reg = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+    Object.values(reg).forEach(function(m) {
+      if (!allMaids.find(function(x){ return x.phone === m.phone; })) {
+        allMaids.push(m);
+      }
+    });
+  } catch(e) {}
+
+  // Sirf woh maids dikhao jo is agency mein already nahi hain
+  const available = allMaids.filter(function(m) {
+    if (m.agencyId && String(m.agencyId) === String(currentAgencyId)) return false;
+    if (agPhone && (m.agencyPhone||'').replace(/\D/g,'') === agPhone) return false;
+    return true;
+  });
+
+  if (!available.length) { showToast('Koi bhi maid available nahi hai ya saari maids already is agency mein hain.'); return; }
   const sel = `<select id="addMaidToAgencySelect" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:9px;font-size:14px;">
     <option value="">-- Maid chuniye --</option>
-    ${available.map(m=>`<option value="${m.id}">${escHtml(m.name)} — ${escHtml(m.phone||'')} (${escHtml(m.city||'')})</option>`).join('')}
+    ${available.map(m=>`<option value="${escHtml(m.phone||m.id)}">${escHtml(m.name)} — ${escHtml(m.phone||'')} (${escHtml(m.city||'')})</option>`).join('')}
   </select>`;
   const html = `<div style="padding:24px;">
     <p style="font-size:14px;color:var(--text2);margin-bottom:12px;">Agency mein add karne ke liye maid chuniye:</p>
@@ -20407,25 +20547,57 @@ function openAddMaidToAgencyModal() {
 
 function confirmAddMaidToAgency() {
   const selEl = document.getElementById('addMaidToAgencySelect');
-  const maidId = selEl ? parseInt(selEl.value) : null;
-  if (!maidId) { showToast('Pehle maid chuniye!'); return; }
-  // Agency ka info bhi attach karo taaki agency dashboard mein dikh sake
+  const selVal = selEl ? selEl.value : '';
+  if (!selVal) { showToast('Pehle maid chuniye!'); return; }
+
   const agencies = getAgencies();
-  const thisAgency = agencies.find(function(a){ return a.id === currentAgencyId; });
-  let maids = getMaids().map(m => {
-    if (m.id===maidId) {
+  const thisAgency = agencies.find(function(a){ return String(a.id) === String(currentAgencyId); });
+
+  // ram_admin_maids mein dhundho (by id ya phone)
+  let adminMaids = getMaids();
+  let found = false;
+  adminMaids = adminMaids.map(function(m) {
+    if (String(m.id) === String(selVal) || String(m.phone) === String(selVal)) {
       m.agencyId = currentAgencyId;
-      if (thisAgency) { m.agencyPhone = thisAgency.phone; m.agencyName = thisAgency.name; }
+      if (thisAgency) { m.agencyPhone = thisAgency.phone; m.agencyName = thisAgency.name||thisAgency.ownerName||''; m.agencyStatus = 'yes'; }
+      found = true;
     }
     return m;
   });
-  localStorage.setItem('ram_admin_maids', JSON.stringify(maids));
-  // ── Firebase live sync: website + agency dashboard turant update ho ──
-  if (typeof window._fbSet === 'function') {
-    window._fbSet('adminData', 'ram_admin_maids', maids).catch(function(e){ console.warn('confirmAddMaidToAgency Firebase sync failed:', e); });
-  } else if (typeof window._fbSetWhenReady === 'function') {
-    window._fbSetWhenReady('adminData', 'ram_admin_maids', maids).catch(function(e){ console.warn('confirmAddMaidToAgency Firebase sync failed:', e); });
+
+  // Agar ram_registered_maids mein hai to wahan se ram_admin_maids mein move karo
+  if (!found) {
+    try {
+      const reg = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      const maidRec = Object.values(reg).find(function(m){ return String(m.phone) === String(selVal); });
+      if (maidRec) {
+        const maxId = adminMaids.reduce(function(mx,m){ return Math.max(mx, m.id||0); }, 0);
+        const newRec = Object.assign({}, maidRec, {
+          id: maxId + 1,
+          agencyId: currentAgencyId,
+          agencyPhone: thisAgency ? thisAgency.phone : maidRec.agencyPhone,
+          agencyName: thisAgency ? (thisAgency.name||thisAgency.ownerName||'') : maidRec.agencyName,
+          agencyStatus: 'yes'
+        });
+        adminMaids.push(newRec);
+        found = true;
+      }
+    } catch(e) {}
   }
+
+  if (!found) { showToast('Maid nahi mili, dobara koshish karo.'); return; }
+
+  localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+
+  // Firebase mein sirf individual maid document save karo (array bohot bada hota hai)
+  if (thisAgency) {
+    const updatedMaid = adminMaids.find(function(m){ return String(m.phone) === String(selVal) || String(m.id) === String(selVal); });
+    if (updatedMaid) {
+      var fbFn = typeof window._fbSet === 'function' ? window._fbSet : (typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : null);
+      if (fbFn) fbFn('adminData', 'maid_' + updatedMaid.phone, updatedMaid).catch(function(e){ console.warn('confirmAddMaidToAgency Firebase sync failed:', e); });
+    }
+  }
+
   if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
   closeAdminModal();
   renderAgencyMaids();
@@ -20942,9 +21114,16 @@ var _adminSelectedChatPhone = null;
 async function _adminFetchAllChatsFromFirebase() {
   if (typeof window._fbGet !== 'function') return null;
   try {
+    // _fbGet(coll, null) ab _fbGetAll call karta hai — { docId: data } format return hoga
     const allSite = await window._fbGet('siteData', null);
-    if (!allSite) return null;
-    const msgs = Object.values(allSite).filter(v => v && v.id && v.id.startsWith('help_'));
+    if (!allSite || typeof allSite !== 'object') return null;
+    // Values mein help_ id wale objects nikalo
+    const msgs = [];
+    Object.values(allSite).forEach(val => {
+      if (val && typeof val === 'object' && val.id && val.id.startsWith('help_')) {
+        msgs.push(val);
+      }
+    });
     if (!msgs.length) return null;
     // localStorage ke saath merge karo
     const local = JSON.parse(localStorage.getItem('help_enquiries') || '[]');
@@ -20954,7 +21133,7 @@ async function _adminFetchAllChatsFromFirebase() {
     const merged = Object.values(fbMap);
     localStorage.setItem('help_enquiries', JSON.stringify(merged));
     return merged;
-  } catch(e) { return null; }
+  } catch(e) { console.warn('_adminFetchAllChats error:', e); return null; }
 }
 
 // ── Admin: Render Live Chat Left Panel (User List) ──
@@ -21102,8 +21281,7 @@ async function sendAdminChatReply() {
   }
   if (!target) { showToast('Koi message nahi mila. Pehle user ka message aane do.'); return; }
 
-
-
+  // Input pehle clear karo (optimistic UX)
   if (inputEl) inputEl.value = '';
 
   const idx = all.findIndex(e => e.id === target.id);
@@ -21113,8 +21291,22 @@ async function sendAdminChatReply() {
     all[idx].status = 'replied';
     all[idx].replyRead = false;
     localStorage.setItem('help_enquiries', JSON.stringify(all));
+    // Firebase mein save karo — SABSE PEHLE taaki dusre device pe instantly aaye
     if (typeof window._fbSet === 'function') {
       try { await window._fbSet('siteData', target.id, all[idx]); } catch(e) {}
+    }
+    // User ke personal key mein bhi Firebase pe save karo (cross-device)
+    if (typeof window._fbSet === 'function' && target.phone) {
+      try {
+        const userNotifKey = 'user_reply_notif_' + target.phone;
+        await window._fbSet('siteData', userNotifKey, {
+          phone: target.phone,
+          msgId: target.id,
+          reply: reply,
+          repliedAt: all[idx].repliedAt,
+          updatedAt: new Date().toISOString()
+        });
+      } catch(e) {}
     }
     // User personal list update
     try {
@@ -21357,9 +21549,20 @@ async function sendUserChatMsg() {
   // Legacy id prefix compat
   msgObj.id = 'help_' + msgObj.id;
 
-  // Firebase
+  // Firebase mein save karo — SABSE ZAROORI: cross-device delivery
   if (typeof window._fbSet === 'function') {
     try { await window._fbSet('siteData', msgObj.id, msgObj); } catch(e) {}
+    // Admin ko instantly alert karne ke liye ek quick key bhi set karo
+    try {
+      await window._fbSet('siteData', 'admin_new_msg_alert', {
+        phone: phone,
+        name: name,
+        msgId: msgObj.id,
+        preview: msg.substring(0, 80),
+        userType: msgObj.userType,
+        sentAt: msgObj.submittedAt
+      });
+    } catch(e) {}
   }
   // localStorage
   try {
@@ -21462,63 +21665,116 @@ function renderUserChatMessages(msgs, phone) {
 }
 
 // ── Admin: Realtime polling — Firebase se nayi messages auto-fetch karo ──
+// Yeh poller admin panel KHULA ho to hamesha chalta hai — Help page pe jaane ki zaroorat nahi
 let _adminChatTimer = null;
+let _adminLastKnownMsgCount = 0;
 function startAdminChatRealtimeSync() {
   if (_adminChatTimer) clearInterval(_adminChatTimer);
   _adminChatTimer = setInterval(async () => {
-    const listEl = document.getElementById('adminChatUserList');
-    if (!listEl) { clearInterval(_adminChatTimer); return; }
-    const fbData = await _adminFetchAllChatsFromFirebase();
-    if (!fbData) return;
-    const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
-    const filterType = document.getElementById('helpFilterType')?.value || '';
-    _renderAdminLiveChatUI(fbData, filterStatus, filterType, listEl);
-    // Agar koi user selected hai toh uski chat bhi refresh karo
-    if (_adminSelectedChatPhone) {
-      const msgs = fbData.filter(e => e.phone === _adminSelectedChatPhone)
-                         .sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
-      renderAdminChatWindow(msgs);
+    // Admin panel band ho to poller band karo
+    const adminOverlay = document.getElementById('adminPanelOverlay');
+    if (!adminOverlay || !adminOverlay.classList.contains('open')) return;
+
+    // ── Quick alert check: user ne message bheja kya? (Full fetch se pehle) ──
+    if (typeof _syncAdminNotificationsFromFirebase === 'function') {
+      _syncAdminNotificationsFromFirebase(); // Runs async, non-blocking
     }
-    // Admin badge update karo
+
+    const fbData = await _adminFetchAllChatsFromFirebase().catch(() => null);
+    if (!fbData) return;
+
+    // ── Help & Support badge update (hamesha — Help page pe ho ya na ho) ──
     const unread = fbData.filter(m => !m.adminReply && m.status === 'open').length;
     const badge = document.getElementById('helpNavBadge');
-    if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline' : 'none'; }
+    if (badge) { badge.textContent = unread; badge.style.display = unread > 0 ? 'inline-flex' : 'none'; }
+
+    // ── Agar nayi message aayi to bell notification bhi update karo ──
+    if (unread > _adminLastKnownMsgCount) {
+      // Nayi messages hain — notifications sync karo
+      if (typeof _syncAdminNotificationsFromFirebase === 'function') _syncAdminNotificationsFromFirebase();
+    }
+    _adminLastKnownMsgCount = unread;
+
+    // ── Help page khuli ho to UI bhi refresh karo ──
+    const listEl = document.getElementById('adminChatUserList');
+    if (listEl) {
+      const filterStatus = document.getElementById('helpFilterStatus')?.value || '';
+      const filterType = document.getElementById('helpFilterType')?.value || '';
+      _renderAdminLiveChatUI(fbData, filterStatus, filterType, listEl);
+      // Agar koi user selected hai toh uski chat bhi refresh karo
+      if (_adminSelectedChatPhone) {
+        const msgs = fbData.filter(e => e.phone === _adminSelectedChatPhone)
+                           .sort((a,b) => new Date(a.submittedAt) - new Date(b.submittedAt));
+        renderAdminChatWindow(msgs);
+      }
+    }
   }, 7000); // Har 7 second mein Firebase check karo
 }
 
 // Realtime polling for new admin replies
 let _userChatTimer = null;
+let _userChatLastCheck = 0;
 function startUserChatRealtimeSync() {
   if (_userChatTimer) clearInterval(_userChatTimer);
   _userChatTimer = setInterval(async () => {
     const el = document.getElementById('userChatMessages');
-    if (!el) { clearInterval(_userChatTimer); return; }
+    if (!el) { clearInterval(_userChatTimer); _userChatTimer = null; return; }
     const isMaid2 = isMaidUser();
     const phone2 = isMaid2 ? getLoggedMaidPhone() : getAuthToken();
     if (!phone2 || typeof window._fbGet !== 'function') return;
     try {
-      const allSite = await window._fbGet('siteData', null);
-      if (!allSite) return;
+      // Step 1: Pehle quick notif key check karo (sirf apni key — fast!)
+      const notifKey = 'user_reply_notif_' + phone2;
+      const quickNotif = await window._fbGet('siteData', notifKey).catch(() => null);
       const myList = JSON.parse(localStorage.getItem('my_help_' + phone2) || '[]');
       let changed = false;
-      Object.values(allSite).forEach(v => {
-        if (!v || !v.id || !v.id.startsWith('help_') || v.phone !== phone2) return;
-        const idx = myList.findIndex(e => e.id === v.id);
-        if (idx === -1) { myList.unshift(v); changed = true; }
-        else if (v.adminReply && myList[idx].adminReply !== v.adminReply) {
-          myList[idx] = Object.assign({}, myList[idx], v, { replyRead: false });
-          changed = true;
+
+      if (quickNotif && quickNotif.msgId && quickNotif.updatedAt) {
+        const lastSeen = _userChatLastCheck || 0;
+        const notifTime = new Date(quickNotif.updatedAt).getTime();
+        if (notifTime > lastSeen) {
+          // Nayi reply aayi — full message fetch karo
+          const msgData = await window._fbGet('siteData', quickNotif.msgId).catch(() => null);
+          if (msgData && msgData.adminReply) {
+            const idx = myList.findIndex(e => e.id === quickNotif.msgId);
+            if (idx === -1) { myList.unshift(Object.assign({}, msgData, { replyRead: false })); changed = true; }
+            else if (myList[idx].adminReply !== msgData.adminReply) {
+              myList[idx] = Object.assign({}, myList[idx], msgData, { replyRead: false });
+              changed = true;
+            }
+          }
+          _userChatLastCheck = notifTime;
         }
-      });
+      }
+
+      // Step 2: Har 4 cycle mein (32 sec) full sync bhi karo
+      if (!changed && Date.now() - (_userChatLastCheck || 0) > 32000) {
+        const allSite = await window._fbGet('siteData', null).catch(() => null);
+        if (allSite) {
+          Object.values(allSite).forEach(v => {
+            if (!v || !v.id || !v.id.startsWith('help_') || v.phone !== phone2) return;
+            const idx = myList.findIndex(e => e.id === v.id);
+            if (idx === -1) { myList.unshift(v); changed = true; }
+            else if (v.adminReply && myList[idx].adminReply !== v.adminReply) {
+              myList[idx] = Object.assign({}, myList[idx], v, { replyRead: false });
+              changed = true;
+            }
+          });
+          _userChatLastCheck = Date.now();
+        }
+      }
+
       if (changed) {
         myList.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
         localStorage.setItem('my_help_' + phone2, JSON.stringify(myList));
-        renderUserChatMessages([...myList].reverse(), phone2);
+        // UI sirf tab update karo jab chatMessages div exist kare (glitch avoid)
+        const chatEl = document.getElementById('userChatMessages');
+        if (chatEl) renderUserChatMessages([...myList].reverse(), phone2);
         const nr = myList.filter(m => m.adminReply && !m.replyRead).length;
         if (nr > 0) {
           const badge = document.getElementById('helpUnreadBadge');
           if (badge) { badge.textContent = nr; badge.style.display = 'inline'; }
-          showToast('💬 Admin ne aapki chat ka jawab de diya!');
+          if (typeof showToast === 'function') showToast('💬 Admin ne aapki chat ka jawab de diya!');
         }
       }
     } catch(e) {}
@@ -24111,6 +24367,21 @@ function getNotifications(){
   const now = Date.now();
   Object.values(custs).filter(c => c.createdAt && (now - new Date(c.createdAt).getTime()) < 86400000)
     .forEach(c => list.push({icon:'fa-user-plus',bg:'var(--green-bg)',color:'var(--green)',text:`New customer <strong>${c.name}</strong> registered`,page:'customers',time:'New'}));
+  // ── Help & Chat notifications: Firebase-synced, cross-device pe bhi dikhti hain ──
+  try {
+    const helpNotifs = readNotifications().filter(n => n.audience === 'admin' && !n.read);
+    helpNotifs.forEach(n => {
+      list.push({
+        icon: n.title && n.title.includes('Chat') ? 'fa-comments' : 'fa-headset',
+        bg: 'var(--purple-bg,#ede9fe)',
+        color: 'var(--purple,#7c3aed)',
+        text: `<strong>${n.title||'Help'}</strong>: ${n.message||''}`,
+        page: n.page || 'help',
+        time: n.createdAt ? new Date(n.createdAt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : 'New',
+        _notifId: n.id
+      });
+    });
+  } catch(e) {}
   return list;
 }
 function renderNotifications(){
@@ -24142,6 +24413,15 @@ function toggleNotifPanel(){
   const p=document.getElementById('notifPanel');
   renderNotifications();
   p.classList.toggle('open');
+  // Help notifications ko read mark karo jab panel open ho
+  if (p.classList.contains('open')) {
+    try {
+      const list = readNotifications();
+      let changed = false;
+      list.forEach(n => { if (n.audience === 'admin' && !n.read) { n.read = true; changed = true; } });
+      if (changed) writeNotifications(list);
+    } catch(e) {}
+  }
 }
 
 // ══════════════════════════════════════
@@ -25104,12 +25384,31 @@ window._fbSet = function(coll, key, val) {
 
 // ── Universal Firestore get ──
 window._fbGet = async function(coll, key) {
+  // null key = puri collection fetch karo
+  if (key === null || key === undefined) {
+    return window._fbGetAll(coll);
+  }
   try {
     const { getDoc } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
     const snap = await getDoc(doc(_db, coll, _fbKey(key)));
     if (snap.exists() && snap.data().data !== undefined) return snap.data().data;
   } catch(e) { console.warn('FB get failed:', key, e); }
   return null;
+};
+
+// ── Puri collection fetch karo — _fbGet(coll, null) ke liye ──
+window._fbGetAll = async function(coll) {
+  try {
+    const { getDocs: _getDocs, collection: _col } = await import('https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js');
+    const snap = await _getDocs(_col(_db, coll));
+    const result = {};
+    snap.forEach(d => {
+      if (d.data().data !== undefined && d.data().data !== null) {
+        result[d.id] = d.data().data;
+      }
+    });
+    return Object.keys(result).length ? result : null;
+  } catch(e) { console.warn('FB getAll failed:', coll, e); return null; }
 };
 
 // ── Image compress (max 500px, 75% quality) ──
@@ -26844,6 +27143,7 @@ clearAuthErrors = function() {
 
       <div id="agLoginMsg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
 
+      <div style="text-align:right;margin-bottom:10px;"><a href="#" style="color:#f97316;font-size:13px;font-weight:600;" onclick="openAgForgotModal();return false;">🔑 Forgot Password?</a></div>
       <button onclick="submitAgencyLogin()" class="btn btn-lg w-full mt-4" style="background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">
         <i class="fas fa-sign-in-alt"></i> Login as Agency
       </button>
@@ -26945,9 +27245,14 @@ clearAuthErrors = function() {
           <div>These Terms &amp; Conditions shall be governed by and construed in accordance with the laws of India. Any legal dispute arising out of or in connection with the use of this platform shall be subject to the exclusive jurisdiction of the competent courts at the platform's registered place of business.</div>
         </div>
 
+        <div style="margin-bottom:13px;padding:11px 14px;background:rgba(255,255,255,.04);border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
+          <div style="font-weight:700;color:#fff;margin-bottom:4px;">15. Aadhaar &amp; Other Verification — Agency's Sole Responsibility</div>
+          <div>Aadhaar card verification, police verification, background checks, address verification, and any other identity or credential verification of maids shall be carried out exclusively by the agency itself. <strong style="color:#fbbf24;">Rent a Maid India company ki is sambandh mein koi bhi zimmedari nahi hai.</strong> The platform does not verify, authenticate, or cross-check any documents submitted by the agency or its registered maids. Any fraudulent document, false identity, or unverified background that causes loss or harm to any party shall be the sole legal and financial responsibility of the agency. The platform shall not be liable or held accountable in any such matter under any circumstances.</div>
+        </div>
+
         <div style="margin-bottom:20px;padding:11px 14px;background:rgba(249,115,22,.12);border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
-          <div style="font-weight:700;color:#f97316;margin-bottom:4px;">15. Final Acceptance and Agreement</div>
-          <div style="color:#e2e8f0;">By registering on this platform, the agency confirms that it has read, fully understood, and unconditionally agrees to all 14 clauses stated above. The agency acknowledges that the platform shall bear no liability whatsoever for any loss, damage, legal action, or dispute arising from the agency's activities, and that all such responsibility rests entirely with the agency.</div>
+          <div style="font-weight:700;color:#f97316;margin-bottom:4px;">16. Final Acceptance and Agreement</div>
+          <div style="color:#e2e8f0;">By registering on this platform, the agency confirms that it has read, fully understood, and unconditionally agrees to all 15 clauses stated above. The agency acknowledges that the platform shall bear no liability whatsoever for any loss, damage, legal action, or dispute arising from the agency's activities, and that all such responsibility rests entirely with the agency.</div>
         </div>
 
       </div>
@@ -27131,6 +27436,7 @@ function agNMPreviewPhoto(event) {
   var file = event.target.files[0];
   if (!file) return;
   if (file.size > 5 * 1024 * 1024) { showToast('Photo too large — please choose a file under 5MB.'); event.target.value=''; return; }
+  window._agNMPhotoFile = file; // Firebase Storage upload ke liye file object store karo
   var reader = new FileReader();
   reader.onload = function(e) {
     var prev = document.getElementById('agNMPhotoPreview');
@@ -27148,6 +27454,9 @@ function agNMAadharUpload(event, side) {
   if (file.size > 5 * 1024 * 1024) { showToast('File too large — please choose a file under 5MB.'); event.target.value=''; return; }
   var labelEl = document.getElementById(side==='front' ? 'agNMAadharFrontName' : 'agNMAadharBackName');
   if (labelEl) labelEl.textContent = '✓ ' + file.name;
+  // Firebase Storage upload ke liye file object store karo
+  if (side==='front') window._agNMAadharFrontFile = file;
+  else window._agNMAadharBackFile = file;
   var reader = new FileReader();
   reader.onload = function(e) {
     if (side==='front') window._agNMAadharFrontBase64 = e.target.result;
@@ -27658,8 +27967,9 @@ function agGetMyMaids(agPhone) {
   var matchedAgency = agencies.find(function(a){ return (a.phone||'').replace(/\D/g,'') === agPhone; });
   var matchedAgencyId = matchedAgency ? matchedAgency.id : null;
   return all.filter(function(m){
-    var byPhone = m.agencyPhone === agPhone || (m.agencyStatus === 'yes' && m.agencyPhone === agPhone);
-    var byId = matchedAgencyId && (m.agencyId === matchedAgencyId || String(m.agencyId) === String(matchedAgencyId));
+    var mAgPhone = (m.agencyPhone||'').replace(/\D/g,'');
+    var byPhone = mAgPhone === agPhone || (m.agencyStatus === 'yes' && mAgPhone === agPhone);
+    var byId = matchedAgencyId && String(m.agencyId) === String(matchedAgencyId);
     return byPhone || byId;
   });
 }
@@ -28029,45 +28339,124 @@ function agRespondEnquiry(reqId, newStatus) {
     window._fbSet('siteData', fbAgKey, agList).catch(function(e){});
   }
 
-  // Maid ke inbox mein bhi status update karo
+  // ── Maid ke inbox mein status update karo (Firebase-first: cross-device kaam kare) ──
   var maidPhone = enq._maidPhone || enq.maidPhone || '';
   if (maidPhone) {
     var maidKey = 'ram_maid_requests_' + maidPhone;
-    var maidReqs = [];
-    try { maidReqs = JSON.parse(localStorage.getItem(maidKey)||'[]'); } catch(e){}
-    var mReq = maidReqs.find(function(r){ return r.id === reqId; });
-    if (mReq) {
-      mReq.status = newStatus;
-      mReq.agencyRespondedAt = new Date().toISOString();
+    var fbMaidKey = maidKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    var _respondedAt = new Date().toISOString();
+
+    function _doMaidUpdate(maidReqs) {
+      var mReq = maidReqs.find(function(r){ return r.id === reqId; });
+      if (!mReq) {
+        // Entry nahi mili — create karo
+        mReq = { id: reqId, status: newStatus, agencyRespondedAt: _respondedAt };
+        maidReqs.unshift(mReq);
+      } else {
+        mReq.status = newStatus;
+        mReq.agencyRespondedAt = _respondedAt;
+      }
       localStorage.setItem(maidKey, JSON.stringify(maidReqs));
-      var fbMaidKey = maidKey.replace(/[^a-zA-Z0-9_-]/g, '_');
       if (typeof window._fbSetWhenReady === 'function') {
         window._fbSetWhenReady('siteData', fbMaidKey, maidReqs).catch(function(e){});
       } else if (typeof window._fbSet === 'function') {
         window._fbSet('siteData', fbMaidKey, maidReqs).catch(function(e){});
       }
     }
+
+    // Firebase se fresh data lo phir update karo (cross-device guarantee)
+    if (typeof window._fbGet === 'function') {
+      window._fbGet('siteData', fbMaidKey).then(function(fbData) {
+        var maidReqs = [];
+        if (fbData && Array.isArray(fbData)) {
+          maidReqs = fbData;
+          // Local se bhi merge karo
+          var localReqs = [];
+          try { localReqs = JSON.parse(localStorage.getItem(maidKey)||'[]'); } catch(eL){}
+          localReqs.forEach(function(lr){
+            if (!maidReqs.find(function(fr){ return fr.id === lr.id; })) maidReqs.push(lr);
+          });
+        } else {
+          try { maidReqs = JSON.parse(localStorage.getItem(maidKey)||'[]'); } catch(eL){}
+        }
+        _doMaidUpdate(maidReqs);
+      }).catch(function(e) {
+        var maidReqs = [];
+        try { maidReqs = JSON.parse(localStorage.getItem(maidKey)||'[]'); } catch(eL){}
+        _doMaidUpdate(maidReqs);
+      });
+    } else {
+      var maidReqs = [];
+      try { maidReqs = JSON.parse(localStorage.getItem(maidKey)||'[]'); } catch(e){}
+      _doMaidUpdate(maidReqs);
+    }
   }
 
-  // Customer ke status key mein bhi update karo
+  // ── Customer ke status key mein update karo (Firebase-first: cross-device kaam kare) ──
+  // Agency aur customer alag devices pe ho sakte hain — isliye Firebase se fresh data lo
   var custPhone = enq.customerPhone || enq.customerId || '';
   if (custPhone) {
     var custKey = 'ram_cust_req_status_' + custPhone;
-    var custReqs = [];
-    try { custReqs = JSON.parse(localStorage.getItem(custKey)||'[]'); } catch(e){}
-    var cReq = custReqs.find(function(r){ return r.reqId === reqId || r.maidId === enq.maidId; });
-    if (cReq) {
-      cReq.status = newStatus;
-      cReq.respondedAt = new Date().toISOString();
-      // Agency accept hone par customer ko maid ka number bhi dikhao
-      if (newStatus === 'Accepted') cReq.maidPhoneUnlocked = maidPhone;
+    var fbCustKey = custKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    var _maidIdForCust = enq.maidId || maidPhone;
+    var _maidNameForCust = enq._maidName || enq.maidName || '';
+    var _maidPhoneForCust = maidPhone;
+    var _newStatusForCust = newStatus;
+    var _reqIdForCust = reqId;
+
+    function _doCustUpdate(custReqs) {
+      var cEntry = {
+        reqId: _reqIdForCust,
+        maidPhone: _maidPhoneForCust,
+        maidId: _maidIdForCust,
+        maidName: _maidNameForCust,
+        status: _newStatusForCust,
+        respondedAt: new Date().toISOString()
+      };
+      if (_newStatusForCust === 'Accepted') cEntry.maidPhoneUnlocked = _maidPhoneForCust;
+      var cReqIdx = custReqs.findIndex(function(r){
+        return r.reqId === _reqIdForCust || r.maidId === _maidIdForCust;
+      });
+      if (cReqIdx >= 0) {
+        custReqs[cReqIdx] = Object.assign({}, custReqs[cReqIdx], cEntry);
+      } else {
+        // Customer ke localStorage mein nahi mila — nayi entry add karo
+        // Firebase listener customer ko turant notify karega
+        custReqs.unshift(cEntry);
+      }
       localStorage.setItem(custKey, JSON.stringify(custReqs));
-      var fbCustKey = custKey.replace(/[^a-zA-Z0-9_-]/g, '_');
       if (typeof window._fbSetWhenReady === 'function') {
         window._fbSetWhenReady('siteData', fbCustKey, custReqs).catch(function(e){});
       } else if (typeof window._fbSet === 'function') {
         window._fbSet('siteData', fbCustKey, custReqs).catch(function(e){});
       }
+    }
+
+    // Firebase se customer ka fresh data lo (cross-device guarantee)
+    if (typeof window._fbGet === 'function') {
+      window._fbGet('siteData', fbCustKey).then(function(fbData) {
+        var custReqs = [];
+        if (fbData && Array.isArray(fbData)) {
+          custReqs = fbData;
+          // Local se bhi merge karo (koi entry miss na ho)
+          var localReqs = [];
+          try { localReqs = JSON.parse(localStorage.getItem(custKey)||'[]'); } catch(eL){}
+          localReqs.forEach(function(lr){
+            if (!custReqs.find(function(fr){ return fr.reqId === lr.reqId; })) custReqs.push(lr);
+          });
+        } else {
+          try { custReqs = JSON.parse(localStorage.getItem(custKey)||'[]'); } catch(eL){}
+        }
+        _doCustUpdate(custReqs);
+      }).catch(function(e) {
+        var custReqs = [];
+        try { custReqs = JSON.parse(localStorage.getItem(custKey)||'[]'); } catch(eL){}
+        _doCustUpdate(custReqs);
+      });
+    } else {
+      var custReqs = [];
+      try { custReqs = JSON.parse(localStorage.getItem(custKey)||'[]'); } catch(e){}
+      _doCustUpdate(custReqs);
     }
   }
 
@@ -28170,7 +28559,7 @@ function agSetEnqFilter(f) {
 /* ═══════════════════════════════════════════════════════
    ADD NEW MAID (by Agency)
 ═══════════════════════════════════════════════════════ */
-function submitAgencyAddMaid() {
+async function submitAgencyAddMaid() {
   var sess = agGetSession(); if (!sess) return;
   var btn = document.getElementById('agAddMaidBtn');
   var name   = (document.getElementById('agNewMaidName').value||'').trim();
@@ -28203,7 +28592,31 @@ function submitAgencyAddMaid() {
 
   if (btn) { btn.disabled=true; btn.textContent='Saving…'; }
 
-  var simpleHash = function(s){ var h=0; for(var i=0;i<s.length;i++){ h=((h<<5)-h)+s.charCodeAt(i); h|=0; } return String(h); };
+  // ── Firebase Storage mein photos upload karo (base64 nahi, URL save hoga) ──
+  var photoUrl = '';
+  var aadharFrontUrl = '';
+  var aadharBackUrl = '';
+
+  try {
+    if (window._agNMPhotoFile && typeof window._fbUploadPhoto === 'function') {
+      if (btn) btn.textContent = 'Uploading photo…';
+      photoUrl = await window._fbUploadPhoto(window._agNMPhotoFile, 'maid-photos/' + phone + '_' + Date.now() + '.jpg') || '';
+    }
+    if (window._agNMAadharFrontFile && typeof window._fbUploadPhoto === 'function') {
+      if (btn) btn.textContent = 'Uploading Aadhaar…';
+      aadharFrontUrl = await window._fbUploadPhoto(window._agNMAadharFrontFile, 'aadhar-photos/' + phone + '_front_' + Date.now() + '.jpg') || '';
+    }
+    if (window._agNMAadharBackFile && typeof window._fbUploadPhoto === 'function') {
+      aadharBackUrl = await window._fbUploadPhoto(window._agNMAadharBackFile, 'aadhar-photos/' + phone + '_back_' + Date.now() + '.jpg') || '';
+    }
+  } catch(uploadErr) {
+    console.warn('Agency maid photo upload error:', uploadErr);
+    // Upload fail ho to bhi registration continue karo (URL empty rahega)
+  }
+
+  if (btn) btn.textContent = 'Saving…';
+
+  var simpleHash = function(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h)^s.charCodeAt(i); h=h&h; } return 'h'+Math.abs(h).toString(36); };
   var maidRec = {
     name: name, phone: phone,
     age: parseInt(age)||age||'', gender: gender||'Female',
@@ -28213,33 +28626,48 @@ function submitAgencyAddMaid() {
     experience: 0, rating: 0, reviewCount: 0,
     agencyStatus: 'yes', agencyPhone: sess.phone, agencyName: sess.agencyName,
     passwordHash: simpleHash(password),
-    photo: window._agNMPhotoBase64||'', available: false, verified: false,
+    photo: photoUrl, available: false, verified: false,
     aadharNumber: (document.getElementById('agNMAadharNumber')||{}).value||'',
-    aadharFront: window._agNMAadharFrontBase64||'',
-    aadharBack: window._agNMAadharBackBase64||'',
+    aadharFront: aadharFrontUrl,
+    aadharBack: aadharBackUrl,
     registeredAt: new Date().toISOString(), fromAgency: true
   };
+
+  // agencyId bhi set karo taaki admin panel agency filter kaam kare
+  var agencies = [];
+  try { agencies = JSON.parse(localStorage.getItem('ram_admin_agencies') || '[]'); } catch(eAg) {}
+  var sessAgency = agencies.find(function(a){ return (a.phone||'').replace(/\D/g,'') === (sess.phone||'').replace(/\D/g,''); });
+  if (sessAgency) {
+    maidRec.agencyId = sessAgency.id;
+    maidRec.agencyName = sessAgency.name || sess.agencyName || '';
+  }
 
   // Save to ram_registered_maids
   existing[phone] = maidRec;
   localStorage.setItem('ram_registered_maids', JSON.stringify(existing));
 
-  // Save to ram_admin_maids
+  // Save to ram_admin_maids (agency dashboard + admin panel dono mein dikhe)
   var adminMaids = [];
   try { adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids')||'[]'); } catch(e){}
-  var maxId = adminMaids.reduce(function(mx,m){ return Math.max(mx,m.id||0); }, 0);
-  adminMaids.push(Object.assign({id: maxId+1}, maidRec));
+  // Duplicate check
+  var alreadyIdx = adminMaids.findIndex(function(m){ return m.phone === phone; });
+  if (alreadyIdx !== -1) {
+    adminMaids[alreadyIdx] = Object.assign(adminMaids[alreadyIdx], maidRec);
+  } else {
+    var maxId = adminMaids.reduce(function(mx,m){ return Math.max(mx,m.id||0); }, 0);
+    adminMaids.push(Object.assign({id: maxId+1}, maidRec));
+  }
   localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
 
-  // Firebase sync if available — sab teen jagah save karo
-  if (typeof window._fbSet === 'function') {
-    window._fbSet('adminData','maid_'+phone, maidRec).catch(function(){});
-    window._fbSet('adminData','ram_admin_maids', adminMaids).catch(function(){});
-    window._fbSet('adminData','ram_registered_maids', existing).catch(function(){});
-  } else if (typeof window._fbSetWhenReady === 'function') {
-    window._fbSetWhenReady('adminData','maid_'+phone, maidRec).catch(function(){});
-    window._fbSetWhenReady('adminData','ram_admin_maids', adminMaids).catch(function(){});
-    window._fbSetWhenReady('adminData','ram_registered_maids', existing).catch(function(){});
+  // Firebase mein dono save karo:
+  // 1. Individual maid document (photo/aadhar URL ke saath)
+  // 2. ram_registered_maids (website-registered maids ke liye listener)
+  var fbSaveFn = typeof window._fbSet === 'function' ? window._fbSet
+               : typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady
+               : null;
+  if (fbSaveFn) {
+    try { await fbSaveFn('adminData', 'maid_'+phone, maidRec); } catch(e) { console.warn('Firebase maid_phone save failed:', e); }
+    try { await fbSaveFn('adminData', 'ram_registered_maids', existing); } catch(e) { console.warn('Firebase registered_maids save failed:', e); }
   }
 
   // Admin ko notification do ki nayi maid agency ne add ki
@@ -28260,7 +28688,8 @@ function submitAgencyAddMaid() {
   var aadharNum = document.getElementById('agNMAadharNumber'); if (aadharNum) aadharNum.value='';
   var aFront = document.getElementById('agNMAadharFrontName'); if (aFront) aFront.textContent='';
   var aFrontInp = document.getElementById('agNMAadharFrontInput'); if (aFrontInp) aFrontInp.value='';
-  window._agNMPhotoBase64=null; window._agNMAadharFrontBase64=null;
+  window._agNMPhotoBase64=null; window._agNMAadharFrontBase64=null; window._agNMAadharBackBase64=null;
+  window._agNMPhotoFile=null; window._agNMAadharFrontFile=null; window._agNMAadharBackFile=null;
   if (btn) { btn.disabled=false; btn.textContent='Register Maid'; }
 
   // Refresh stats & maid list
@@ -28846,6 +29275,174 @@ function submitAgencyAddMaid() {
     </div>
   </div>
 </div>
+
+<!-- ══ AGENCY FORGOT PASSWORD MODAL ══ -->
+<div id="agForgotModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999999;align-items:center;justify-content:center;padding:16px;" onclick="if(event.target===this)closeAgForgotModal()">
+  <div style="background:#1a2535;border-radius:18px;width:100%;max-width:420px;padding:28px 24px;box-shadow:0 24px 64px rgba(0,0,0,.5);animation:heroFadeIn .3s ease both;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#f97316,#ea580c);display:flex;align-items:center;justify-content:center;font-size:18px;">🔑</div>
+        <div style="font-size:17px;font-weight:800;color:#fff;">Forgot Password</div>
+      </div>
+      <button onclick="closeAgForgotModal()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;line-height:1;">×</button>
+    </div>
+
+    <!-- Step 1: Phone enter karo -->
+    <div id="agForgotStep1">
+      <p style="color:#cbd5e1;font-size:13px;margin-bottom:16px;">Apna registered phone number enter karein. Hum aapka account dhundhenge.</p>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">Registered Phone Number *</label>
+        <input type="tel" id="agForgotPhone" maxlength="10" placeholder="9876543210"
+          style="width:100%;padding:11px 14px;background:#0f1923;border:1.5px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')agForgotStep1Next()" />
+        <div id="agForgotPhoneErr" style="color:#ef4444;font-size:12px;margin-top:4px;display:none;">Valid 10-digit phone number enter karein.</div>
+      </div>
+      <div id="agForgotStep1Msg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
+      <button onclick="agForgotStep1Next()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">
+        Next →
+      </button>
+    </div>
+
+    <!-- Step 2: Naya password set karo -->
+    <div id="agForgotStep2" style="display:none;">
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">Account mil gaya! Ab apna naya password set karein.</p>
+      <div style="margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">New Password *</label>
+        <div style="position:relative;">
+          <input type="password" id="agForgotNewPass" placeholder="Min 8 characters"
+            style="width:100%;padding:11px 42px 11px 14px;background:#0f1923;border:1.5px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter')document.getElementById('agForgotConfPass').focus()" />
+          <button type="button" onclick="togglePwd('agForgotNewPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="agForgotNewPassErr" style="color:#ef4444;font-size:12px;margin-top:4px;display:none;">Password min 8 characters ka hona chahiye.</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">Confirm New Password *</label>
+        <div style="position:relative;">
+          <input type="password" id="agForgotConfPass" placeholder="Password dobara enter karein"
+            style="width:100%;padding:11px 42px 11px 14px;background:#0f1923;border:1.5px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter')agForgotResetPassword()" />
+          <button type="button" onclick="togglePwd('agForgotConfPass',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <div id="agForgotConfPassErr" style="color:#ef4444;font-size:12px;margin-top:4px;display:none;">Dono passwords match nahi kar rahe.</div>
+      </div>
+      <div id="agForgotStep2Msg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
+      <button onclick="agForgotResetPassword()" style="width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">
+        ✅ Reset Password
+      </button>
+      <button onclick="agForgotBackToStep1()" style="width:100%;padding:10px;background:none;color:#94a3b8;border:none;font-size:13px;cursor:pointer;margin-top:8px;">← Back</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Agency Forgot Password ──
+var _agForgotFoundAgency = null;
+var _agForgotFoundIndex  = null;
+
+function openAgForgotModal() {
+  _agForgotFoundAgency = null;
+  _agForgotFoundIndex  = null;
+  document.getElementById('agForgotPhone').value = '';
+  document.getElementById('agForgotPhoneErr').style.display = 'none';
+  document.getElementById('agForgotStep1Msg').style.display = 'none';
+  document.getElementById('agForgotStep1').style.display = '';
+  document.getElementById('agForgotStep2').style.display = 'none';
+  document.getElementById('agForgotModal').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+  setTimeout(function(){ document.getElementById('agForgotPhone').focus(); }, 200);
+}
+
+function closeAgForgotModal() {
+  document.getElementById('agForgotModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function agForgotShowMsg(id, msg, isErr) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? '' : 'none';
+  el.style.background = isErr ? 'rgba(239,68,68,.15)' : 'rgba(34,197,94,.15)';
+  el.style.color = isErr ? '#ef4444' : '#22c55e';
+  el.style.border = '1px solid ' + (isErr ? 'rgba(239,68,68,.3)' : 'rgba(34,197,94,.3)');
+}
+
+function agForgotStep1Next() {
+  var phone = (document.getElementById('agForgotPhone').value || '').replace(/\D/g,'');
+  var phoneErr = document.getElementById('agForgotPhoneErr');
+
+  if (phone.length !== 10) {
+    phoneErr.style.display = '';
+    return;
+  }
+  phoneErr.style.display = 'none';
+
+  var agencies = agGetAgencies();
+  var idx = -1;
+  var found = null;
+  for (var i = 0; i < agencies.length; i++) {
+    var agPhone = (agencies[i].phone || '').replace(/\D/g,'');
+    if (agPhone === phone) { found = agencies[i]; idx = i; break; }
+  }
+
+  if (!found) {
+    agForgotShowMsg('agForgotStep1Msg', '❌ Yeh phone number kisi registered agency se match nahi karta.', true);
+    return;
+  }
+
+  _agForgotFoundAgency = found;
+  _agForgotFoundIndex  = idx;
+  agForgotShowMsg('agForgotStep1Msg', '', false);
+
+  // Step 2 dikhao
+  document.getElementById('agForgotStep1').style.display = 'none';
+  document.getElementById('agForgotStep2').style.display = '';
+  document.getElementById('agForgotNewPassErr').style.display = 'none';
+  document.getElementById('agForgotConfPassErr').style.display = 'none';
+  document.getElementById('agForgotStep2Msg').style.display = 'none';
+  document.getElementById('agForgotNewPass').value = '';
+  document.getElementById('agForgotConfPass').value = '';
+  setTimeout(function(){ document.getElementById('agForgotNewPass').focus(); }, 150);
+}
+
+function agForgotBackToStep1() {
+  document.getElementById('agForgotStep2').style.display = 'none';
+  document.getElementById('agForgotStep1').style.display = '';
+  agForgotShowMsg('agForgotStep1Msg', '', false);
+}
+
+function agForgotResetPassword() {
+  var newPass  = document.getElementById('agForgotNewPass').value;
+  var confPass = document.getElementById('agForgotConfPass').value;
+  var newErr   = document.getElementById('agForgotNewPassErr');
+  var confErr  = document.getElementById('agForgotConfPassErr');
+  var ok = true;
+
+  if (newPass.length < 8) { newErr.style.display = ''; ok = false; } else { newErr.style.display = 'none'; }
+  if (newPass !== confPass) { confErr.style.display = ''; ok = false; } else { confErr.style.display = 'none'; }
+  if (!ok) return;
+
+  var agencies = agGetAgencies();
+  if (_agForgotFoundIndex === null || _agForgotFoundIndex < 0 || _agForgotFoundIndex >= agencies.length) {
+    agForgotShowMsg('agForgotStep2Msg', '❌ Kuch galat ho gaya. Please dobara try karein.', true);
+    return;
+  }
+
+  agencies[_agForgotFoundIndex].password = newPass;
+  agSaveAgencies(agencies);
+
+  agForgotShowMsg('agForgotStep2Msg', '✅ Password reset ho gaya! Ab naye password se login karein.', false);
+  setTimeout(function(){
+    closeAgForgotModal();
+    // Login phone prefill kar do
+    var lpEl = document.getElementById('agLoginPhone');
+    if (lpEl) lpEl.value = (agencies[_agForgotFoundIndex].phone || '').replace(/\D/g,'');
+    var pwEl = document.getElementById('agLoginPassword');
+    if (pwEl) { pwEl.value = ''; pwEl.focus(); }
+  }, 1800);
+}
+</script>
 
 </body>
 
