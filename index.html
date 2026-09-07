@@ -19645,28 +19645,52 @@ function renderDashboard() {
   `).join('');
   // Pending Maid Registrations
   const pendingMaids = maids.filter(m => !m.verified);
+  const resubmittedMaids = pendingMaids.filter(m => m.verificationStatus === 'resubmitted');
+  const normalPendingMaids = pendingMaids.filter(m => m.verificationStatus !== 'resubmitted');
   const pendingBadge = document.getElementById('pendingMaidBadge');
-  if (pendingBadge) pendingBadge.textContent = pendingMaids.length > 0 ? pendingMaids.length + ' pending' : '';
+  if (pendingBadge) pendingBadge.textContent = pendingMaids.length > 0 ? pendingMaids.length + ' pending' + (resubmittedMaids.length ? ' · ' + resubmittedMaids.length + ' re-submitted' : '') : '';
   const pendingEl = document.getElementById('pendingMaidsSection');
   if (pendingEl) {
-    pendingEl.innerHTML = pendingMaids.length ? pendingMaids.slice(0,5).map(m => `
-      <div class="activity-item" style="cursor:pointer;" onclick="gotoPage('maids');">
-        <div class="activity-icon" style="background:var(--yellow-bg);color:#92400e;"><i class="fas fa-user-tie"></i></div>
-        <div class="activity-text">
-          <strong>${m.name}</strong> — ${m.city||'N/A'}, ${m.state||''}
-          <br><span style="font-size:12px;color:var(--text3);">${(m.services||[]).join(', ')||'Services N/A'}</span>
+    if (!pendingMaids.length) {
+      pendingEl.innerHTML = '<div class="empty-state" style="padding:16px;"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>All maids are verified! ✓</p></div>';
+    } else {
+      // Re-submitted maids pehle dikhao (priority)
+      const resubHtml = resubmittedMaids.slice(0,3).map(m => `
+        <div class="activity-item" style="cursor:pointer;border-left:3px solid #f97316;background:#fff7ed;" onclick="viewMaid(${m.id})">
+          <div class="activity-icon" style="background:#fff7ed;color:#c2410c;"><i class="fas fa-rotate"></i></div>
+          <div class="activity-text">
+            <strong>${m.name}</strong>
+            <span style="background:#fff7ed;color:#c2410c;font-size:10px;font-weight:700;padding:1px 6px;border-radius:999px;border:1px solid #fed7aa;margin-left:6px;">🔄 Re-submitted</span>
+            <br><span style="font-size:12px;color:var(--text3);">${m.phone||''} · ${m.city||'N/A'}${m.agencyName ? ' · ' + m.agencyName : ''}</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="action-btn action-btn-outline action-btn-sm" onclick="event.stopPropagation();viewMaid(${m.id})" title="Pura profile dekho" style="color:#f97316;border-color:#f97316;"><i class="fas fa-eye"></i> Review</button>
+            <button class="action-btn action-btn-success action-btn-sm" onclick="event.stopPropagation();quickVerifyMaid(${m.id})"><i class="fas fa-check"></i> Approve</button>
+            <button class="action-btn action-btn-danger action-btn-sm" onclick="event.stopPropagation();deleteMaidById(${m.id})"><i class="fas fa-times"></i></button>
+          </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;">
-          <button class="action-btn action-btn-success action-btn-sm" onclick="event.stopPropagation();quickVerifyMaid(${m.id})"><i class="fas fa-check"></i> Approve</button>
-          <button class="action-btn action-btn-danger action-btn-sm" onclick="event.stopPropagation();deleteMaidById(${m.id})"><i class="fas fa-times"></i></button>
+      `).join('');
+      // Baaki normal pending maids
+      const normalHtml = normalPendingMaids.slice(0, 5 - Math.min(resubmittedMaids.length,3)).map(m => `
+        <div class="activity-item" style="cursor:pointer;" onclick="gotoPage('maids');">
+          <div class="activity-icon" style="background:var(--yellow-bg);color:#92400e;"><i class="fas fa-user-tie"></i></div>
+          <div class="activity-text">
+            <strong>${m.name}</strong> — ${m.city||'N/A'}, ${m.state||''}
+            <br><span style="font-size:12px;color:var(--text3);">${(m.services||[]).join(', ')||'Services N/A'}</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="action-btn action-btn-success action-btn-sm" onclick="event.stopPropagation();quickVerifyMaid(${m.id})"><i class="fas fa-check"></i> Approve</button>
+            <button class="action-btn action-btn-danger action-btn-sm" onclick="event.stopPropagation();deleteMaidById(${m.id})"><i class="fas fa-times"></i></button>
+          </div>
         </div>
-      </div>
-    `).join('') : '<div class="empty-state" style="padding:16px;"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>All maids are verified! ✓</p></div>';
+      `).join('');
+      pendingEl.innerHTML = resubHtml + normalHtml;
+    }
   }
 }
 
 async function quickVerifyMaid(id) {
-  const maids = getMaids().map(m => m.id === id ? {...m, verified:true, available:true} : m);
+  const maids = getMaids().map(m => m.id === id ? {...m, verified:true, available:true, verificationStatus:'verified'} : m);
   setMaids(maids);
   // Also update ram_registered_maids so maid can login via OTP/password on website.
   // IMPORTANT: fetch the latest data from Firebase first and merge — otherwise this
@@ -19910,7 +19934,11 @@ function renderMaids() {
       <td><span style="color:#f59e0b;">${stars(m.rating)}</span> <span style="font-size:12px;color:var(--text2);">${m.rating} (${m.reviewCount})</span></td>
       <td>${m.experience} yr${m.experience!==1?'s':''}</td>
       <td><span class="badge ${m.available?'badge-green':'badge-gray'}">${m.available?'Available':'Busy'}</span></td>
-      <td><span class="badge ${m.verified?'badge-blue':'badge-yellow'}">${m.verified?'Verified':'Pending'}</span></td>
+      <td>${(()=>{
+        if (m.verified) return '<span class="badge badge-blue">Verified</span>';
+        if (m.verificationStatus === 'resubmitted') return '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:700;">🔄 Re-submitted</span>';
+        return '<span class="badge badge-yellow">Pending</span>';
+      })()}</td>
       <td>${(()=>{
         if (m.agencyId) {
           const ag = getAgencies().find(a => a.id === m.agencyId || String(a.id) === String(m.agencyId));
@@ -20522,6 +20550,46 @@ function renderViewMaidBody(m, id) {
   let aadharBack = null;
   try { aadharData = JSON.parse(localStorage.getItem('aadhar_' + m.phone) || 'null'); } catch(e) {}
   try { aadharBack = JSON.parse(localStorage.getItem('aadhar_' + m.phone + '_back') || 'null'); } catch(e) {}
+
+  // FIX: Agar localStorage mein aadhar data nahi hai (doosre device pe)
+  // to maid record ke aadharFront/aadharBack fields se construct karo
+  // Yeh tab hota hai jab agency dashboard se maid register ki gayi ho
+  if (!aadharData && (m.aadharFront || m.aadharNumber)) {
+    aadharData = {
+      phone: m.phone,
+      aadharNum: m.aadharNumber || '',
+      frontUrl: m.aadharFront || '',
+      backUrl: m.aadharBack || '',
+      status: m.aadharVerified ? 'verified' : 'pending',
+      submittedAt: m.registeredAt || new Date().toISOString(),
+      submittedBy: m.fromAgency ? 'agency' : 'maid'
+    };
+    // Also save to localStorage so next time loads faster
+    try { localStorage.setItem('aadhar_' + m.phone, JSON.stringify(aadharData)); } catch(e) {}
+  }
+  if (!aadharBack && m.aadharBack) {
+    aadharBack = { backUrl: m.aadharBack };
+    try { localStorage.setItem('aadhar_' + m.phone + '_back', JSON.stringify(aadharBack)); } catch(e) {}
+  }
+
+  // FIX: Agar Firebase se fresh data load karo (live sync ke liye)
+  if (typeof window._fbGet === 'function') {
+    window._fbGet('siteData', 'aadhar_' + m.phone).then(function(fbAadhar) {
+      if (fbAadhar && fbAadhar.frontUrl) {
+        try { localStorage.setItem('aadhar_' + m.phone, JSON.stringify(fbAadhar)); } catch(e) {}
+        // Agar Firebase pe better data hai to page refresh karo silently
+        var currentEl = document.getElementById('viewMaidBody');
+        if (currentEl && fbAadhar.frontUrl !== (aadharData && aadharData.frontUrl)) {
+          renderViewMaidBody(m, id);
+        }
+      }
+    }).catch(function(){});
+    window._fbGet('siteData', 'aadhar_' + m.phone + '_back').then(function(fbBack) {
+      if (fbBack && fbBack.backUrl) {
+        try { localStorage.setItem('aadhar_' + m.phone + '_back', JSON.stringify(fbBack)); } catch(e) {}
+      }
+    }).catch(function(){});
+  }
 
   // Aadhar section HTML
   const aadharSection = `
@@ -22141,37 +22209,90 @@ function openMaidFolderModal(phone, maidId) {
   `;
   openModal('maidFolderModal');
 
-  // ── FIX: Firebase se bhi data fetch karo (async) — agar localStorage mein nahi tha to refresh karo ──
+  // ── Firebase se data fetch karo (async) — siteData aur adminData dono se ──
   if (typeof window._fbGet === 'function') {
-    // Per-maid document fetch karo (maid_{phone})
-    window._fbGet('adminData', 'maid_' + phone).then(function(fbMaidRec) {
-      if (!fbMaidRec) return;
-      // localStorage sync karo
+    var _needsRefresh = false;
+
+    // Saare fetch parallel mein chalao
+    Promise.all([
+      window._fbGet('adminData', 'maid_' + phone).catch(function(e) { console.warn('Firebase maid_phone fetch error:', e); return null; }),
+      window._fbGet('siteData', 'aadhar_' + phone).catch(function(e) { console.warn('Firebase aadhar_front fetch error:', e); return null; }),
+      window._fbGet('siteData', 'aadhar_' + phone + '_back').catch(function(e) { console.warn('Firebase aadhar_back fetch error:', e); return null; })
+    ]).then(function(results) {
+      var fbMaidRec = results[0];
+      var fbAadharFront = results[1];
+      var fbAadharBack = results[2];
+
       try {
-        var regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
-        if (!regMaids[phone] || (fbMaidRec.aadharFront && !regMaids[phone].aadharFront)) {
-          regMaids[phone] = Object.assign(regMaids[phone] || {}, fbMaidRec);
-          localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
-        }
-        // aadhar_ keys bhi sync karo
-        if (fbMaidRec.aadharFront || fbMaidRec.aadharNumber) {
-          var ad = JSON.parse(localStorage.getItem('aadhar_' + phone) || 'null');
-          if (!ad || !ad.frontUrl) {
-            var newAd = { frontUrl: fbMaidRec.aadharFront || '', aadharNum: fbMaidRec.aadharNumber || '', status: fbMaidRec.verified ? 'verified' : 'pending' };
-            localStorage.setItem('aadhar_' + phone, JSON.stringify(newAd));
+        // 1. maid_{phone} se regMaids aur aadhar_ keys sync karo
+        if (fbMaidRec) {
+          var regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+          if (!regMaids[phone] || (fbMaidRec.aadharFront && !regMaids[phone].aadharFront)) {
+            regMaids[phone] = Object.assign(regMaids[phone] || {}, fbMaidRec);
+            localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
+            _needsRefresh = true;
+          }
+          // aadharFront sync from maid record
+          if (fbMaidRec.aadharFront || fbMaidRec.aadharNumber) {
+            var adLocal = JSON.parse(localStorage.getItem('aadhar_' + phone) || 'null');
+            if (!adLocal || !adLocal.frontUrl) {
+              var newAd = { frontUrl: fbMaidRec.aadharFront || '', aadharNum: fbMaidRec.aadharNumber || '', status: fbMaidRec.verified ? 'verified' : 'pending' };
+              localStorage.setItem('aadhar_' + phone, JSON.stringify(newAd));
+              _needsRefresh = true;
+            }
+          }
+          // aadharBack sync from maid record
+          if (fbMaidRec.aadharBack) {
+            var abLocal = JSON.parse(localStorage.getItem('aadhar_' + phone + '_back') || 'null');
+            if (!abLocal || !abLocal.backUrl) {
+              localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify({ backUrl: fbMaidRec.aadharBack }));
+              _needsRefresh = true;
+            }
           }
         }
-        if (fbMaidRec.aadharBack) {
-          var ab = JSON.parse(localStorage.getItem('aadhar_' + phone + '_back') || 'null');
-          if (!ab || !ab.backUrl) {
-            localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify({ backUrl: fbMaidRec.aadharBack }));
+
+        // 2. siteData/aadhar_{phone} se directly sync karo (agency upload ka primary source)
+        if (fbAadharFront && (fbAadharFront.frontUrl || fbAadharFront.aadharNum)) {
+          var adExisting = JSON.parse(localStorage.getItem('aadhar_' + phone) || 'null');
+          if (!adExisting || !adExisting.frontUrl) {
+            localStorage.setItem('aadhar_' + phone, JSON.stringify(fbAadharFront));
+            _needsRefresh = true;
+          }
+          // regMaids mein bhi aadharFront URL sync karo
+          if (fbAadharFront.frontUrl) {
+            var regMaids2 = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+            if (regMaids2[phone] && !regMaids2[phone].aadharFront) {
+              regMaids2[phone].aadharFront = fbAadharFront.frontUrl;
+              regMaids2[phone].aadharNumber = regMaids2[phone].aadharNumber || fbAadharFront.aadharNum || '';
+              localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids2));
+              _needsRefresh = true;
+            }
           }
         }
-      } catch(e) {}
-      // Modal refresh karo agar kuch naya mila
-      var modalEl = document.getElementById('maidFolderModal');
-      if (modalEl && modalEl.style.display !== 'none') {
-        openMaidFolderModal(phone, maidId);
+
+        // 3. siteData/aadhar_{phone}_back se sync karo
+        if (fbAadharBack && fbAadharBack.backUrl) {
+          var abExisting = JSON.parse(localStorage.getItem('aadhar_' + phone + '_back') || 'null');
+          if (!abExisting || !abExisting.backUrl) {
+            localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify(fbAadharBack));
+            _needsRefresh = true;
+          }
+          // regMaids mein bhi aadharBack URL sync karo
+          var regMaids3 = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+          if (regMaids3[phone] && !regMaids3[phone].aadharBack) {
+            regMaids3[phone].aadharBack = fbAadharBack.backUrl;
+            localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids3));
+            _needsRefresh = true;
+          }
+        }
+      } catch(e) { console.warn('Folder modal Firebase sync error:', e); }
+
+      // Modal refresh karo sirf tab jab naya data mila ho aur modal abhi bhi open ho
+      if (_needsRefresh) {
+        var modalEl = document.getElementById('maidFolderModal');
+        if (modalEl && modalEl.classList.contains('open')) {
+          openMaidFolderModal(phone, maidId);
+        }
       }
     }).catch(function(e) { console.warn('Firebase folder fetch error:', e); });
   }
@@ -22332,7 +22453,7 @@ async function saveMaid() {
   updateNavBadges();
 }
 function toggleMaidVerified(id) {
-  const maids = getMaids().map(m => m.id === id ? {...m, verified: !m.verified} : m);
+  const maids = getMaids().map(m => m.id === id ? {...m, verified: !m.verified, verificationStatus: !m.verified ? 'verified' : 'pending'} : m);
   setMaids(maids);
   // Sync ram_registered_maids on toggle
   const toggled = maids.find(m => m.id === id);
@@ -23290,8 +23411,13 @@ function loadWebsiteEditorForm(){
 function switchWebTab(tab){
   document.querySelectorAll('#pg-website .settings-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('#pg-website .settings-nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('wtab-'+tab).classList.add('active');
-  event.currentTarget.classList.add('active');
+  var tabEl = document.getElementById('wtab-'+tab);
+  if(tabEl) tabEl.classList.add('active');
+  // Nav item active highlight — onclick attribute se match karo (event.currentTarget unreliable hai)
+  document.querySelectorAll('#pg-website .settings-nav-item').forEach(function(n){
+    var oc = n.getAttribute('onclick') || '';
+    if(oc.indexOf("'"+tab+"'") !== -1 || oc.indexOf('"'+tab+'"') !== -1) n.classList.add('active');
+  });
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); wcLoadPopupToggle(); }
@@ -23303,38 +23429,55 @@ function switchWebTab(tab){
 // ═══════════════════════════════════════════════
 function ann2FillFields(s){
   if(!s || typeof s !== 'object') s = {};
-  if(s.text !== undefined) document.getElementById('ann2-text').value = s.text;
+  // Helper: safe element value set
+  var setVal = function(id, val){ var el = document.getElementById(id); if(el && val !== undefined) el.value = val; };
+  var setChk = function(id, val){ var el = document.getElementById(id); if(el && val !== undefined) el.checked = !!val; };
+
+  if(s.text !== undefined) setVal('ann2-text', s.text);
   if(s.visible !== undefined){
-    var chk = document.getElementById('ann2-enabled');
-    chk.checked = (s.visible !== false);
+    setChk('ann2-enabled', s.visible !== false);
     ann2TogglePreview();
   }
-  if(s.badgeText !== undefined) document.getElementById('ann2-badge').value = s.badgeText;
-  if(s.showBadge !== undefined) document.getElementById('ann2-show-badge').checked = (s.showBadge === true);
-  if(s.showClose !== undefined) document.getElementById('ann2-show-close').checked = (s.showClose === true);
-  if(s.textColor !== undefined) document.getElementById('ann2-text-color').value = s.textColor;
-  if(s.bg1 !== undefined) document.getElementById('ann2-bg1').value = s.bg1;
-  if(s.bg2 !== undefined) document.getElementById('ann2-bg2').value = s.bg2;
+  if(s.badgeText !== undefined) setVal('ann2-badge', s.badgeText);
+  if(s.showBadge !== undefined) setChk('ann2-show-badge', s.showBadge === true);
+  if(s.showClose !== undefined) setChk('ann2-show-close', s.showClose === true);
+  if(s.textColor !== undefined) setVal('ann2-text-color', s.textColor);
+  if(s.bg1 !== undefined) setVal('ann2-bg1', s.bg1);
+  if(s.bg2 !== undefined) setVal('ann2-bg2', s.bg2);
   if(s.fontSize !== undefined){
-    document.getElementById('ann2-font').value = s.fontSize;
-    document.getElementById('ann2-font-val').textContent = s.fontSize + 'px';
+    setVal('ann2-font', s.fontSize);
+    var fv = document.getElementById('ann2-font-val'); if(fv) fv.textContent = s.fontSize + 'px';
   }
   if(s.barHeight !== undefined){
-    document.getElementById('ann2-height').value = s.barHeight;
-    document.getElementById('ann2-height-val').textContent = s.barHeight + 'px';
+    setVal('ann2-height', s.barHeight);
+    var hv = document.getElementById('ann2-height-val'); if(hv) hv.textContent = s.barHeight + 'px';
   }
   if(s.speed !== undefined){
     var spd = Math.round(parseFloat(s.speed) / 0.25);
-    document.getElementById('ann2-speed').value = spd;
+    setVal('ann2-speed', Math.max(1, Math.min(10, spd)));
     ann2SpeedLabel();
   }
+  // Hamesha preview update karo — chahe fields fill hui ho ya na hui ho
   ann2UpdatePreview();
 }
 
 async function ann2InitPanel(){
+  // Safety: tab element visible hai ya nahi check karo
+  var tabEl = document.getElementById('wtab-annbar');
+  if(tabEl && !tabEl.classList.contains('active')){
+    tabEl.classList.add('active');
+  }
+
   // Pehle localStorage se load karo (instant, no delay)
   var s = null;
   try { s = JSON.parse(localStorage.getItem('rentamaid_ann_v2')); } catch(e){}
+
+  // Elements exist karte hain check karo
+  if(!document.getElementById('ann2-text')){
+    console.warn('ann2InitPanel: ann2-text element nahi mila — panel DOM mein nahi hai');
+    return;
+  }
+
   ann2FillFields(s || {});
 
   // Phir Firebase se fresh data fetch karo aur fields update karo
@@ -26554,8 +26697,22 @@ async function forgotSendOtp() {
     if (err.code === 'auth/invalid-phone-number') errMsg = 'Phone number format galat hai.';
     else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Thodi der baad try karein.';
     else if (err.code === 'auth/quota-exceeded') errMsg = 'OTP limit exceed ho gayi. Kal try karein.';
-    else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/internal-error') errMsg = 'Security check fail hua. Page ek baar refresh karein aur dobara try karein.';
+    else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/internal-error') errMsg = 'Security check fail hua. Page reload ho rahi hai, please wait...';
     else if (err.code === 'auth/network-request-failed') errMsg = 'Network error. Internet connection check karein.';
+    // ── Auto-reload on first OTP error (retryable errors ke liye) ──
+    const _noReloadCodes = ['auth/too-many-requests','auth/quota-exceeded','auth/invalid-phone-number','auth/network-request-failed'];
+    if (!_noReloadCodes.includes(err.code)) {
+      // Phone aur role sessionStorage mein save karo taaki reload ke baad modal wapas khule
+      try {
+        sessionStorage.setItem('_ram_forgot_retry', JSON.stringify({ phone: phone, role: _forgotRole }));
+      } catch(se) {}
+      hint.textContent = '⚠️ ' + errMsg + ' Page automatically reload ho rahi hai...';
+      hint.style.display = 'block';
+      hint.style.color = '#dc2626';
+      btn.disabled = true;
+      setTimeout(function() { location.reload(); }, 2000);
+      return;
+    }
     hint.textContent = '⚠️ ' + errMsg;
     hint.style.display = 'block';
     hint.style.color = '#dc2626';
@@ -28276,7 +28433,7 @@ function agEditMaid(phone) {
 
   // Aadhaar status
   document.getElementById('agEM_aadharFrontStatus').textContent = m.aadharFront ? '✓ Front uploaded' : '';
-  document.getElementById('agEM_aadharBackStatus').textContent = m.aadharBack ? '✓ Back uploaded' : '';
+  // agEM_aadharBackStatus removed
 
   // Reset temp vars
   window._agEMPhotoBase64 = null;
@@ -28308,7 +28465,7 @@ function agEMAadharUpload(event, side) {
   var reader = new FileReader();
   reader.onload = function(e) {
     if (side==='front') { window._agEMAadharFrontBase64 = e.target.result; document.getElementById('agEM_aadharFrontStatus').textContent = '✓ '+file.name; }
-    else { window._agEMAadharBackBase64 = e.target.result; document.getElementById('agEM_aadharBackStatus').textContent = '✓ '+file.name; }
+    else { window._agEMAadharBackBase64 = e.target.result; }
   };
   reader.readAsDataURL(file);
 }
@@ -28325,12 +28482,16 @@ function agSaveEditMaid() {
   var services = Array.from(document.querySelectorAll('.ag-em-svc-cb:checked')).map(function(cb){ return cb.value; });
 
   if (!name) { showToast('Name is required.'); return; }
+  if (!origPhone) { showToast('Session error. Please close and try again.'); return; }
 
   // Update in ram_registered_maids
   var reg = {};
   try { reg = JSON.parse(localStorage.getItem('ram_registered_maids')||'{}'); } catch(e){}
   var m = reg[origPhone];
   if (!m) { showToast('Maid not found.'); return; }
+
+  // FIX: Pehle original aadhar save karo, PHIR update karo (comparison ke liye)
+  var oldAadharNum = (m.aadharNumber||'');
 
   m.name = name;
   m.age = age ? parseInt(age)||age : m.age;
@@ -28344,8 +28505,8 @@ function agSaveEditMaid() {
   if (window._agEMAadharFrontBase64) m.aadharFront = window._agEMAadharFrontBase64;
   if (window._agEMAadharBackBase64) m.aadharBack = window._agEMAadharBackBase64;
 
-  // Mark as pending re-verification if aadhaar changed
-  if (window._agEMAadharFrontBase64 || window._agEMAadharBackBase64 || aadharNum !== (m.aadharNumber||'')) {
+  // FIX: Ab oldAadharNum se compare karo (m.aadharNumber se nahi — wo update ho chuka hai)
+  if (window._agEMAadharFrontBase64 || window._agEMAadharBackBase64 || aadharNum !== oldAadharNum) {
     m.verified = false;
     m.verificationStatus = 'resubmitted';
   }
@@ -28368,6 +28529,51 @@ function agSaveEditMaid() {
     window._fbSetWhenReady('adminData','maid_'+origPhone, m).catch(function(){});
     window._fbSetWhenReady('adminData','ram_admin_maids', adminMaids).catch(function(){});
     window._fbSetWhenReady('adminData','ram_registered_maids', reg).catch(function(){});
+  }
+
+  // ── Aadhaar data ko aadhar_${phone} format mein bhi save karo ──
+  // (Taaki admin ke viewMaid modal mein photos properly dikhen)
+  if (window._agEMAadharFrontBase64 || aadharNum) {
+    var _aadharEntry = {
+      aadharNum: aadharNum || m.aadharNumber || '',
+      frontUrl: window._agEMAadharFrontBase64 || m.aadharFront || '',
+      status: 'pending',
+      submittedAt: new Date().toISOString()
+    };
+    localStorage.setItem('aadhar_' + origPhone, JSON.stringify(_aadharEntry));
+    if (typeof window._fbSet === 'function') {
+      window._fbSet('adminData', 'aadhar_' + origPhone, _aadharEntry).catch(function(){});
+    }
+  }
+  if (window._agEMAadharBackBase64) {
+    var _aadharBackEntry = { backUrl: window._agEMAadharBackBase64, submittedAt: new Date().toISOString() };
+    localStorage.setItem('aadhar_' + origPhone + '_back', JSON.stringify(_aadharBackEntry));
+    if (typeof window._fbSet === 'function') {
+      window._fbSet('adminData', 'aadhar_' + origPhone + '_back', _aadharBackEntry).catch(function(){});
+    }
+  }
+
+  // ── Admin ko notification do: agency ne maid ka re-verification submit kiya ──
+  if (typeof addNotification === 'function') {
+    try {
+      var _agName = m.agencyName || 'Agency';
+      var _notifMsg = m.name + ' (' + origPhone + ') ka profile update hua hai — re-verification pending hai.'
+        + ' Agency: ' + _agName + '.'
+        + (aadharNum ? ' Aadhaar: ' + aadharNum + '.' : '')
+        + ' Maids section mein jao, profile dekho aur Verify karo.';
+      addNotification({
+        audience: 'admin',
+        title: '🔄 Re-Verification Request: ' + m.name,
+        message: _notifMsg,
+        page: 'maids'
+      });
+      // Firebase pe bhi notification push karo (cross-device real-time ke liye)
+      if (typeof window._fbSet === 'function') {
+        var _allNotifs = [];
+        try { _allNotifs = JSON.parse(localStorage.getItem('notifications') || '[]'); } catch(e) {}
+        window._fbSet('siteData', 'notifications', _allNotifs).catch(function(){});
+      }
+    } catch(eN) {}
   }
 
   showToast('✅ Maid updated! Submitted for re-verification.');
@@ -28758,15 +28964,54 @@ async function submitAgencyAddMaid() {
 
   // Aadhaar data ko admin panel format mein bhi save karo (aadhar_{phone} key)
   // Taaki admin panel mein Aadhaar Verification section mein dikh sake
-  if (aadharFrontUrl || maidRec.aadharNumber) {
-    var aadharRecord = { phone: phone, aadharNum: maidRec.aadharNumber || '', frontUrl: aadharFrontUrl || '', backUrl: aadharBackUrl || '', status: 'pending', submittedAt: new Date().toISOString(), submittedBy: 'agency', agencyPhone: sess.phone, agencyName: sess.agencyName || '' };
-    localStorage.setItem('aadhar_' + phone, JSON.stringify(aadharRecord));
-    if (aadharBackUrl) {
-      localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify({ backUrl: aadharBackUrl }));
+  // FIX: Aadhaar number ya koi bhi photo ho to record banao
+  // Agar Firebase URL nahi mila to base64 fallback use karo
+  var finalFrontUrl = aadharFrontUrl || window._agNMAadharFrontBase64 || '';
+  var finalBackUrl = aadharBackUrl || window._agNMAadharBackBase64 || '';
+  if (finalFrontUrl || maidRec.aadharNumber) {
+    var aadharRecord = {
+      phone: phone,
+      aadharNum: maidRec.aadharNumber || '',
+      frontUrl: finalFrontUrl,
+      backUrl: finalBackUrl,
+      status: 'pending',
+      submittedAt: new Date().toISOString(),
+      submittedBy: 'agency',
+      agencyPhone: sess.phone,
+      agencyName: sess.agencyName || ''
+    };
+    // LocalStorage mein save karo (isi device ke liye)
+    try { localStorage.setItem('aadhar_' + phone, JSON.stringify(aadharRecord)); } catch(e) {}
+    if (finalBackUrl) {
+      try { localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify({ backUrl: finalBackUrl })); } catch(e) {}
     }
+    // maidRec mein bhi update karo taaki Firebase document mein bhi rahe
+    maidRec.aadharFront = finalFrontUrl;
+    maidRec.aadharBack = finalBackUrl;
+
+    // Firebase pe save — _fbSet ready hone ka wait karo
+    var saveAadharToFirebase = function() {
+      if (typeof window._fbSet === 'function') {
+        window._fbSet('siteData', 'aadhar_' + phone, aadharRecord).catch(function(e) { console.warn('Aadhar Firebase save failed:', e); });
+        if (finalBackUrl) {
+          window._fbSet('siteData', 'aadhar_' + phone + '_back', { backUrl: finalBackUrl }).catch(function(e) {});
+        }
+      }
+    };
     if (typeof window._fbSet === 'function') {
-      window._fbSet('siteData', 'aadhar_' + phone, aadharRecord).catch(function(e) { console.warn('Aadhar Firebase save failed:', e); });
-      if (aadharBackUrl) { window._fbSet('siteData', 'aadhar_' + phone + '_back', { backUrl: aadharBackUrl }).catch(function(e) {}); }
+      saveAadharToFirebase();
+    } else {
+      // _fbSet ready hone ka wait karo (max 15 sec)
+      var aadharSaveStart = Date.now();
+      var aadharSavePoll = setInterval(function() {
+        if (typeof window._fbSet === 'function') {
+          clearInterval(aadharSavePoll);
+          saveAadharToFirebase();
+        } else if (Date.now() - aadharSaveStart > 15000) {
+          clearInterval(aadharSavePoll);
+          console.warn('Firebase not ready for aadhar save — localStorage only saved.');
+        }
+      }, 200);
     }
   }
 
@@ -29412,7 +29657,7 @@ async function submitAgencyAddMaid() {
           <label>Aadhaar Number</label>
           <input id="agEM_aadharNum" type="text" maxlength="12" placeholder="12-digit Aadhaar number" />
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="display:grid;grid-template-columns:1fr;gap:10px;">
           <div>
             <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Front Side</div>
             <label style="display:block;padding:8px;background:#fff;border:1.5px dashed #86efac;border-radius:8px;text-align:center;font-size:12px;color:#16a34a;cursor:pointer;">
@@ -29420,14 +29665,6 @@ async function submitAgencyAddMaid() {
               <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="agEMAadharUpload(event,'front')" />
             </label>
             <div id="agEM_aadharFrontStatus" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>
-          </div>
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Back Side</div>
-            <label style="display:block;padding:8px;background:#fff;border:1.5px dashed #86efac;border-radius:8px;text-align:center;font-size:12px;color:#16a34a;cursor:pointer;">
-              📤 Upload Back
-              <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="agEMAadharUpload(event,'back')" />
-            </label>
-            <div id="agEM_aadharBackStatus" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>
           </div>
         </div>
         <div style="font-size:11px;color:#6b7280;margin-top:8px;">⚠️ Uploading new Aadhaar will reset verification status and send for re-review by admin.</div>
@@ -29741,6 +29978,37 @@ function agForgotResetPassword() {
     if (pwEl) { pwEl.value = ''; pwEl.focus(); }
   }, 1800);
 }
+
+// ── Forgot Password: Auto-reopen modal after page reload (OTP error recovery) ──
+// Jab OTP error pe page reload hoti hai, sessionStorage mein saved data se
+// automatically forgot password modal wapas khulta hai phone prefilled ke saath.
+document.addEventListener('DOMContentLoaded', function() {
+  try {
+    var retryRaw = sessionStorage.getItem('_ram_forgot_retry');
+    if (retryRaw) {
+      sessionStorage.removeItem('_ram_forgot_retry'); // ek baar hi retry, loop nahi
+      var retryData = JSON.parse(retryRaw);
+      if (retryData && retryData.phone && retryData.role) {
+        setTimeout(function() {
+          // Forgot password modal kholo with saved role
+          if (typeof showForgotPasswordView === 'function') {
+            showForgotPasswordView(retryData.role);
+          }
+          // Phone number wapas prefill karo
+          var phoneEl = document.getElementById('forgotPhone');
+          if (phoneEl) phoneEl.value = retryData.phone;
+          // Hint message dikhao
+          var hintEl = document.getElementById('forgotOtpHint');
+          if (hintEl) {
+            hintEl.textContent = '🔄 Page reload ho gayi. Ab "Send OTP" dobara dabao.';
+            hintEl.style.display = 'block';
+            hintEl.style.color = '#f97316';
+          }
+        }, 800);
+      }
+    }
+  } catch(e) {}
+});
 </script>
 
 </body>
