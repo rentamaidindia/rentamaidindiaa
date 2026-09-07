@@ -559,108 +559,6 @@
 
   /* ── NAVBAR ── */
   nav { position:sticky; top:0; z-index:100; background:#fff; border-bottom:1px solid var(--border); box-shadow:0 1px 4px rgba(0,0,0,.06); }
-
-  /* ══ ANNOUNCEMENT TICKER BAR ══ */
-  #announcementBar {
-    width: 100%;
-    background: linear-gradient(90deg, #1a3c5e 0%, #0f2940 50%, #1a3c5e 100%);
-    color: #fff;
-    overflow: hidden;
-    position: relative;
-    display: flex;
-    align-items: center;
-    border-bottom: 2px solid rgba(249,115,22,0.5);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-    transition: height 0.3s ease, padding 0.3s ease;
-  }
-  #announcementBar.hidden-bar { height: 0 !important; padding: 0 !important; overflow: hidden; }
-  .ticker-icon {
-    flex-shrink: 0;
-    background: var(--primary, #f97316);
-    padding: 0 14px;
-    font-size: 12px;
-    font-weight: 800;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    align-self: stretch;
-    border-right: 2px solid rgba(255,255,255,0.15);
-  }
-  .ticker-track-wrap {
-    flex: 1;
-    overflow: hidden;
-    position: relative;
-  }
-  .ticker-track {
-    display: flex;
-    white-space: nowrap;
-    will-change: transform;
-  }
-  .ticker-track span {
-    display: inline-block;
-    padding-right: 80px;
-  }
-  .ticker-controls {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 10px;
-    border-left: 2px solid rgba(255,255,255,0.15);
-  }
-  .ticker-btn {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: #fff;
-    border-radius: 5px;
-    width: 28px;
-    height: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background .15s;
-    flex-shrink: 0;
-  }
-  .ticker-btn:hover { background: rgba(249,115,22,0.5); border-color: var(--primary,#f97316); }
-  .ticker-close {
-    background: rgba(220,38,38,0.3);
-    border-color: rgba(220,38,38,0.5);
-  }
-  .ticker-close:hover { background: #dc2626; border-color: #dc2626; }
-  /* Admin panel */
-  #tickerAdminPanel {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-    z-index: 9999;
-    padding: 28px;
-    width: min(480px, 92vw);
-    border: 2px solid var(--primary,#f97316);
-  }
-  #tickerAdminPanel.open { display: block; }
-  #tickerOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:9998; }
-  #tickerOverlay.open { display:block; }
-  .ticker-admin-title { font-size: 18px; font-weight: 800; color: #1a3c5e; margin-bottom: 18px; display:flex; align-items:center; gap:8px; }
-  .ticker-admin-label { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; display:block; }
-  .ticker-admin-input { width: 100%; padding: 10px 13px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 14px; color: #111827; outline: none; box-sizing: border-box; margin-bottom: 14px; }
-  .ticker-admin-input:focus { border-color: var(--primary,#f97316); }
-  .ticker-admin-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
-  .ticker-admin-row label { font-size: 13px; font-weight: 600; color: #374151; }
-  .ticker-admin-row input[type=range] { flex:1; accent-color: var(--primary,#f97316); }
-  .ticker-admin-save { width:100%; padding: 11px; background: linear-gradient(135deg,#f97316,#ea580c); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:800; cursor:pointer; margin-top:4px; }
-  .ticker-admin-save:hover { opacity:.9; }
-  .ticker-admin-close-btn { position:absolute; top:14px; right:16px; background:none; border:none; font-size:22px; color:#9ca3af; cursor:pointer; line-height:1; }
-  .ticker-admin-close-btn:hover { color:#dc2626; }
   .nav-inner { max-width:1280px; margin:0 auto; padding:0 16px; height:64px; display:flex; align-items:center; justify-content:space-between; }
   .nav-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
   .nav-logo-icon { width:36px; height:36px; background:var(--primary); border-radius:8px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:18px; }
@@ -2361,294 +2259,125 @@ tr:hover td{background:#f8fafc;}
   </div>
 </nav>
 
-<!-- ══════════════════════════════════════
-     ANNOUNCEMENT TICKER BAR (clean — no buttons on bar)
-══════════════════════════════════════ -->
-<div id="announcementBar" style="height:44px;font-size:14px;display:flex;align-items:center;overflow:hidden;width:100%;background:linear-gradient(90deg,#1a3c5e,#0f2940,#1a3c5e);border-bottom:2px solid rgba(249,115,22,.5);box-shadow:0 2px 8px rgba(0,0,0,.18);">
-  <div id="tickerImgWrap" style="display:none;flex-shrink:0;height:100%;align-items:center;">
-    <img id="tickerImg" src="" alt="" style="height:100%;max-height:44px;object-fit:cover;display:block;">
-  </div>
-  <div style="flex:1;overflow:hidden;position:relative;">
-    <div id="tickerTrack" style="display:flex;white-space:nowrap;will-change:transform;">
-      <span style="display:inline-block;padding-right:80px;color:#fff;font-weight:500;" id="tickerSpan1"></span>
-      <span style="display:inline-block;padding-right:80px;color:#fff;font-weight:500;" id="tickerSpan2" aria-hidden="true"></span>
+<!-- ══ ANNOUNCEMENT BAR ══ -->
+<div id="annBar" style="width:100%;overflow:hidden;position:relative;z-index:999;background:linear-gradient(90deg,#1a3c5e,#0f2940,#1a3c5e);border-bottom:2px solid rgba(249,115,22,.4);">
+  <div id="annBarInner" style="display:flex;align-items:center;height:44px;width:100%;">
+    <!-- Left badge (hidden by default like screenshot) -->
+    <div id="annBadge" style="display:none;flex-shrink:0;height:100%;align-items:center;padding:0 16px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;color:#fff;background:rgba(0,0,0,0.2);">
+      <i class="fas fa-bullhorn" style="margin-right:6px;font-size:12px;"></i><span>NOTICE</span>
     </div>
+    <!-- Scrolling text -->
+    <div style="flex:1;overflow:hidden;position:relative;">
+      <div id="annTrack" style="display:inline-flex;white-space:nowrap;will-change:transform;">
+        <span id="annSpan1" style="display:inline-block;padding-right:100px;font-weight:500;color:#fff;font-size:14px;">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! &nbsp;|&nbsp; ✅ Verified &amp; Background-Checked Maids &nbsp;|&nbsp; 🏠 Part-Time, Full-Time, Live-In Maid Service &nbsp;|&nbsp; ⭐ 4.8 Rating | 4200+ Happy Families</span>
+        <span id="annSpan2" style="display:inline-block;padding-right:100px;font-weight:500;color:#fff;font-size:14px;" aria-hidden="true">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! &nbsp;|&nbsp; ✅ Verified &amp; Background-Checked Maids &nbsp;|&nbsp; 🏠 Part-Time, Full-Time, Live-In Maid Service &nbsp;|&nbsp; ⭐ 4.8 Rating | 4200+ Happy Families</span>
+      </div>
+    </div>
+    <!-- Close button (hidden by default) -->
+    <button id="annCloseBtn" onclick="annClose()" style="display:none;flex-shrink:0;background:rgba(0,0,0,0.15);border:none;color:rgba(255,255,255,0.8);width:32px;height:100%;cursor:pointer;font-size:16px;transition:background .2s;" onmouseenter="this.style.background='rgba(0,0,0,0.35)'" onmouseleave="this.style.background='rgba(0,0,0,0.15)'">✕</button>
   </div>
 </div>
 
-
-
-<!-- ══ TICKER SCRIPT ══ -->
 <script>
 (function(){
-  var bar    = document.getElementById('announcementBar');
-  var track  = document.getElementById('tickerTrack');
-  var span1  = document.getElementById('tickerSpan1');
-  var span2  = document.getElementById('tickerSpan2');
-  var imgWrap= document.getElementById('tickerImgWrap');
-  var imgEl  = document.getElementById('tickerImg');
+  var ANN_KEY = 'rentamaid_ann_v2';
+  var _annPos = 0, _annSpeed = 1.0, _annRaf = null, _annClosed = false;
 
-  var pos    = 0;
-  var speed  = 0.6;
-  var paused = false;
-  var visible= true;
-  var annImgData = '';
+  var bar      = document.getElementById('annBar');
+  var inner    = document.getElementById('annBarInner');
+  var track    = document.getElementById('annTrack');
+  var span1    = document.getElementById('annSpan1');
+  var span2    = document.getElementById('annSpan2');
+  var badge    = document.getElementById('annBadge');
+  var closeBtn = document.getElementById('annCloseBtn');
 
-  // Default text
-  var currentText = '🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! \u00a0|\u00a0 ✅ Verified & Background-Checked Maids \u00a0|\u00a0 🏠 Part-Time, Full-Time, Live-In Maid Service \u00a0|\u00a0 ⭐ 4.8 Rating | 4200+ Happy Families';
-  span1.textContent = currentText;
-  span2.textContent = currentText;
-
-  function animate(){
-    if(!paused){
-      pos -= speed;
+  // ── Start scroll animation ──
+  function startAnim(){
+    if(_annRaf) cancelAnimationFrame(_annRaf);
+    _annPos = 0;
+    (function tick(){
+      _annPos -= _annSpeed;
       var half = track.scrollWidth / 2;
-      if(Math.abs(pos) >= half) pos = 0;
-      track.style.transform = 'translateX('+pos+'px)';
-    }
-    requestAnimationFrame(animate);
-  }
-  animate();
-
-  // ── Admin panel helpers ───────────────────────
-
-  window.annSpeedLabel = function(){
-    var v = parseInt(document.getElementById('ann-speed').value);
-    var labels={1:'Bahut Slow',2:'Slow',3:'Slow',4:'Medium',5:'Medium',6:'Medium',7:'Fast',8:'Fast',9:'Bahut Fast',10:'Bahut Fast'};
-    document.getElementById('ann-speed-label').textContent = labels[v]||'Medium';
-    // live preview speed
-    speed = v * 0.12;
-  };
-
-  window.annToggleBar = function(){
-    var cb = document.getElementById('ann-enabled');
-    visible = cb.checked;
-    var track2 = document.getElementById('ann-toggle-track');
-    var thumb  = document.getElementById('ann-toggle-thumb');
-    if(visible){
-      bar.style.height = document.getElementById('ann-height').value + 'px';
-      bar.style.overflow = 'hidden';
-      bar.style.borderBottom = '2px solid rgba(249,115,22,.5)';
-      track2.style.background = '#22c55e';
-      thumb.style.transform = 'translateX(24px)';
-    } else {
-      bar.style.height = '0';
-      bar.style.borderBottom = 'none';
-      track2.style.background = '#d1d5db';
-      thumb.style.transform = 'translateX(0)';
-    }
-  };
-
-  window.annAdminTogglePlay = function(){
-    paused = !paused;
-    var btn = document.getElementById('ann-play-btn');
-    btn.textContent = paused ? '▶ Resume' : '⏸ Pause';
-    btn.style.background = paused ? '#166534' : '#1a3c5e';
-  };
-
-  window.annPickBg = function(c1,c2){
-    document.getElementById('ann-bg1').value = c1;
-    document.getElementById('ann-bg2').value = c2;
-    // immediately update preview strip
-    annUpdatePreviewStrip();
-  };
-
-  function annUpdatePreviewStrip(){
-    var b1  = document.getElementById('ann-bg1').value;
-    var b2  = document.getElementById('ann-bg2').value;
-    var tc  = document.getElementById('ann-text-color').value;
-    var fs  = document.getElementById('ann-font').value;
-    var ht  = document.getElementById('ann-height').value;
-    var txt = document.getElementById('ann-text').value || currentText;
-    var strip = document.getElementById('ann-preview-strip');
-    if(strip){
-      strip.style.background = 'linear-gradient(90deg,'+b1+','+b2+','+b1+')';
-      strip.style.color = tc;
-      strip.style.fontSize = fs+'px';
-      strip.style.height = ht+'px';
-      strip.textContent = txt;
-    }
+      if(Math.abs(_annPos) >= half) _annPos = 0;
+      track.style.transform = 'translateX(' + _annPos + 'px)';
+      _annRaf = requestAnimationFrame(tick);
+    })();
   }
 
-  // Note: Live preview event listeners are wired in annInitAdminPanel (called on tab open)
-
-  window.annImgPreview = function(){
-    var url = document.getElementById('ann-img-url').value.trim();
-    if(url){
-      annImgData = url;
-      document.getElementById('ann-img-preview').src = url;
-      document.getElementById('ann-img-preview-wrap').style.display = 'flex';
-    }
-  };
-
-  window.annImgFromFile = function(input){
-    if(!input.files || !input.files[0]) return;
-    var reader = new FileReader();
-    reader.onload = function(e){
-      annImgData = e.target.result;
-      document.getElementById('ann-img-preview').src = annImgData;
-      document.getElementById('ann-img-preview-wrap').style.display = 'flex';
-    };
-    reader.readAsDataURL(input.files[0]);
-  };
-
-  window.annRemoveImg = function(){
-    annImgData = '';
-    document.getElementById('ann-img-file').value = '';
-    document.getElementById('ann-img-url').value  = '';
-    document.getElementById('ann-img-preview-wrap').style.display = 'none';
-    imgWrap.style.display = 'none';
-    imgEl.src = '';
-  };
-
-  // ── Firebase + localStorage dual sync ──
-  var ANN_LS_KEY = 'rentamaid_ann_settings';
-  var ANN_FB_COLL = 'siteData';
-  var ANN_FB_KEY  = 'ram_announcement_bar';
-
-  // Apply settings object to the live bar
+  // ── Apply settings from admin / Firebase ──
   window.annApplySettings = function(s){
-    if(!s) return;
-    if(s.text){ currentText = s.text; span1.textContent = s.text; span2.textContent = s.text; }
-    pos = 0; track.style.transform = 'translateX(0px)';
-    if(s.fs) bar.style.fontSize = s.fs + 'px';
-    if(s.visible === false){ bar.style.height='0'; bar.style.borderBottom='none'; visible=false; }
-    else { visible=true; if(s.ht) bar.style.height = s.ht+'px'; bar.style.borderBottom='2px solid rgba(249,115,22,.5)'; }
-    if(s.ht){ imgEl.style.maxHeight = s.ht+'px'; }
-    if(s.spd) speed = parseFloat(s.spd) * 0.12;
-    if(s.tc){ span1.style.color = s.tc; span2.style.color = s.tc; }
-    if(s.b1 && s.b2) bar.style.background = 'linear-gradient(90deg,'+s.b1+','+s.b2+','+s.b1+')';
-    if(s.img){ imgEl.src = s.img; imgWrap.style.display='flex'; annImgData=s.img; }
-    else { imgWrap.style.display='none'; imgEl.src=''; }
-    // localStorage bhi update karo taaki page reload pe bhi rahe
-    try{ localStorage.setItem(ANN_LS_KEY, JSON.stringify(s)); }catch(e){}
+    if(!s || typeof s !== 'object') return;
+    var visible   = (s.visible !== false);
+    var text      = s.text || '';
+    var textColor = s.textColor || '#ffffff';
+    var bg1       = s.bg1 || '#1a3c5e';
+    var bg2       = s.bg2 || '#0f2940';
+    var fontSize  = parseInt(s.fontSize)  || 14;
+    var barHeight = parseInt(s.barHeight) || 44;
+    var showBadge = (s.showBadge === true);
+    var showClose = (s.showClose === true);
+    var badgeText = s.badgeText || 'NOTICE';
+    _annSpeed     = parseFloat(s.speed) || 1.0;
+
+    // Apply text
+    span1.textContent = text;
+    span2.textContent = text;
+    [span1, span2].forEach(function(el){
+      el.style.color = textColor;
+      el.style.fontSize = fontSize + 'px';
+    });
+
+    // Apply bar style
+    bar.style.background = 'linear-gradient(90deg,' + bg1 + ',' + bg2 + ',' + bg1 + ')';
+    bar.style.height = barHeight + 'px';
+    inner.style.height = barHeight + 'px';
+
+    // Badge
+    badge.style.display = showBadge ? 'flex' : 'none';
+    badge.querySelector('span').textContent = badgeText;
+    badge.style.height = barHeight + 'px';
+
+    // Close btn
+    closeBtn.style.display = showClose ? 'block' : 'none';
+    closeBtn.style.height = barHeight + 'px';
+
+    // Show / hide
+    if(!visible || !text.trim() || _annClosed){
+      bar.style.display = 'none';
+    } else {
+      bar.style.display = 'block';
+      startAnim();
+    }
+    try { localStorage.setItem(ANN_KEY, JSON.stringify(s)); } catch(e){}
   };
 
-  // Page load: pehle localStorage se apply karo (instant), Firebase se override hoga jab aaye
-  (function(){
-    try{ var s=JSON.parse(localStorage.getItem(ANN_LS_KEY)); if(s) window.annApplySettings(s); }catch(e){}
-  })();
+  // ── Close ──
+  window.annClose = function(){
+    _annClosed = true;
+    bar.style.display = 'none';
+  };
 
-  // Firebase real-time listener — har device pe turant update
-  // (Firebase module load hone ke baad fire karega)
-  window._annStartFirebaseListener = function(db, onSnapshotFn, docFn){
-    try{
-      onSnapshotFn(docFn(db, ANN_FB_COLL, ANN_FB_KEY), function(snap){
+  // ── Load from localStorage or use defaults ──
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(ANN_KEY)); } catch(e){}
+  if(saved && saved.text){
+    window.annApplySettings(saved);
+  } else {
+    // Default — exactly like screenshot: just scrolling text, no badge, no close
+    startAnim();
+  }
+
+  // ── Firebase real-time listener ──
+  window._annStartFirebaseListener = function(db, onSnapshot, doc){
+    try {
+      onSnapshot(doc(db, 'siteData', 'ram_ann_v2'), function(snap){
         if(snap.exists() && snap.data() && snap.data().data){
+          _annClosed = false;
           window.annApplySettings(snap.data().data);
         }
-      }, function(e){ console.warn('Announcement bar listener error:', e); });
-    }catch(e){ console.warn('Announcement bar listener setup failed:', e); }
+      });
+    } catch(e){ console.warn('Ann listener failed:', e); }
   };
-
-  // Initialize admin panel fields from saved settings
-  window.annInitAdminPanel = function(){
-    var s; try{ s=JSON.parse(localStorage.getItem(ANN_LS_KEY)); }catch(e){}
-    if(!s) s = { text: currentText||'', fs:14, ht:44, spd:5, tc:'#ffffff', b1:'#1a3c5e', b2:'#0f2940', visible:true, img:'' };
-    var tf = function(id, val){ var el=document.getElementById(id); if(el && val!==undefined) el.value=val; };
-    tf('ann-text', s.text||'');
-    tf('ann-font', s.fs||'14');
-    tf('ann-height', s.ht||'44');
-    tf('ann-speed', s.spd||'5');
-    tf('ann-text-color', s.tc||'#ffffff');
-    tf('ann-bg1', s.b1||'#1a3c5e');
-    tf('ann-bg2', s.b2||'#0f2940');
-    if(s.img){ annImgData=s.img; var p=document.getElementById('ann-img-preview'); if(p) p.src=s.img; var pw=document.getElementById('ann-img-preview-wrap'); if(pw) pw.style.display='flex'; }
-    var fv=document.getElementById('ann-font-val'); if(fv) fv.textContent=(s.fs||14)+'px';
-    var hv=document.getElementById('ann-height-val'); if(hv) hv.textContent=(s.ht||44)+'px';
-    var sl=document.getElementById('ann-speed-label'); if(sl){ var spd=parseInt(s.spd||5); var labels={1:'Bahut Slow',2:'Slow',3:'Slow',4:'Medium',5:'Medium',6:'Medium',7:'Fast',8:'Fast',9:'Bahut Fast',10:'Bahut Fast'}; sl.textContent=labels[spd]||'Medium'; }
-    var cb=document.getElementById('ann-enabled'); if(cb) cb.checked = (s.visible !== false);
-    // Live preview event listeners wire up (har baar tab open hone par)
-    ['ann-bg1','ann-bg2','ann-text-color'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el){ el.removeEventListener('input',annUpdatePreviewStrip); el.addEventListener('input',annUpdatePreviewStrip); }
-    });
-    ['ann-font','ann-height'].forEach(function(id){
-      var el=document.getElementById(id);
-      if(el){ el.removeEventListener('input',annUpdatePreviewStrip); el.addEventListener('input',annUpdatePreviewStrip); }
-    });
-    var annTxtEl2=document.getElementById('ann-text');
-    if(annTxtEl2){ annTxtEl2.removeEventListener('input',annUpdatePreviewStrip); annTxtEl2.addEventListener('input',annUpdatePreviewStrip); }
-    var annSpEl=document.getElementById('ann-speed');
-    if(annSpEl){ annSpEl.removeEventListener('input',annSpeedLabel); annSpEl.addEventListener('input',annSpeedLabel); }
-    annUpdatePreviewStrip();
-  };
-
-  window.annApplyAll = function(){
-    // 1. Text
-    var newTxt = document.getElementById('ann-text').value.trim();
-    if(newTxt) currentText = newTxt;
-    span1.textContent = currentText;
-    span2.textContent = currentText;
-    pos = 0; track.style.transform = 'translateX(0px)';
-    // 2. Font
-    var fs = document.getElementById('ann-font').value;
-    bar.style.fontSize = fs + 'px';
-    // 3. Height
-    var ht = document.getElementById('ann-height').value;
-    if(visible){ bar.style.height = ht + 'px'; imgEl.style.maxHeight = ht + 'px'; }
-    // 4. Speed
-    speed = parseFloat(document.getElementById('ann-speed').value) * 0.12;
-    // 5. Text color
-    var tc = document.getElementById('ann-text-color').value;
-    span1.style.color = tc; span2.style.color = tc;
-    // 6. BG
-    var b1 = document.getElementById('ann-bg1').value;
-    var b2 = document.getElementById('ann-bg2').value;
-    bar.style.background = 'linear-gradient(90deg,'+b1+','+b2+','+b1+')';
-    // 7. Image
-    if(annImgData){ imgEl.src = annImgData; imgWrap.style.display = 'flex'; }
-    else { imgWrap.style.display = 'none'; }
-
-    // 8. Settings object
-    var settings = {
-      text: currentText,
-      fs: fs, ht: ht,
-      spd: document.getElementById('ann-speed').value,
-      tc: tc, b1: b1, b2: b2,
-      visible: visible,
-      img: annImgData || ''
-    };
-
-    // 9. localStorage save (instant same-device sync)
-    try{ localStorage.setItem(ANN_LS_KEY, JSON.stringify(settings)); }catch(e){}
-
-    // 10. Firebase save — har device pe real-time update trigger karega
-    var fbSaved = false;
-    if(typeof window._fbSet === 'function'){
-      window._fbSet(ANN_FB_COLL, ANN_FB_KEY, settings)
-        .then(function(){
-          if(!fbSaved){ fbSaved=true; annShowToast('✅ Live ho gaya! Sab devices pe update!'); }
-        })
-        .catch(function(e){
-          console.warn('Announcement Firebase save failed:', e);
-          if(!fbSaved){ fbSaved=true; annShowToast('✅ Local update hua! (Firebase sync retry hogi)'); }
-        });
-    } else {
-      annShowToast('✅ Announcement bar update ho gaya!');
-    }
-    // Immediate toast in case Firebase is slow
-    setTimeout(function(){ if(!fbSaved){ fbSaved=true; annShowToast('✅ Announcement bar live ho gaya!'); } }, 1200);
-  };
-
-  function annShowToast(msg){
-    var toast = document.createElement('div');
-    toast.textContent = msg;
-    toast.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#166534;color:#fff;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;z-index:99999;box-shadow:0 4px 16px rgba(0,0,0,.25);white-space:nowrap;';
-    document.body.appendChild(toast);
-    setTimeout(function(){ toast.remove(); }, 3500);
-  }
-
-  // Visibility toggle bhi Firebase mein save karo
-  var _origAnnToggleBar = window.annToggleBar;
-  window.annToggleBar = function(){
-    _origAnnToggleBar();
-    var s; try{ s=JSON.parse(localStorage.getItem(ANN_LS_KEY))||{}; }catch(e){ s={}; }
-    s.visible = document.getElementById('ann-enabled').checked;
-    try{ localStorage.setItem(ANN_LS_KEY, JSON.stringify(s)); }catch(e){}
-    if(typeof window._fbSet === 'function') window._fbSet(ANN_FB_COLL, ANN_FB_KEY, s).catch(function(){});
-  };
-
 })();
 </script>
 
@@ -14449,79 +14178,97 @@ async function submitReg() {
         if (typeof window._fbSet === 'function') {
           try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e) {}
         }
-
-        // ══ AUTO AGENCY LINK ══
-        // Agar maid ne agencyStatus='yes' select kiya aur agency phone dali,
-        // toh us phone number ki agency dhundho aur maid ko auto-link karo.
-        // Dono sources check karo: ram_admin_agencies + rami_agencies (agency dashboard)
-        if ((agencyStatus === 'yes') && agencyPhone) {
-          try {
-            // Firebase se fresh agencies load karo (agar available ho)
-            let agencies = [];
-            try { agencies = JSON.parse(localStorage.getItem('ram_admin_agencies') || '[]'); } catch(e2) {}
-            if (!agencies.length) {
-              try {
-                var ag2 = JSON.parse(localStorage.getItem('rami_agencies') || '[]');
-                if (ag2.length) agencies = ag2;
-              } catch(e3) {}
-            }
-            if (!agencies.length && typeof window._fbGet === 'function') {
-              try {
-                const fbAg = await window._fbGet('adminData', 'ram_admin_agencies');
-                if (fbAg && Array.isArray(fbAg) && fbAg.length) agencies = fbAg;
-                else {
-                  const fbAg2 = await window._fbGet('adminData', 'rami_agencies');
-                  if (fbAg2 && Array.isArray(fbAg2)) agencies = fbAg2;
-                }
-              } catch(e4) {}
-            }
-
-            const matchedAgency = agencies.find(a => (a.phone || '').replace(/\D/g,'') === agencyPhone);
-            if (matchedAgency) {
-              // admin maids list mein agencyId set karo
-              const maidIdx = adminMaids.findIndex(m => m.phone === phone);
-              if (maidIdx !== -1) {
-                adminMaids[maidIdx].agencyId = matchedAgency.id;
-                adminMaids[maidIdx].agencyPhone = matchedAgency.phone;
-                adminMaids[maidIdx].agencyName = matchedAgency.name;
-                localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
-                if (typeof window._fbSet === 'function') {
-                  try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e5) {}
-                }
-              }
-              // registered maids mein bhi agencyId set karo
-              const updatedReg = (() => { try { return JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e){return {};} })();
-              if (updatedReg[phone]) {
-                updatedReg[phone].agencyId = matchedAgency.id;
-                updatedReg[phone].agencyPhone = matchedAgency.phone;
-                updatedReg[phone].agencyName = matchedAgency.name;
-                localStorage.setItem('ram_registered_maids', JSON.stringify(updatedReg));
-                if (typeof window._fbSet === 'function') {
-                  try { await window._fbSet('adminData', 'maid_' + phone, updatedReg[phone]); } catch(e6) {}
-                  try { await window._fbSet('adminData', 'ram_registered_maids', updatedReg); } catch(e7) {}
-                }
-              }
-              // ── Admin ko notification do: agency mein nayi maid ──
-              if (typeof addNotification === 'function') {
-                try {
-                  addNotification({
-                    audience: 'admin',
-                    title: '🏢 Agency Maid Registered',
-                    message: name + ' (' + phone + ') ne ' + matchedAgency.name + ' agency ke saath register kiya.',
-                    page: 'agencies'
-                  });
-                } catch(eN) {}
-              }
-              // Admin panel mein agency list live refresh karo
-              if (typeof window.renderAgencies === 'function') { try { window.renderAgencies(); } catch(eA) {} }
-              if (typeof window.renderAgencyMaids === 'function') { try { window.renderAgencyMaids(); } catch(eM) {} }
-              // Agency dashboard ko bhi live update signal do
-              if (typeof window.renderAgencyMaidsList === 'function') { try { window.renderAgencyMaidsList(); } catch(eR) {} }
-              if (typeof window.renderAgencyDashboard === 'function') { try { const sess = (typeof agGetSession === 'function') ? agGetSession() : null; if(sess) window.renderAgencyDashboard(sess); } catch(eD) {} }
-            }
-          } catch(eAg) { console.warn('Auto agency-link error:', eAg); }
+      } else {
+        // ── Already registered maid: agencyStatus/agencyPhone update karo ──
+        const existIdx = adminMaids.findIndex(m => m.phone === phone);
+        if (existIdx !== -1) {
+          if (agencyStatus) adminMaids[existIdx].agencyStatus = agencyStatus;
+          if (agencyPhone) adminMaids[existIdx].agencyPhone = agencyPhone;
+          if (agencyName) adminMaids[existIdx].agencyName = agencyName;
+          if (agencyState) adminMaids[existIdx].agencyState = agencyState;
+          if (agencyDistrict) adminMaids[existIdx].agencyDistrict = agencyDistrict;
+          if (agencyArea) adminMaids[existIdx].agencyArea = agencyArea;
+          localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+          if (typeof window._fbSet === 'function') {
+            try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e) {}
+          }
         }
+      }
 
+      // ══ AUTO AGENCY LINK ══
+      // Agar maid ne agencyStatus='yes' select kiya aur agency phone dali,
+      // toh us phone number ki agency dhundho aur maid ko auto-link karo.
+      // Dono sources check karo: ram_admin_agencies + rami_agencies (agency dashboard)
+      // NOTE: Yeh block NEW aur EXISTING dono maids ke liye chalega
+      if ((agencyStatus === 'yes') && agencyPhone) {
+        try {
+          // Firebase se fresh agencies load karo (agar available ho)
+          let agencies = [];
+          try { agencies = JSON.parse(localStorage.getItem('ram_admin_agencies') || '[]'); } catch(e2) {}
+          if (!agencies.length) {
+            try {
+              var ag2 = JSON.parse(localStorage.getItem('rami_agencies') || '[]');
+              if (ag2.length) agencies = ag2;
+            } catch(e3) {}
+          }
+          if (!agencies.length && typeof window._fbGet === 'function') {
+            try {
+              const fbAg = await window._fbGet('adminData', 'ram_admin_agencies');
+              if (fbAg && Array.isArray(fbAg) && fbAg.length) agencies = fbAg;
+              else {
+                const fbAg2 = await window._fbGet('adminData', 'rami_agencies');
+                if (fbAg2 && Array.isArray(fbAg2)) agencies = fbAg2;
+              }
+            } catch(e4) {}
+          }
+
+          const matchedAgency = agencies.find(a => (a.phone || '').replace(/\D/g,'') === agencyPhone);
+          if (matchedAgency) {
+            // admin maids list mein agencyId set karo
+            const maidIdx = adminMaids.findIndex(m => m.phone === phone);
+            if (maidIdx !== -1) {
+              adminMaids[maidIdx].agencyId = matchedAgency.id;
+              adminMaids[maidIdx].agencyPhone = matchedAgency.phone;
+              adminMaids[maidIdx].agencyName = matchedAgency.name;
+              localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+              if (typeof window._fbSet === 'function') {
+                try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e5) {}
+              }
+            }
+            // registered maids mein bhi agencyId set karo
+            const updatedReg = (() => { try { return JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e){return {};} })();
+            if (updatedReg[phone]) {
+              updatedReg[phone].agencyId = matchedAgency.id;
+              updatedReg[phone].agencyPhone = matchedAgency.phone;
+              updatedReg[phone].agencyName = matchedAgency.name;
+              localStorage.setItem('ram_registered_maids', JSON.stringify(updatedReg));
+              if (typeof window._fbSet === 'function') {
+                try { await window._fbSet('adminData', 'maid_' + phone, updatedReg[phone]); } catch(e6) {}
+                try { await window._fbSet('adminData', 'ram_registered_maids', updatedReg); } catch(e7) {}
+              }
+            }
+            // ── Admin ko notification do: agency mein nayi maid (sirf new registration ke liye) ──
+            if (!alreadyExists && typeof addNotification === 'function') {
+              try {
+                addNotification({
+                  audience: 'admin',
+                  title: '🏢 Agency Maid Registered',
+                  message: name + ' (' + phone + ') ne ' + matchedAgency.name + ' agency ke saath register kiya.',
+                  page: 'agencies'
+                });
+              } catch(eN) {}
+            }
+            // Admin panel mein agency list live refresh karo
+            if (typeof window.renderAgencies === 'function') { try { window.renderAgencies(); } catch(eA) {} }
+            if (typeof window.renderAgencyMaids === 'function') { try { window.renderAgencyMaids(); } catch(eM) {} }
+            // Agency dashboard ko bhi live update signal do
+            if (typeof window.renderAgencyMaidsList === 'function') { try { window.renderAgencyMaidsList(); } catch(eR) {} }
+            if (typeof window.renderAgencyDashboard === 'function') { try { const sess = (typeof agGetSession === 'function') ? agGetSession() : null; if(sess) window.renderAgencyDashboard(sess); } catch(eD) {} }
+          }
+        } catch(eAg) { console.warn('Auto agency-link error:', eAg); }
+      }
+
+      if (!alreadyExists) {
         // NOTE: Aadhar is no longer collected at signup. The maid will be asked
         // for photo + Aadhar in a compulsory popup right after her first login.
       }
@@ -18113,7 +17860,8 @@ async function rcSubmitLogin() {
             <div class="settings-nav-item" onclick="switchWebTab('animations')"><i class="fas fa-wand-magic-sparkles"></i> Animations</div>
             <div class="settings-nav-item" onclick="switchWebTab('gallery')"><i class="fas fa-images"></i> Photo Gallery</div>
             <div class="settings-nav-item" onclick="switchWebTab('welcomepopup')"><i class="fas fa-door-open"></i> Welcome Popup</div>
-            <div class="settings-nav-item" onclick="switchWebTab('announcement')"><i class="fas fa-bullhorn"></i> Announcement Bar</div>
+            <div class="settings-nav-item" onclick="switchWebTab('annbar')"><i class="fas fa-bullhorn"></i> Announcement Bar</div>
+
           </div>
           <div>
             <!-- HERO TAB -->
@@ -18526,128 +18274,123 @@ async function rcSubmitLogin() {
                   <button class="btn" style="background:var(--muted-bg);color:var(--secondary);" onclick="document.getElementById('welcomeRolePopup').style.display='flex'; loadPopupLogo();"><i class="fas fa-eye" style="margin-right:8px;"></i>Preview Popup</button>
                 </div>
               </div>
+
+
             <!-- ══ ANNOUNCEMENT BAR TAB ══ -->
-            <div class="settings-section" id="wtab-announcement">
+            <div class="settings-section" id="wtab-annbar">
               <div class="settings-card">
-                <h3><i class="fas fa-bullhorn" style="color:var(--primary);margin-right:8px;"></i>Announcement / Ticker Bar</h3>
-                <p>Nav ke neeche moving announcement bar — yahan se text, design, speed, color aur photo sab update karein. Changes turant live ho jaate hain.</p>
+                <h3><i class="fas fa-bullhorn" style="color:var(--primary);margin-right:8px;"></i>Announcement Bar</h3>
+                <p style="color:var(--muted);font-size:13px;margin-bottom:0;">Nav ke neeche dikhne wala scrolling bar — text, color, speed sab yahan se control karein. Save karte hi <strong>sabke browser mein turant live</strong> ho jaata hai.</p>
                 <hr class="settings-divider"/>
 
-                <!-- ON / OFF TOGGLE -->
-                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--muted-bg,#f1f5f9);border-radius:12px;padding:14px 18px;margin-bottom:16px;gap:12px;">
+                <!-- ON / OFF -->
+                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--muted-bg,#f1f5f9);border-radius:12px;padding:16px 18px;margin-bottom:14px;gap:12px;border:2px solid transparent;transition:border-color .2s;" id="ann2-onoff-box">
                   <div>
-                    <div style="font-size:15px;font-weight:700;color:var(--secondary);margin-bottom:2px;"><i class="fas fa-toggle-on" style="color:var(--primary);margin-right:7px;"></i>Bar On / Off</div>
-                    <div style="font-size:12.5px;color:var(--muted);">Band karo toh bar bilkul nahi dikhega. Chalu karo toh wapas aayega.</div>
+                    <div style="font-size:15px;font-weight:700;color:var(--secondary);"><i class="fas fa-toggle-on" style="color:var(--primary);margin-right:6px;"></i>Bar On / Off</div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:3px;">Off karoge toh <strong>sabke liye</strong> bar band ho jayega. On karoge toh turant wapas aayega.</div>
+                    <div id="ann2-onoff-status" style="margin-top:6px;font-size:12px;font-weight:700;color:#22c55e;">🟢 Abhi ON hai — website par dikh raha hai</div>
                   </div>
-                  <label style="position:relative;display:inline-block;width:52px;height:28px;flex-shrink:0;cursor:pointer;">
-                    <input type="checkbox" id="ann-enabled" checked onchange="annToggleBar()" style="opacity:0;width:0;height:0;position:absolute;">
-                    <span id="ann-toggle-track" style="position:absolute;inset:0;border-radius:28px;background:#22c55e;transition:background .25s;"></span>
-                    <span id="ann-toggle-thumb" style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.22);transition:transform .25s;transform:translateX(24px);"></span>
+                  <label style="position:relative;display:inline-block;width:56px;height:30px;flex-shrink:0;cursor:pointer;">
+                    <input type="checkbox" id="ann2-enabled" checked style="opacity:0;width:0;height:0;position:absolute;" onchange="ann2TogglePreview()">
+                    <span id="ann2-track" style="position:absolute;inset:0;border-radius:28px;background:#22c55e;transition:background .25s;"></span>
+                    <span id="ann2-thumb" style="position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .25s;transform:translateX(26px);"></span>
                   </label>
                 </div>
 
-                <!-- PLAY / PAUSE -->
-                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--muted-bg,#f1f5f9);border-radius:12px;padding:14px 18px;margin-bottom:16px;gap:12px;">
-                  <div>
-                    <div style="font-size:15px;font-weight:700;color:var(--secondary);margin-bottom:2px;"><i class="fas fa-circle-play" style="color:var(--primary);margin-right:7px;"></i>Ticker Animation</div>
-                    <div style="font-size:12.5px;color:var(--muted);">Ruk jaaye ya chalti rahe — Play / Pause karo.</div>
+                <!-- BADGE OPTIONS -->
+                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                  <div style="flex:1;min-width:140px;">
+                    <label style="font-size:12px;font-weight:700;color:var(--secondary);display:block;margin-bottom:5px;">🏷️ Badge Text</label>
+                    <input type="text" id="ann2-badge" value="NOTICE" placeholder="NOTICE / OFFER / NEW" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;box-sizing:border-box;outline:none;" oninput="ann2UpdatePreview()">
                   </div>
-                  <button id="ann-play-btn" onclick="annAdminTogglePlay()" style="padding:8px 18px;background:#1a3c5e;color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;">⏸ Pause</button>
+                  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px;">
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                      <input type="checkbox" id="ann2-show-badge" onchange="ann2UpdatePreview()"> Badge dikhao
+                    </label>
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                      <input type="checkbox" id="ann2-show-close" onchange="ann2UpdatePreview()"> Close button
+                    </label>
+                  </div>
                 </div>
 
                 <hr class="settings-divider"/>
 
                 <!-- TEXT -->
                 <div class="form-group">
-                  <label>📝 Announcement Text</label>
-                  <textarea id="ann-text" rows="3" placeholder="Apna announcement yahan likho..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:inherit;" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'"></textarea>
+                  <label style="font-size:12px;font-weight:700;color:var(--secondary);">📝 Announcement Text</label>
+                  <textarea id="ann2-text" rows="3" placeholder="Apna announcement yahan likho... Emojis bhi use kar sakte ho 🎉" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:inherit;" oninput="ann2UpdatePreview()" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! &nbsp;|&nbsp; ✅ Verified &amp; Background-Checked Maids &nbsp;|&nbsp; 🏠 Part-Time, Full-Time, Live-In &nbsp;|&nbsp; ⭐ 4.8 Rating | 4200+ Happy Families</textarea>
                 </div>
 
                 <hr class="settings-divider"/>
 
-                <!-- FONT SIZE + HEIGHT + SPEED -->
-                <h3>📐 Size &amp; Speed</h3>
-                <div class="form-row" style="gap:16px;flex-wrap:wrap;">
-                  <div class="form-group" style="flex:1;min-width:180px;">
-                    <label>Font Size: <strong id="ann-font-val" style="color:var(--primary);">14px</strong></label>
-                    <input type="range" id="ann-font" min="10" max="24" value="14" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann-font-val').textContent=this.value+'px';">
+                <!-- SIZE & SPEED -->
+                <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📐 Size &amp; Speed</h3>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                  <div style="flex:1;min-width:160px;">
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Font Size: <strong id="ann2-font-val" style="color:var(--primary);">14px</strong></label>
+                    <input type="range" id="ann2-font" min="11" max="22" value="14" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann2-font-val').textContent=this.value+'px';ann2UpdatePreview();">
                   </div>
-                  <div class="form-group" style="flex:1;min-width:180px;">
-                    <label>Bar Height: <strong id="ann-height-val" style="color:var(--primary);">44px</strong></label>
-                    <input type="range" id="ann-height" min="30" max="80" value="44" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann-height-val').textContent=this.value+'px';">
+                  <div style="flex:1;min-width:160px;">
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Bar Height: <strong id="ann2-height-val" style="color:var(--primary);">44px</strong></label>
+                    <input type="range" id="ann2-height" min="28" max="80" value="44" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann2-height-val').textContent=this.value+'px';ann2UpdatePreview();">
+                    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;"><span>Chhota (28px)</span><span>Bada (80px)</span></div>
                   </div>
-                  <div class="form-group" style="flex:1;min-width:180px;">
-                    <label>Scroll Speed: <strong id="ann-speed-label" style="color:var(--primary);">Medium</strong></label>
-                    <input type="range" id="ann-speed" min="1" max="10" value="5" style="width:100%;accent-color:var(--primary);" oninput="annSpeedLabel();">
+                  <div style="flex:1;min-width:160px;">
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Scroll Speed: <strong id="ann2-speed-val" style="color:var(--primary);">Normal</strong></label>
+                    <input type="range" id="ann2-speed" min="1" max="10" value="4" style="width:100%;accent-color:var(--primary);" oninput="ann2SpeedLabel();ann2UpdatePreview();">
+                    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;"><span>Slow</span><span>Fast</span></div>
                   </div>
                 </div>
 
                 <hr class="settings-divider"/>
 
-                <!-- TEXT COLOR -->
-                <h3>🔤 Text Color</h3>
-                <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;flex-wrap:wrap;">
-                  <input type="color" id="ann-text-color" value="#ffffff" style="width:48px;height:38px;border:none;border-radius:8px;cursor:pointer;">
-                  <span style="font-size:13px;color:var(--muted);">Announcement text ka rang</span>
-                </div>
-
-                <hr class="settings-divider"/>
-
-                <!-- BG COLOR -->
-                <h3>🎨 Background Color</h3>
-                <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Ready-made colors ya apna custom color choose karo:</p>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-                  <button onclick="annPickBg('#1a3c5e','#0f2940')" style="width:42px;height:32px;background:linear-gradient(90deg,#1a3c5e,#0f2940);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Navy Blue"></button>
-                  <button onclick="annPickBg('#166534','#14532d')" style="width:42px;height:32px;background:linear-gradient(90deg,#166534,#14532d);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Green"></button>
-                  <button onclick="annPickBg('#7c3aed','#6d28d9')" style="width:42px;height:32px;background:linear-gradient(90deg,#7c3aed,#6d28d9);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Purple"></button>
-                  <button onclick="annPickBg('#dc2626','#991b1b')" style="width:42px;height:32px;background:linear-gradient(90deg,#dc2626,#991b1b);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Red"></button>
-                  <button onclick="annPickBg('#b45309','#92400e')" style="width:42px;height:32px;background:linear-gradient(90deg,#b45309,#92400e);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Brown"></button>
-                  <button onclick="annPickBg('#0891b2','#0e7490')" style="width:42px;height:32px;background:linear-gradient(90deg,#0891b2,#0e7490);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Cyan"></button>
-                  <button onclick="annPickBg('#f97316','#ea580c')" style="width:42px;height:32px;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Orange"></button>
-                  <button onclick="annPickBg('#111827','#374151')" style="width:42px;height:32px;background:linear-gradient(90deg,#111827,#374151);border-radius:8px;border:2px solid #cbd5e1;cursor:pointer;" title="Black"></button>
-                </div>
-                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="font-size:13px;font-weight:600;color:var(--secondary);">Color 1:</label>
-                    <input type="color" id="ann-bg1" value="#1a3c5e" style="width:44px;height:34px;border:none;border-radius:7px;cursor:pointer;">
+                <!-- COLORS -->
+                <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🎨 Colors</h3>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+                  <div>
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">Text Color</label>
+                    <input type="color" id="ann2-text-color" value="#ffffff" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
                   </div>
-                  <div style="display:flex;align-items:center;gap:8px;">
-                    <label style="font-size:13px;font-weight:600;color:var(--secondary);">Color 2:</label>
-                    <input type="color" id="ann-bg2" value="#0f2940" style="width:44px;height:34px;border:none;border-radius:7px;cursor:pointer;">
+                  <div>
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">BG Color 1</label>
+                    <input type="color" id="ann2-bg1" value="#1a3c5e" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
                   </div>
-                  <span style="font-size:12px;color:var(--muted);">← Dono milke gradient banega</span>
+                  <div>
+                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">BG Color 2</label>
+                    <input type="color" id="ann2-bg2" value="#0f2940" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
+                  </div>
+                </div>
+                <!-- Quick color presets -->
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+                  <span style="font-size:12px;font-weight:600;color:var(--muted);align-self:center;">Quick:</span>
+                  <button onclick="ann2Preset('#1a3c5e','#0f2940')" style="width:38px;height:26px;background:linear-gradient(90deg,#1a3c5e,#0f2940);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Navy"></button>
+                  <button onclick="ann2Preset('#166534','#14532d')" style="width:38px;height:26px;background:linear-gradient(90deg,#166534,#14532d);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Green"></button>
+                  <button onclick="ann2Preset('#7c3aed','#5b21b6')" style="width:38px;height:26px;background:linear-gradient(90deg,#7c3aed,#5b21b6);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Purple"></button>
+                  <button onclick="ann2Preset('#dc2626','#991b1b')" style="width:38px;height:26px;background:linear-gradient(90deg,#dc2626,#991b1b);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Red"></button>
+                  <button onclick="ann2Preset('#f97316','#ea580c')" style="width:38px;height:26px;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Orange"></button>
+                  <button onclick="ann2Preset('#0891b2','#0e7490')" style="width:38px;height:26px;background:linear-gradient(90deg,#0891b2,#0e7490);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Cyan"></button>
+                  <button onclick="ann2Preset('#111827','#374151')" style="width:38px;height:26px;background:linear-gradient(90deg,#111827,#374151);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Black"></button>
                 </div>
 
                 <hr class="settings-divider"/>
 
-                <!-- IMAGE UPLOAD -->
-                <h3>🖼️ Photo / Image (Optional)</h3>
-                <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Bar ke left side mein ek choti photo / icon dikhega. Logo ya offer image lagao.</p>
-                <div class="form-group">
-                  <label>Image URL paste karo</label>
-                  <input type="text" id="ann-img-url" placeholder="https://..." oninput="annImgPreview()">
-                </div>
-                <div class="form-group">
-                  <label>Ya Device se Upload karo</label>
-                  <input type="file" id="ann-img-file" accept="image/*" onchange="annImgFromFile(this)">
-                </div>
-                <div id="ann-img-preview-wrap" style="display:none;margin-bottom:8px;align-items:center;gap:10px;">
-                  <img id="ann-img-preview" src="" alt="preview" style="height:44px;border-radius:8px;border:1px solid var(--border);object-fit:cover;">
-                  <button onclick="annRemoveImg()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">✕ Image Hatao</button>
+                <!-- LIVE PREVIEW -->
+                <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">👀 Live Preview</h3>
+                <div id="ann2-preview" style="height:44px;display:flex;align-items:center;overflow:hidden;border-radius:10px;border:1.5px solid var(--border);margin-bottom:18px;background:linear-gradient(90deg,#1a3c5e,#0f2940,#1a3c5e);font-size:14px;color:#fff;white-space:nowrap;font-weight:500;position:relative;">
+                  <div id="ann2-preview-badge" style="display:none;flex-shrink:0;height:100%;align-items:center;padding:0 14px;background:rgba(0,0,0,0.2);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;">
+                    <i class="fas fa-bullhorn" style="margin-right:5px;font-size:11px;"></i><span>NOTICE</span>
+                  </div>
+                  <div style="flex:1;overflow:hidden;padding:0 14px;">
+                    <span id="ann2-preview-text" style="font-weight:500;">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available!</span>
+                  </div>
+                  <div style="flex-shrink:0;padding:0 12px;opacity:.6;font-size:15px;">✕</div>
                 </div>
 
-                <hr class="settings-divider"/>
-
-                <!-- LIVE PREVIEW STRIP -->
-                <h3>👀 Live Preview</h3>
-                <div id="ann-preview-strip" style="height:44px;display:flex;align-items:center;overflow:hidden;border-radius:10px;border:1px solid var(--border);margin-bottom:18px;background:linear-gradient(90deg,#1a3c5e,#0f2940,#1a3c5e);font-size:14px;color:#fff;padding:0 16px;white-space:nowrap;font-weight:500;">
-                  Apna announcement yahan likhein — Admin Panel se update karein
-                </div>
-
-                <!-- APPLY BUTTON -->
-                <button onclick="annApplyAll()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.02em;box-shadow:0 4px 16px rgba(249,115,22,.3);">
-                  ✅ Apply All Changes — Website Par Live Update
+                <!-- SAVE BUTTON -->
+                <button onclick="ann2Save()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.02em;box-shadow:0 4px 16px rgba(249,115,22,.3);display:flex;align-items:center;justify-content:center;gap:10px;">
+                  <i class="fas fa-rocket"></i> Save &amp; Live Update — Sabke Browser Mein Turant
                 </button>
+                <p id="ann2-save-status" style="text-align:center;font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;min-height:20px;"></p>
               </div>
             </div>
 
@@ -20181,6 +19924,7 @@ function renderMaids() {
           <button class="action-btn action-btn-outline action-btn-sm" onclick="openMaidFolderModal('${m.phone||''}',${m.id})" title="Folder" style="color:#f59e0b;border-color:#fde68a;"><i class="fas fa-folder-open"></i></button>
           <button class="action-btn ${m.verified?'action-btn-outline':'action-btn-success'} action-btn-sm" onclick="toggleMaidVerified(${m.id})" title="${m.verified?'Unverify':'Verify'}"><i class="fas fa-${m.verified?'times':'check'}"></i></button>
           <button class="action-btn ${m.available?'action-btn-outline':'action-btn-success'} action-btn-sm" onclick="toggleMaidAvail(${m.id})" title="Toggle Availability"><i class="fas fa-toggle-${m.available?'on':'off'}"></i></button>
+          <button class="action-btn action-btn-outline action-btn-sm" onclick="openAssignMaidToAgencyModal(${m.id})" title="${m.agencyId||m.agencyPhone?'Agency change/remove karo':'Agency mein add karo'}" style="color:#7c3aed;border-color:#ddd4fe;"><i class="fas fa-building"></i></button>
           <button class="action-btn action-btn-danger action-btn-sm" onclick="deleteMaid(${m.id})"><i class="fas fa-trash"></i></button>
         </div>
       </td>
@@ -20244,7 +19988,14 @@ function getAgencyMaids(agency) {
 }
 
 function renderAgencies() {
+  // ── FIX: Ensure every agency has a unique id (old data mein id missing ho sakta hai) ──
   let agencies = getAgencies();
+  let needsSave = false;
+  agencies = agencies.map(function(a, i) {
+    if (!a.id) { a.id = Date.now() + i; needsSave = true; }
+    return a;
+  });
+  if (needsSave) saveAgencies(agencies);
   const nameQ = (document.getElementById('agencySearchName')?.value || '').toLowerCase();
   const phoneQ = (document.getElementById('agencySearchPhone')?.value || '').toLowerCase();
   const locQ = (document.getElementById('agencySearchLocation')?.value || '').toLowerCase();
@@ -20623,6 +20374,115 @@ function showAdminModal(title, bodyHtml) {
 function closeAdminModal() {
   const m = document.getElementById('agencyHelperModal');
   if (m) m.style.display = 'none';
+}
+
+// ── Maids list se directly kisi maid ko agency assign / change / remove karo ──
+function openAssignMaidToAgencyModal(maidId) {
+  const allMaids = getMaids();
+  const maid = allMaids.find(function(m){ return m.id === maidId; });
+  if (!maid) return;
+
+  const agencies = getAgencies();
+  const currentAgency = maid.agencyId
+    ? agencies.find(function(a){ return String(a.id) === String(maid.agencyId); })
+    : null;
+
+  const currentInfo = currentAgency
+    ? `<div style="margin-bottom:14px;padding:10px 14px;background:#fef3c7;border-radius:8px;font-size:13px;color:#92400e;border:1px solid #fde68a;">
+        <i class="fas fa-building" style="margin-right:6px;"></i>
+        Abhi <strong>${escHtml(currentAgency.name||currentAgency.phone||'—')}</strong> agency mein hai
+       </div>`
+    : (maid.agencyPhone
+        ? `<div style="margin-bottom:14px;padding:10px 14px;background:#fef3c7;border-radius:8px;font-size:13px;color:#92400e;border:1px solid #fde68a;">
+            <i class="fas fa-clock" style="margin-right:6px;"></i>
+            Agency phone <strong>${escHtml(maid.agencyPhone)}</strong> se linked (pending link)
+           </div>`
+        : '');
+
+  const agencyOptions = agencies.map(function(a){
+    const selected = maid.agencyId && String(a.id) === String(maid.agencyId) ? ' selected' : '';
+    return `<option value="${a.id}"${selected}>${escHtml(a.name||a.ownerName||a.phone)} — ${escHtml(a.phone||'')}</option>`;
+  }).join('');
+
+  const html = `<div style="padding:24px;">
+    ${currentInfo}
+    <p style="font-size:14px;color:var(--text2);margin-bottom:10px;">Agency chuniye jisme yeh maid add karni hai:</p>
+    <select id="assignAgencySelect" style="width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:9px;font-size:14px;margin-bottom:16px;">
+      <option value="">-- Koi Agency Nahi (Remove) --</option>
+      ${agencyOptions}
+    </select>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="action-btn action-btn-outline" onclick="closeAdminModal()">Cancel</button>
+      <button class="action-btn action-btn-primary" onclick="confirmAssignMaidToAgency(${maidId})"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>`;
+  showAdminModal('Agency Assign — ' + escHtml(maid.name||maid.phone), html);
+}
+
+function confirmAssignMaidToAgency(maidId) {
+  const selEl = document.getElementById('assignAgencySelect');
+  const selVal = selEl ? selEl.value : '';
+  const agencies = getAgencies();
+  const chosenAgency = selVal ? agencies.find(function(a){ return String(a.id) === String(selVal); }) : null;
+
+  let adminMaids = getMaids();
+  const maidIdx = adminMaids.findIndex(function(m){ return m.id === maidId; });
+  if (maidIdx === -1) { showToast('Maid nahi mili.'); return; }
+
+  if (chosenAgency) {
+    // Agency assign karo
+    adminMaids[maidIdx].agencyId = chosenAgency.id;
+    adminMaids[maidIdx].agencyPhone = chosenAgency.phone || '';
+    adminMaids[maidIdx].agencyName = chosenAgency.name || chosenAgency.ownerName || '';
+    adminMaids[maidIdx].agencyStatus = 'yes';
+  } else {
+    // Agency remove karo
+    delete adminMaids[maidIdx].agencyId;
+    delete adminMaids[maidIdx].agencyPhone;
+    delete adminMaids[maidIdx].agencyName;
+    adminMaids[maidIdx].agencyStatus = 'no';
+  }
+
+  localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+
+  // Firebase sync
+  var fbFn = typeof window._fbSet === 'function' ? window._fbSet : (typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : null);
+  if (fbFn) {
+    fbFn('adminData', 'ram_admin_maids', adminMaids).catch(function(e){ console.warn('assignMaid Firebase sync failed:', e); });
+    // Per-maid doc bhi update karo
+    var updMaid = adminMaids[maidIdx];
+    if (updMaid && updMaid.phone) {
+      fbFn('adminData', 'maid_' + updMaid.phone, updMaid).catch(function(e){ console.warn('assignMaid per-doc Firebase sync failed:', e); });
+    }
+    // ram_registered_maids mein bhi update karo agar wahan bhi hai
+    try {
+      var reg = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      var mPhone = adminMaids[maidIdx].phone;
+      if (reg[mPhone]) {
+        if (chosenAgency) {
+          reg[mPhone].agencyId = chosenAgency.id;
+          reg[mPhone].agencyPhone = chosenAgency.phone || '';
+          reg[mPhone].agencyName = chosenAgency.name || chosenAgency.ownerName || '';
+          reg[mPhone].agencyStatus = 'yes';
+        } else {
+          delete reg[mPhone].agencyId;
+          delete reg[mPhone].agencyPhone;
+          delete reg[mPhone].agencyName;
+          reg[mPhone].agencyStatus = 'no';
+        }
+        localStorage.setItem('ram_registered_maids', JSON.stringify(reg));
+        fbFn('adminData', 'ram_registered_maids', reg).catch(function(e){});
+        fbFn('adminData', 'maid_' + mPhone, reg[mPhone]).catch(function(e){});
+      }
+    } catch(e) {}
+  }
+
+  closeAdminModal();
+  if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
+  renderMaids();
+  renderAgencies();
+  if (currentAgencyId && typeof renderAgencyMaids === 'function') renderAgencyMaids();
+  showToast(chosenAgency ? ('Maid "' + (chosenAgency.name||chosenAgency.phone) + '" agency mein add ho gayi!') : 'Maid agency se remove ho gayi.');
 }
 
 // Update badge on load
@@ -23371,19 +23231,131 @@ function switchWebTab(tab){
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); wcLoadPopupToggle(); }
-  if(tab === 'announcement') {
-    annInitAdminPanel();
-    // Agar localStorage empty hai — Firebase se seedha fetch karo aur panel fill karo
-    if(typeof window._fbGet === 'function'){
-      window._fbGet('siteData', 'ram_announcement_bar').then(function(s){
-        if(!s || typeof s !== 'object') return;
-        try { localStorage.setItem('rentamaid_ann_settings', JSON.stringify(s)); } catch(e){}
-        if(typeof window.annApplySettings === 'function') window.annApplySettings(s);
-        annInitAdminPanel(); // panel fields dobara fill karo ab data ke saath
-      }).catch(function(){});
-    }
-  }
+  if(tab === 'annbar') ann2InitPanel();
 }
+
+// ═══════════════════════════════════════════════
+//  ANNOUNCEMENT BAR v2 — Admin Panel Functions
+// ═══════════════════════════════════════════════
+function ann2InitPanel(){
+  // Load saved settings into panel fields
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem('rentamaid_ann_v2')); } catch(e){}
+  if(!s) return;
+  if(s.text !== undefined) document.getElementById('ann2-text').value = s.text;
+  if(s.visible !== undefined){
+    var chk = document.getElementById('ann2-enabled');
+    chk.checked = (s.visible !== false);
+    ann2TogglePreview();
+  }
+  if(s.badgeText !== undefined) document.getElementById('ann2-badge').value = s.badgeText;
+  if(s.showBadge !== undefined) document.getElementById('ann2-show-badge').checked = (s.showBadge !== false);
+  if(s.showClose !== undefined) document.getElementById('ann2-show-close').checked = (s.showClose !== false);
+  if(s.textColor !== undefined) document.getElementById('ann2-text-color').value = s.textColor;
+  if(s.bg1 !== undefined) document.getElementById('ann2-bg1').value = s.bg1;
+  if(s.bg2 !== undefined) document.getElementById('ann2-bg2').value = s.bg2;
+  if(s.fontSize !== undefined){
+    document.getElementById('ann2-font').value = s.fontSize;
+    document.getElementById('ann2-font-val').textContent = s.fontSize + 'px';
+  }
+  if(s.barHeight !== undefined){
+    document.getElementById('ann2-height').value = s.barHeight;
+    document.getElementById('ann2-height-val').textContent = s.barHeight + 'px';
+  }
+  if(s.speed !== undefined){
+    var spd = Math.round(parseFloat(s.speed) / 0.25);
+    document.getElementById('ann2-speed').value = spd;
+    ann2SpeedLabel();
+  }
+  ann2UpdatePreview();
+}
+function ann2SpeedLabel(){
+  var v = parseInt(document.getElementById('ann2-speed').value);
+  var labels = {1:'Bahut Slow',2:'Slow',3:'Slow',4:'Normal',5:'Normal',6:'Normal',7:'Fast',8:'Fast',9:'Bahut Fast',10:'Bahut Fast'};
+  document.getElementById('ann2-speed-val').textContent = labels[v] || 'Normal';
+}
+function ann2TogglePreview(){
+  var on = document.getElementById('ann2-enabled').checked;
+  var track = document.getElementById('ann2-track');
+  var thumb = document.getElementById('ann2-thumb');
+  var statusEl = document.getElementById('ann2-onoff-status');
+  var box = document.getElementById('ann2-onoff-box');
+  track.style.background = on ? '#22c55e' : '#d1d5db';
+  thumb.style.transform = on ? 'translateX(26px)' : 'translateX(0)';
+  if(statusEl){
+    statusEl.style.color = on ? '#22c55e' : '#dc2626';
+    statusEl.textContent = on ? '🟢 Abhi ON hai — website par dikh raha hai' : '🔴 Abhi OFF hai — kisi ko nahi dikhega';
+  }
+  if(box) box.style.borderColor = on ? '#22c55e' : '#dc2626';
+  ann2UpdatePreview();
+}
+function ann2UpdatePreview(){
+  var text      = document.getElementById('ann2-text').value;
+  var bg1       = document.getElementById('ann2-bg1').value;
+  var bg2       = document.getElementById('ann2-bg2').value;
+  var textColor = document.getElementById('ann2-text-color').value;
+  var fontSize  = document.getElementById('ann2-font').value;
+  var barHeight = document.getElementById('ann2-height').value;
+  var showBadge = document.getElementById('ann2-show-badge').checked;
+  var badgeText = document.getElementById('ann2-badge').value || 'NOTICE';
+  var visible   = document.getElementById('ann2-enabled').checked;
+
+  var prev = document.getElementById('ann2-preview');
+  var prevBadge = document.getElementById('ann2-preview-badge');
+  var prevText  = document.getElementById('ann2-preview-text');
+
+  prev.style.background = 'linear-gradient(90deg,'+bg1+','+bg2+','+bg1+')';
+  prev.style.height = barHeight + 'px';
+  prev.style.fontSize = fontSize + 'px';
+  prev.style.display = visible ? 'flex' : 'none';
+  prevBadge.style.display = showBadge ? 'flex' : 'none';
+  prevBadge.querySelector('span').textContent = badgeText;
+  prevText.style.color = textColor;
+  prevText.textContent = text;
+}
+function ann2Preset(c1, c2){
+  document.getElementById('ann2-bg1').value = c1;
+  document.getElementById('ann2-bg2').value = c2;
+  ann2UpdatePreview();
+}
+async function ann2Save(){
+  var s = {
+    visible   : document.getElementById('ann2-enabled').checked,
+    text      : document.getElementById('ann2-text').value,
+    badgeText : document.getElementById('ann2-badge').value || 'NOTICE',
+    showBadge : document.getElementById('ann2-show-badge').checked,
+    showClose : document.getElementById('ann2-show-close').checked,
+    textColor : document.getElementById('ann2-text-color').value,
+    bg1       : document.getElementById('ann2-bg1').value,
+    bg2       : document.getElementById('ann2-bg2').value,
+    fontSize  : parseInt(document.getElementById('ann2-font').value),
+    barHeight : parseInt(document.getElementById('ann2-height').value),
+    speed     : parseFloat(document.getElementById('ann2-speed').value) * 0.25
+  };
+  // Apply immediately on this page
+  if(typeof window.annApplySettings === 'function') window.annApplySettings(s);
+  // Save to localStorage
+  try { localStorage.setItem('rentamaid_ann_v2', JSON.stringify(s)); } catch(e){}
+  // Save to Firebase for live update on all devices
+  var statusEl = document.getElementById('ann2-save-status');
+  statusEl.style.color = '#f97316';
+  statusEl.textContent = '⏳ Firebase pe save ho raha hai...';
+  try {
+    if(typeof window._fbSet === 'function'){
+      await window._fbSet('siteData', 'ram_ann_v2', s);
+      statusEl.style.color = '#22c55e';
+      statusEl.textContent = '✅ Saved! Sabke browser mein live ho gaya.';
+    } else {
+      statusEl.style.color = '#22c55e';
+      statusEl.textContent = '✅ Locally saved. (Firebase connect nahi hai)';
+    }
+  } catch(err){
+    statusEl.style.color = '#dc2626';
+    statusEl.textContent = '❌ Firebase error: ' + (err.message || err);
+  }
+  setTimeout(function(){ statusEl.textContent = ''; }, 5000);
+}
+
 async function handleImageUpload(event, targetInputId){
   const file = event.target.files[0];
   if(!file) return;
@@ -25762,16 +25734,6 @@ function setupRealtimeSync() {
     }
   });
 
-  // ── Announcement Bar — real-time sync (har device pe turant update) ──
-  try {
-    onSnapshot(doc(_db, 'siteData', 'ram_announcement_bar'), snap => {
-      if (snap.exists() && snap.data() && snap.data().data) {
-        if (typeof window.annApplySettings === 'function') {
-          window.annApplySettings(snap.data().data);
-        }
-      }
-    }, e => console.warn('Announcement bar listener error:', e));
-  } catch(e) { console.warn('Announcement bar listener setup failed:', e); }
 
   // ── Gallery — real-time sync ──
   onSnapshot(doc(_db, 'siteData', 'ram_site_gallery'), snap => {
@@ -26153,13 +26115,12 @@ loadFromFirebase().then(() => {
   setupRealtimeSync();
   setupAdminRealtimeSync();
 
-  // ── Announcement bar Firebase real-time listener start karo ──
-  // Jab bhi admin koi change kare, har device pe turant update ho
+  // ── Announcement Bar v2 — Firebase real-time listener ──
   try {
-    if(typeof window._annStartFirebaseListener === 'function'){
+    if(typeof window._annStartFirebaseListener === 'function' && typeof _db !== 'undefined'){
       window._annStartFirebaseListener(_db, onSnapshot, doc);
     }
-  } catch(annErr){ console.warn('Announcement bar listener failed:', annErr); }
+  } catch(annErr){ console.warn('Ann bar listener failed:', annErr); }
 
   // Agency enquiry onSnapshot: jab bhi koi customer agency ki maid ko request bheje,
   // agency dashboard TURANT update ho — chahe koi bhi browser/device ho
@@ -27558,7 +27519,7 @@ function submitAgencyRegister() {
   if (agencies.find(function(a){ return a.phone === phone; })) {
     agMsg('agRegMsg','This phone number is already registered. Please login.',true); return;
   }
-  var newAg = { agencyName:agName, state:state, district:district, area:area,
+  var newAg = { id: Date.now(), agencyName:agName, state:state, district:district, area:area,
     phone:phone, email:email, maidCount:maidCount, password:password,
     registeredAt:new Date().toISOString(), role:'agency' };
   agencies.push(newAg);
@@ -28462,6 +28423,48 @@ function agRespondEnquiry(reqId, newStatus) {
 
   showToast(newStatus === 'Accepted' ? '✅ Request Accept kar li!' : '❌ Request Reject kar di.');
 
+  // ── Admin bookings mein entry add karo (jab Accepted ho) ──
+  if (newStatus === 'Accepted') {
+    try {
+      var adminBooks = [];
+      try { adminBooks = JSON.parse(localStorage.getItem('ram_admin_bookings') || '[]'); } catch(eB) {}
+      var alreadyBooked = adminBooks.find(function(b) { return b.reqId === reqId; });
+      if (!alreadyBooked) {
+        var maxNum = adminBooks.reduce(function(mx, b) { var n = parseInt((b.id||'BK000').replace('BK','')); return Math.max(mx, n); }, 0);
+        var maidNm = enq._maidName || enq.maidName || '';
+        var custNm = enq.customerName || '';
+        adminBooks.unshift({
+          id: 'BK' + String(maxNum + 1).padStart(3, '0'),
+          reqId: reqId,
+          custName: custNm,
+          phone: enq.customerPhone || enq.customerId || '',
+          service: enq.service || 'Maid Request',
+          maidName: maidNm,
+          maidPhone: enq._maidPhone || enq.maidPhone || '',
+          city: enq.customerCity || '',
+          state: enq.customerState || '',
+          date: new Date().toISOString().split('T')[0],
+          status: 'Accepted',
+          notes: 'Agency ne accept kiya: ' + (sess.agencyName || sess.phone),
+          createdAt: new Date().toISOString(),
+          fromAgency: true,
+          agencyPhone: sess.phone,
+          agencyName: sess.agencyName || ''
+        });
+        localStorage.setItem('ram_admin_bookings', JSON.stringify(adminBooks));
+        if (typeof window._fbSet === 'function') {
+          window._fbSet('adminData', 'ram_admin_bookings', adminBooks).catch(function(e) {});
+        }
+      }
+    } catch(eBook) {}
+  }
+
+  // ── Admin ko notification do ──
+  if (typeof addNotification === 'function') {
+    var notifMsg = (sess.agencyName || 'Agency') + ' ne ' + (enq._maidName || enq.maidName || 'maid') + ' ki request ' + (newStatus === 'Accepted' ? 'ACCEPT' : 'REJECT') + ' ki — Customer: ' + (enq.customerName || '');
+    addNotification({ audience: 'admin', title: newStatus === 'Accepted' ? '✅ Agency Request Accepted' : '❌ Agency Request Rejected', message: notifMsg, page: 'bookings' });
+  }
+
   // Turant render karo
   renderAgencyEnquiries();
   if (typeof renderAgencyDashboard === 'function') { try { renderAgencyDashboard(sess); } catch(ex){} }
@@ -28508,52 +28511,44 @@ function renderAgencyEnquiries() {
     return;
   }
 
-  cont.innerHTML = ePillsHtml + headingHtml + enqs.map(function(e){
+  // Global map — onclick mein index use karo (double-quote bug fix)
+  window._agEnqMap = enqs;
+
+  cont.innerHTML = ePillsHtml + headingHtml + enqs.map(function(e, idx){
     var dt = e.sentAt ? new Date(e.sentAt).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
     var statusColor = e.status==='Accepted'?'#15803d':e.status==='Rejected'?'#dc2626':'#92400e';
     var statusBg = e.status==='Accepted'?'#dcfce7':e.status==='Rejected'?'#fef2f2':'#fef9c3';
     var custPhone = e.customerPhone || e.customerId || '';
-    var safeId = JSON.stringify(e.id);
 
-    // Phone number: Agency ko hamesha dikhao (maid ki tarah) — Pending mein bhi
+    // Phone number
     var phoneHtml = '';
     if (custPhone) {
-      phoneHtml = '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'
-        +'<a href="tel:'+custPhone+'" style="display:inline-flex;align-items:center;gap:5px;background:#f97316;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fas fa-phone"></i> '+custPhone+'</a>'
-        +'<a href="https://wa.me/91'+custPhone+'?text='+encodeURIComponent('Namaste! Main aapki maid request ke baare mein baat karna chahta/chahti hoon. (Rent a Maid India)')
-          +'" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#25d366;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fab fa-whatsapp"></i> WhatsApp</a>'
-        +'</div>';
+      phoneHtml = '<div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">'        +'<a href="tel:'+custPhone+'" style="display:inline-flex;align-items:center;gap:5px;background:#f97316;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fas fa-phone"></i> '+custPhone+'</a>'        +'<a href="https://wa.me/91'+custPhone+'?text=Namaste%21+Main+aapki+maid+request+ke+baare+mein+baat+karna+chahta+hoon.+(Rent+a+Maid+India)" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:#25d366;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;text-decoration:none;"><i class="fab fa-whatsapp"></i> WhatsApp</a>'        +'</div>';
     }
 
-    // Action buttons: sirf Pending pe dikhao
+    // Action buttons — idx use karo, id nahi (double-quote attribute bug fix)
     var actionHtml = '';
     if (e.status === 'Pending') {
-      actionHtml = '<div style="display:flex;gap:8px;margin-top:10px;">'
-        +'<button onclick="agRespondEnquiry('+safeId+',\'Accepted\')" style="flex:1;padding:7px 0;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><i class="fas fa-check"></i> Accept</button>'
-        +'<button onclick="agRespondEnquiry('+safeId+',\'Rejected\')" style="flex:1;padding:7px 0;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;"><i class="fas fa-times"></i> Decline</button>'
-        +'</div>';
+      actionHtml = '<div style="display:flex;gap:8px;margin-top:12px;">'        +'<button onclick="agRespondEnquiryByIdx('+idx+',\'Accepted\')" style="flex:1;padding:11px 0;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;"><i class="fas fa-check"></i> Accept</button>'        +'<button onclick="agRespondEnquiryByIdx('+idx+',\'Rejected\')" style="flex:1;padding:11px 0;background:#dc2626;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;"><i class="fas fa-times"></i> Decline</button>'        +'</div>';
     }
 
-    return '<div style="padding:14px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#f9fafb;">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'
-        +'<div style="flex:1;">'
-          +'<div style="font-weight:700;font-size:14px;color:#111827;">'+(e.customerName||'Customer')+'</div>'
-          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">For: <strong>'+(e._maidName||e.maidName||'—')+'</strong></div>'
-          +'<div style="font-size:12px;color:#6b7280;">City: '+(e.customerCity||'—')+'</div>'
-          +(e.service?'<div style="font-size:12px;color:#6b7280;">Service: '+e.service+'</div>':'')
-          +'<div style="font-size:11px;color:#9ca3af;margin-top:4px;">'+dt+'</div>'
-          +phoneHtml
-          +actionHtml
-        +'</div>'
-        +'<span style="background:'+statusBg+';color:'+statusColor+';font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;">'+e.status+'</span>'
-      +'</div>'
-    +'</div>';
+    return '<div style="padding:14px;border:1px solid #e5e7eb;border-radius:12px;margin-bottom:10px;background:#f9fafb;">'      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">'        +'<div style="flex:1;">'          +'<div style="font-weight:700;font-size:14px;color:#111827;">'+(e.customerName||'Customer')+'</div>'          +'<div style="font-size:12px;color:#6b7280;margin-top:2px;">For: <strong>'+(e._maidName||e.maidName||'—')+'</strong></div>'          +'<div style="font-size:12px;color:#6b7280;">City: '+(e.customerCity||'—')+'</div>'          +(e.service?'<div style="font-size:12px;color:#6b7280;">Service: '+e.service+'</div>':'')          +'<div style="font-size:11px;color:#9ca3af;margin-top:4px;">'+dt+'</div>'          +phoneHtml          +actionHtml        +'</div>'        +'<span style="background:'+statusBg+';color:'+statusColor+';font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;">'+e.status+'</span>'      +'</div>'    +'</div>';
   }).join('');
 }
 
 function agSetEnqFilter(f) {
   _agEnqFilter = f;
   renderAgencyEnquiries();
+}
+
+function agRespondEnquiryByIdx(idx, newStatus) {
+  // Global map se enquiry lo by index (safeId double-quote bug workaround)
+  if (!window._agEnqMap || !window._agEnqMap[idx]) {
+    showToast('❌ Enquiry nahi mili — dobara try karo.');
+    return;
+  }
+  var enq = window._agEnqMap[idx];
+  agRespondEnquiry(enq.id, newStatus);
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -28642,9 +28637,24 @@ async function submitAgencyAddMaid() {
     maidRec.agencyName = sessAgency.name || sess.agencyName || '';
   }
 
+  // Aadhaar data ko admin panel format mein bhi save karo (aadhar_{phone} key)
+  // Taaki admin panel mein Aadhaar Verification section mein dikh sake
+  if (aadharFrontUrl || maidRec.aadharNumber) {
+    var aadharRecord = { phone: phone, aadharNum: maidRec.aadharNumber || '', frontUrl: aadharFrontUrl || '', backUrl: aadharBackUrl || '', status: 'pending', submittedAt: new Date().toISOString(), submittedBy: 'agency', agencyPhone: sess.phone, agencyName: sess.agencyName || '' };
+    localStorage.setItem('aadhar_' + phone, JSON.stringify(aadharRecord));
+    if (aadharBackUrl) {
+      localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify({ backUrl: aadharBackUrl }));
+    }
+    if (typeof window._fbSet === 'function') {
+      window._fbSet('siteData', 'aadhar_' + phone, aadharRecord).catch(function(e) { console.warn('Aadhar Firebase save failed:', e); });
+      if (aadharBackUrl) { window._fbSet('siteData', 'aadhar_' + phone + '_back', { backUrl: aadharBackUrl }).catch(function(e) {}); }
+    }
+  }
+
   // Save to ram_registered_maids
   existing[phone] = maidRec;
   localStorage.setItem('ram_registered_maids', JSON.stringify(existing));
+  localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
 
   // Save to ram_admin_maids (agency dashboard + admin panel dono mein dikhe)
   var adminMaids = [];
@@ -28659,15 +28669,47 @@ async function submitAgencyAddMaid() {
   }
   localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
 
-  // Firebase mein dono save karo:
-  // 1. Individual maid document (photo/aadhar URL ke saath)
-  // 2. ram_registered_maids (website-registered maids ke liye listener)
-  var fbSaveFn = typeof window._fbSet === 'function' ? window._fbSet
-               : typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady
-               : null;
-  if (fbSaveFn) {
-    try { await fbSaveFn('adminData', 'maid_'+phone, maidRec); } catch(e) { console.warn('Firebase maid_phone save failed:', e); }
-    try { await fbSaveFn('adminData', 'ram_registered_maids', existing); } catch(e) { console.warn('Firebase registered_maids save failed:', e); }
+  // Firebase mein save karo (same pattern as normal registration):
+  // 1. Individual maid document: adminData/maid_{phone}  ← PRIMARY (reliable, small)
+  // 2. Full ram_registered_maids document ← admin panel + website listing ke liye
+  // 3. ram_admin_maids ← website MAIDS array sync ke liye
+  if (typeof window._fbSet !== 'function') {
+    // Firebase load hone ka wait karo (max 10 sec)
+    await new Promise(function(resolve) {
+      var start = Date.now();
+      var poll = setInterval(function() {
+        if (typeof window._fbSet === 'function' || Date.now() - start > 10000) {
+          clearInterval(poll); resolve();
+        }
+      }, 100);
+    });
+  }
+  if (typeof window._fbSet === 'function') {
+    // (a) Per-maid alag document — AWAIT karo, sabse important
+    try { await window._fbSet('adminData', 'maid_'+phone, maidRec); } catch(e) { console.warn('Firebase maid_phone save failed:', e); }
+    // (b) Poora ram_registered_maids collection — fire-and-forget
+    try {
+      var safeAll = {};
+      Object.keys(existing).forEach(function(k) {
+        var r = Object.assign({}, existing[k]);
+        if (r.photo && r.photo.startsWith('data:')) r.photo = '';
+        safeAll[k] = r;
+      });
+      window._fbSet('adminData', 'ram_registered_maids', safeAll).catch(function(e) { console.warn('Full maids Firebase save failed:', e); });
+    } catch(e) { console.warn('Firebase registered_maids save failed:', e); }
+    // (c) ram_admin_maids — website MAIDS array aur admin panel ke liye
+    try {
+      var adminMaidsSafe = adminMaids.map(function(m) {
+        var r = Object.assign({}, m);
+        if (r.photo && r.photo.startsWith('data:')) r.photo = '';
+        return r;
+      });
+      window._fbSet('adminData', 'ram_admin_maids', adminMaidsSafe).catch(function(e) { console.warn('Firebase admin_maids save failed:', e); });
+    } catch(e) { console.warn('Firebase admin_maids save failed:', e); }
+  } else if (typeof window._fbSetWhenReady === 'function') {
+    window._fbSetWhenReady('adminData', 'maid_'+phone, maidRec);
+    window._fbSetWhenReady('adminData', 'ram_registered_maids', existing);
+    window._fbSetWhenReady('adminData', 'ram_admin_maids', adminMaids);
   }
 
   // Admin ko notification do ki nayi maid agency ne add ki
@@ -28688,12 +28730,16 @@ async function submitAgencyAddMaid() {
   var aadharNum = document.getElementById('agNMAadharNumber'); if (aadharNum) aadharNum.value='';
   var aFront = document.getElementById('agNMAadharFrontName'); if (aFront) aFront.textContent='';
   var aFrontInp = document.getElementById('agNMAadharFrontInput'); if (aFrontInp) aFrontInp.value='';
+  var aBack = document.getElementById('agNMAadharBackName'); if (aBack) aBack.textContent='';
+  var aBackInp = document.getElementById('agNMAadharBackInput'); if (aBackInp) aBackInp.value='';
   window._agNMPhotoBase64=null; window._agNMAadharFrontBase64=null; window._agNMAadharBackBase64=null;
   window._agNMPhotoFile=null; window._agNMAadharFrontFile=null; window._agNMAadharBackFile=null;
   if (btn) { btn.disabled=false; btn.textContent='Register Maid'; }
 
   // Refresh stats & maid list
   renderAgencyDashboard(sess);
+  // Website MAIDS array refresh karo taaki maid website listing mein bhi aaye
+  if (typeof window.syncAndRenderMaids === 'function') { try { window.syncAndRenderMaids(); } catch(e) {} }
   setTimeout(function(){ agDashTab('maids'); },1500);
 }
 
