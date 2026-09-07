@@ -2372,8 +2372,11 @@ tr:hover td{background:#f8fafc;}
     try {
       onSnapshot(doc(db, 'siteData', 'ram_ann_v2'), function(snap){
         if(snap.exists() && snap.data() && snap.data().data){
+          var annData = snap.data().data;
           _annClosed = false;
-          window.annApplySettings(snap.data().data);
+          // localStorage sahi key mein update karo taaki admin panel reload pe bhi sahi load ho
+          try { localStorage.setItem('rentamaid_ann_v2', JSON.stringify(annData)); } catch(e){}
+          window.annApplySettings(annData);
         }
       });
     } catch(e){ console.warn('Ann listener failed:', e); }
@@ -11648,7 +11651,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <span style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--secondary),#3b82f6);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👩‍💼</span>
           <div style="flex:1;">
             <div style="font-weight:700;font-size:15px;color:#111827;">Register as Maid / Helper</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:3px;">New here? Sign up to find work</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:3px;">मेड अकाउंट नहीं है तो रजिस्टर करें</div>
           </div>
           <i class="fas fa-chevron-right" style="color:#9ca3af;font-size:13px;"></i>
         </button>
@@ -11656,7 +11659,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <span style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--secondary),#3b82f6);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">👩‍💼</span>
           <div style="flex:1;">
             <div style="font-weight:700;font-size:15px;color:#111827;">Login as Maid / Helper</div>
-            <div style="font-size:12px;color:#6b7280;margin-top:3px;">Already registered? Login to your account</div>
+            <div style="font-size:12px;color:#6b7280;margin-top:3px;">मेड अकाउंट है तो लॉगिन करो</div>
           </div>
           <i class="fas fa-chevron-right" style="color:#9ca3af;font-size:13px;"></i>
         </button>
@@ -14290,7 +14293,7 @@ async function submitReg() {
       + '<li>🪪 Login ke baad popup mein photo + Aadhar submit karein</li>'
       + '<li>✅ Admin verify karega — uske baad profile customers ko live dikhegi</li>'
       + '</ul></div>'
-      + '<button class="btn btn-lg btn-primary" onclick="showPage(&quot;home&quot;)"><i class="fas fa-home"></i> Home Jaao</button>'
+      + '<button class="btn btn-lg btn-primary" onclick="switchLoginTab(\'maid\');showModal(\'loginModal\');"><i class="fas fa-sign-in-alt"></i> Maid Login</button>'
       + '</div>';
   }
 }
@@ -15581,7 +15584,7 @@ function dashTab(tab) {
     } else if (aadharStatus2 === 'rejected') {
       statusBanner2 = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-circle-xmark" style="font-size:22px;color:#dc2626;"></i><div><div style="font-weight:700;color:#b91c1c;font-size:14px;">❌ Aadhar Rejected</div><div style="font-size:13px;color:#991b1b;">Admin ne reject kiya. Niche se sahi Aadhar dobara upload karein.</div></div></div>';
     } else if (!hasPhoto2 || !hasAadhar2) {
-      statusBanner2 = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-triangle-exclamation" style="font-size:22px;color:#ea580c;"></i><div><div style="font-weight:700;color:#c2410c;font-size:14px;">⚠️ Photo aur Aadhar Required</div><div style="font-size:13px;color:#9a3412;">Profile live karne ke liye niche se photo aur Aadhar dono upload karein.</div></div></div>';
+      statusBanner2 = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;"><i class="fas fa-triangle-exclamation" style="font-size:22px;color:#ea580c;"></i><div><div style="font-weight:700;color:#c2410c;font-size:14px;">⚠️ फोटो और आधार जरूरी है</div><div style="font-size:13px;color:#9a3412;">प्रोफाइल लाइव करने के लिए नीचे से फोटो और आधार अपलोड करें।</div></div></div>';
     }
 
     content.innerHTML = '<div class="dash-section-title">My Profile</div>'
@@ -21994,8 +21997,34 @@ function openMaidFolderModal(phone, maidId) {
     const regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
     regMaidData = regMaids[phone] || null;
   } catch(e) {}
+
+  // ── FIX: Agency-registered maids ka aadharFront/aadharBack directly regMaidData mein hota hai ──
+  // Agar aadharData null hai lekin regMaidData mein aadharFront URL hai, to use karo
+  if (!aadharData && regMaidData && (regMaidData.aadharFront || regMaidData.aadharNumber)) {
+    aadharData = {
+      frontUrl: regMaidData.aadharFront || '',
+      aadharNum: regMaidData.aadharNumber || '',
+      status: regMaidData.verified ? 'verified' : 'pending'
+    };
+  }
+  // Agar aadharBack null hai lekin regMaidData mein aadharBack URL hai
+  if (!aadharBack && regMaidData && regMaidData.aadharBack) {
+    aadharBack = { backUrl: regMaidData.aadharBack };
+  }
+  // Also use maid record from getMaids() — admin_maids mein bhi aadharFront/Back store hota hai
+  if (!aadharData && m && (m.aadharFront || m.aadharNumber)) {
+    aadharData = { frontUrl: m.aadharFront || '', aadharNum: m.aadharNumber || '', status: m.verified ? 'verified' : 'pending' };
+  }
+  if (!aadharBack && m && m.aadharBack) {
+    aadharBack = { backUrl: m.aadharBack };
+  }
+
   const maidInfo = m || (regMaidData ? { name: regMaidData.name, phone, city: regMaidData.city, state: regMaidData.state, photo: regMaidData.photo, services: regMaidData.services || [], experience: regMaidData.experience, id: null } : null);
   if (!maidInfo) { showToast('Maid data nahi mila'); return; }
+
+  // ── FIX: Profile photo — regMaidData ya m se le lo ──
+  if (!maidInfo.photo && regMaidData && regMaidData.photo) maidInfo.photo = regMaidData.photo;
+  if (!maidInfo.photo && m && m.photo) maidInfo.photo = m.photo;
   document.getElementById('maidFolderTitle').textContent = '📁 ' + maidInfo.name + ' — Folder';
   document.getElementById('maidFolderBody').innerHTML = `
     <!-- Profile Header -->
@@ -22111,6 +22140,41 @@ function openMaidFolderModal(phone, maidId) {
     </div>
   `;
   openModal('maidFolderModal');
+
+  // ── FIX: Firebase se bhi data fetch karo (async) — agar localStorage mein nahi tha to refresh karo ──
+  if (typeof window._fbGet === 'function') {
+    // Per-maid document fetch karo (maid_{phone})
+    window._fbGet('adminData', 'maid_' + phone).then(function(fbMaidRec) {
+      if (!fbMaidRec) return;
+      // localStorage sync karo
+      try {
+        var regMaids = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+        if (!regMaids[phone] || (fbMaidRec.aadharFront && !regMaids[phone].aadharFront)) {
+          regMaids[phone] = Object.assign(regMaids[phone] || {}, fbMaidRec);
+          localStorage.setItem('ram_registered_maids', JSON.stringify(regMaids));
+        }
+        // aadhar_ keys bhi sync karo
+        if (fbMaidRec.aadharFront || fbMaidRec.aadharNumber) {
+          var ad = JSON.parse(localStorage.getItem('aadhar_' + phone) || 'null');
+          if (!ad || !ad.frontUrl) {
+            var newAd = { frontUrl: fbMaidRec.aadharFront || '', aadharNum: fbMaidRec.aadharNumber || '', status: fbMaidRec.verified ? 'verified' : 'pending' };
+            localStorage.setItem('aadhar_' + phone, JSON.stringify(newAd));
+          }
+        }
+        if (fbMaidRec.aadharBack) {
+          var ab = JSON.parse(localStorage.getItem('aadhar_' + phone + '_back') || 'null');
+          if (!ab || !ab.backUrl) {
+            localStorage.setItem('aadhar_' + phone + '_back', JSON.stringify({ backUrl: fbMaidRec.aadharBack }));
+          }
+        }
+      } catch(e) {}
+      // Modal refresh karo agar kuch naya mila
+      var modalEl = document.getElementById('maidFolderModal');
+      if (modalEl && modalEl.style.display !== 'none') {
+        openMaidFolderModal(phone, maidId);
+      }
+    }).catch(function(e) { console.warn('Firebase folder fetch error:', e); });
+  }
 }
 function switchFolderTab(tab) {
   ['identity','profile','photos'].forEach(t => {
@@ -23237,11 +23301,8 @@ function switchWebTab(tab){
 // ═══════════════════════════════════════════════
 //  ANNOUNCEMENT BAR v2 — Admin Panel Functions
 // ═══════════════════════════════════════════════
-function ann2InitPanel(){
-  // Load saved settings into panel fields
-  var s = null;
-  try { s = JSON.parse(localStorage.getItem('rentamaid_ann_v2')); } catch(e){}
-  if(!s) return;
+function ann2FillFields(s){
+  if(!s || typeof s !== 'object') s = {};
   if(s.text !== undefined) document.getElementById('ann2-text').value = s.text;
   if(s.visible !== undefined){
     var chk = document.getElementById('ann2-enabled');
@@ -23249,8 +23310,8 @@ function ann2InitPanel(){
     ann2TogglePreview();
   }
   if(s.badgeText !== undefined) document.getElementById('ann2-badge').value = s.badgeText;
-  if(s.showBadge !== undefined) document.getElementById('ann2-show-badge').checked = (s.showBadge !== false);
-  if(s.showClose !== undefined) document.getElementById('ann2-show-close').checked = (s.showClose !== false);
+  if(s.showBadge !== undefined) document.getElementById('ann2-show-badge').checked = (s.showBadge === true);
+  if(s.showClose !== undefined) document.getElementById('ann2-show-close').checked = (s.showClose === true);
   if(s.textColor !== undefined) document.getElementById('ann2-text-color').value = s.textColor;
   if(s.bg1 !== undefined) document.getElementById('ann2-bg1').value = s.bg1;
   if(s.bg2 !== undefined) document.getElementById('ann2-bg2').value = s.bg2;
@@ -23268,6 +23329,24 @@ function ann2InitPanel(){
     ann2SpeedLabel();
   }
   ann2UpdatePreview();
+}
+
+async function ann2InitPanel(){
+  // Pehle localStorage se load karo (instant, no delay)
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem('rentamaid_ann_v2')); } catch(e){}
+  ann2FillFields(s || {});
+
+  // Phir Firebase se fresh data fetch karo aur fields update karo
+  try {
+    if(typeof window._fbGet === 'function'){
+      var fbData = await window._fbGet('siteData', 'ram_ann_v2');
+      if(fbData && typeof fbData === 'object'){
+        try { localStorage.setItem('rentamaid_ann_v2', JSON.stringify(fbData)); } catch(e){}
+        ann2FillFields(fbData);
+      }
+    }
+  } catch(e){ console.warn('Ann panel Firebase fetch failed:', e); }
 }
 function ann2SpeedLabel(){
   var v = parseInt(document.getElementById('ann2-speed').value);
@@ -25474,6 +25553,11 @@ async function loadFromFirebase() {
             }
           });
           localStorage.setItem('otpStore', JSON.stringify(merged));
+        } else if (d.id === 'ram_ann_v2') {
+          // ── Announcement Bar: sahi localStorage key mein save karo aur turant apply karo ──
+          var annData = d.data().data;
+          localStorage.setItem('rentamaid_ann_v2', JSON.stringify(annData));
+          if (typeof window.annApplySettings === 'function') window.annApplySettings(annData);
         } else {
           localStorage.setItem(d.id, JSON.stringify(d.data().data));
         }
@@ -26371,53 +26455,82 @@ async function forgotSendOtp() {
 
   btn.disabled = true; btn.textContent = 'Checking...';
 
-  // Firebase se latest data sync karo pehle
+  // Firebase se latest data fetch karo — kisi bhi device se kaam kare
+  // IMPORTANT: Pehle Firebase check karo, localStorage pe sirf fallback karo
+  let _accountFound = false;
   if (typeof window._fbGet === 'function') {
     try {
       if (_forgotRole === 'customer') {
         const fbC = await window._fbGet('siteData', 'registeredCustomers');
-        if (fbC && typeof fbC === 'object') { const m = Object.assign({}, readCustomers(), fbC); localStorage.setItem('registeredCustomers', JSON.stringify(m)); }
+        if (fbC && typeof fbC === 'object') {
+          localStorage.setItem('registeredCustomers', JSON.stringify(Object.assign({}, readCustomers(), fbC)));
+          _accountFound = !!(fbC[phone] || readCustomers()[phone]);
+        } else {
+          _accountFound = !!readCustomers()[phone];
+        }
       } else {
+        // Maid ka data Firebase se seedha check karo — doosri device pe localStorage mein data nahi hota
         const fbM = await window._fbGet('adminData', 'ram_registered_maids');
-        if (fbM && typeof fbM === 'object') { const m = Object.assign({}, readRegisteredMaids(), fbM); localStorage.setItem('ram_registered_maids', JSON.stringify(m)); }
+        if (fbM && typeof fbM === 'object') {
+          localStorage.setItem('ram_registered_maids', JSON.stringify(Object.assign({}, readRegisteredMaids(), fbM)));
+          _accountFound = !!(fbM[phone] || readRegisteredMaids()[phone]);
+        } else {
+          // Firebase se data nahi aaya — localStorage mein try karo
+          _accountFound = !!readRegisteredMaids()[phone];
+        }
       }
-    } catch(e) {}
-  }
-
-  // Check account exists
-  if (_forgotRole === 'customer') {
-    const customers = readCustomers();
-    if (!customers[phone]) {
-      phoneErr.textContent = 'Is number par koi customer account nahi hai.';
-      phoneErr.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send OTP'; return;
+    } catch(e) {
+      // Firebase fail hua — localStorage fallback
+      _accountFound = _forgotRole === 'customer' ? !!readCustomers()[phone] : !!readRegisteredMaids()[phone];
     }
   } else {
-    const maids = readRegisteredMaids();
-    if (!maids[phone]) {
-      phoneErr.textContent = 'Is number par koi maid account nahi hai.';
-      phoneErr.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send OTP'; return;
-    }
+    // _fbGet available nahi — localStorage fallback
+    _accountFound = _forgotRole === 'customer' ? !!readCustomers()[phone] : !!readRegisteredMaids()[phone];
+  }
+
+  // Account existence check
+  if (!_accountFound) {
+    const roleLabel = _forgotRole === 'maid' ? 'maid' : 'customer';
+    phoneErr.textContent = 'Is number par koi ' + roleLabel + ' account nahi hai.';
+    phoneErr.style.display = 'block'; btn.disabled = false; btn.textContent = 'Send OTP'; return;
   }
 
   btn.textContent = 'Sending...';
   hint.textContent = 'OTP bheja ja raha hai...';
   hint.style.display = 'block';
 
-  try {
-    // Firebase Phone Auth — Invisible reCAPTCHA
-    // window._forgotRecaptchaVerifier getter/setter module-scoped _recaptchaVerifier se linked hai
+  // reCAPTCHA verifier fresh banana — har baar naya banao taaki kisi bhi device se kaam kare
+  async function _createForgotVerifier() {
+    // Purana verifier destroy karo
     if (window._forgotRecaptchaVerifier) {
       try { window._forgotRecaptchaVerifier.clear(); } catch(e) {}
       window._forgotRecaptchaVerifier = null;
     }
+    // Container ko bilkul saaf karo
     const rcEl = document.getElementById('recaptcha-container');
-    if (rcEl) rcEl.innerHTML = '';
+    if (rcEl) {
+      rcEl.innerHTML = '';
+      // DOM se remove karke wapas add karo — cached state hatane ke liye
+      const parent = rcEl.parentNode;
+      const next = rcEl.nextSibling;
+      parent.removeChild(rcEl);
+      rcEl.innerHTML = '';
+      if (next) parent.insertBefore(rcEl, next);
+      else parent.appendChild(rcEl);
+    }
+    // Thoda wait karo DOM settle hone ke liye
+    await new Promise(r => setTimeout(r, 100));
     window._forgotRecaptchaVerifier = new window.RecaptchaVerifier(window._auth, 'recaptcha-container', {
       size: 'invisible',
       callback: () => {},
       'expired-callback': () => { window._forgotRecaptchaVerifier = null; }
     });
     await window._forgotRecaptchaVerifier.render();
+  }
+
+  try {
+    // Firebase Phone Auth — Invisible reCAPTCHA (any device se kaam karta hai)
+    await _createForgotVerifier();
 
     const phoneWithCode = '+91' + phone;
     window._forgotConfirmationResult = await window.signInWithPhoneNumber(window._auth, phoneWithCode, window._forgotRecaptchaVerifier);
@@ -26430,13 +26543,19 @@ async function forgotSendOtp() {
     document.getElementById('forgotStep2').style.display = 'block';
     setTimeout(() => document.getElementById('forgotOtp').focus(), 100);
   } catch(err) {
-    console.error('Firebase OTP error:', err);
+    console.error('Firebase OTP error:', err, err.code);
+    // Verifier ko reset karo error ke baad bhi
+    if (window._forgotRecaptchaVerifier) {
+      try { window._forgotRecaptchaVerifier.clear(); } catch(e) {}
+      window._forgotRecaptchaVerifier = null;
+    }
     btn.disabled = false; btn.textContent = 'Send OTP';
     let errMsg = 'OTP bhejne mein error. Dobara try karein.';
     if (err.code === 'auth/invalid-phone-number') errMsg = 'Phone number format galat hai.';
     else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Thodi der baad try karein.';
     else if (err.code === 'auth/quota-exceeded') errMsg = 'OTP limit exceed ho gayi. Kal try karein.';
-    else if (err.code === 'auth/captcha-check-failed') errMsg = 'Security check fail. Page refresh karke dobara try karein.';
+    else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/internal-error') errMsg = 'Security check fail hua. Page ek baar refresh karein aur dobara try karein.';
+    else if (err.code === 'auth/network-request-failed') errMsg = 'Network error. Internet connection check karein.';
     hint.textContent = '⚠️ ' + errMsg;
     hint.style.display = 'block';
     hint.style.color = '#dc2626';
@@ -29333,25 +29452,38 @@ async function submitAgencyAddMaid() {
       <button onclick="closeAgForgotModal()" style="background:none;border:none;color:#9ca3af;font-size:22px;cursor:pointer;line-height:1;">×</button>
     </div>
 
-    <!-- Step 1: Phone enter karo -->
+    <!-- Step 1: Phone enter karo + OTP verify -->
     <div id="agForgotStep1">
-      <p style="color:#cbd5e1;font-size:13px;margin-bottom:16px;">Apna registered phone number enter karein. Hum aapka account dhundhenge.</p>
+      <p style="color:#cbd5e1;font-size:13px;margin-bottom:16px;">Apna registered phone number enter karein. OTP se verify karke password reset karein.</p>
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">Registered Phone Number *</label>
-        <input type="tel" id="agForgotPhone" maxlength="10" placeholder="9876543210"
-          style="width:100%;padding:11px 14px;background:#0f1923;border:1.5px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;"
-          onkeydown="if(event.key==='Enter')agForgotStep1Next()" />
+        <div style="display:flex;gap:8px;">
+          <input type="tel" id="agForgotPhone" maxlength="10" placeholder="9876543210"
+            style="flex:1;padding:11px 14px;background:#0f1923;border:1.5px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter')agForgotSendOtp()" />
+          <button onclick="agForgotSendOtp()" id="agForgotSendBtn" style="white-space:nowrap;padding:11px 14px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">Send OTP</button>
+        </div>
         <div id="agForgotPhoneErr" style="color:#ef4444;font-size:12px;margin-top:4px;display:none;">Valid 10-digit phone number enter karein.</div>
+        <div id="agForgotOtpHint" style="font-size:12px;margin-top:4px;display:none;"></div>
+      </div>
+      <!-- OTP field (hidden until OTP sent) -->
+      <div id="agForgotOtpBox" style="display:none;margin-bottom:14px;">
+        <label style="display:block;font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">OTP *</label>
+        <input type="text" id="agForgotOtpInput" maxlength="6" placeholder="6-digit OTP enter karein"
+          style="width:100%;padding:11px 14px;background:#0f1923;border:1.5px solid #334155;border-radius:10px;color:#fff;font-size:15px;outline:none;box-sizing:border-box;"
+          onkeydown="if(event.key==='Enter')agForgotVerifyOtp()" />
+        <div id="agForgotOtpErr" style="color:#ef4444;font-size:12px;margin-top:4px;display:none;"></div>
       </div>
       <div id="agForgotStep1Msg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
-      <button onclick="agForgotStep1Next()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">
-        Next →
+      <button id="agForgotVerifyBtn" onclick="agForgotVerifyOtp()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;display:none;">
+        Verify OTP →
       </button>
+      <div id="agForgotRecaptchaContainer" style="margin-top:8px;"></div>
     </div>
 
     <!-- Step 2: Naya password set karo -->
     <div id="agForgotStep2" style="display:none;">
-      <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">Account mil gaya! Ab apna naya password set karein.</p>
+      <p style="color:#94a3b8;font-size:13px;margin-bottom:16px;">✅ OTP verified! Ab apna naya password set karein.</p>
       <div style="margin-bottom:14px;">
         <label style="display:block;font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:6px;">New Password *</label>
         <div style="position:relative;">
@@ -29382,15 +29514,25 @@ async function submitAgencyAddMaid() {
 </div>
 
 <script>
-// ── Agency Forgot Password ──
+// ── Agency Forgot Password (with OTP verification) ──
 var _agForgotFoundAgency = null;
 var _agForgotFoundIndex  = null;
+var _agForgotConfirmationResult = null;
+var _agForgotRecaptchaVerifier = null;
 
 function openAgForgotModal() {
   _agForgotFoundAgency = null;
   _agForgotFoundIndex  = null;
+  _agForgotConfirmationResult = null;
   document.getElementById('agForgotPhone').value = '';
   document.getElementById('agForgotPhoneErr').style.display = 'none';
+  document.getElementById('agForgotOtpHint').style.display = 'none';
+  document.getElementById('agForgotOtpBox').style.display = 'none';
+  document.getElementById('agForgotOtpInput').value = '';
+  document.getElementById('agForgotOtpErr').style.display = 'none';
+  document.getElementById('agForgotVerifyBtn').style.display = 'none';
+  document.getElementById('agForgotSendBtn').textContent = 'Send OTP';
+  document.getElementById('agForgotSendBtn').disabled = false;
   document.getElementById('agForgotStep1Msg').style.display = 'none';
   document.getElementById('agForgotStep1').style.display = '';
   document.getElementById('agForgotStep2').style.display = 'none';
@@ -29402,6 +29544,11 @@ function openAgForgotModal() {
 function closeAgForgotModal() {
   document.getElementById('agForgotModal').style.display = 'none';
   document.body.style.overflow = '';
+  // reCAPTCHA clean karo
+  if (_agForgotRecaptchaVerifier) {
+    try { _agForgotRecaptchaVerifier.clear(); } catch(e) {}
+    _agForgotRecaptchaVerifier = null;
+  }
 }
 
 function agForgotShowMsg(id, msg, isErr) {
@@ -29414,16 +29561,22 @@ function agForgotShowMsg(id, msg, isErr) {
   el.style.border = '1px solid ' + (isErr ? 'rgba(239,68,68,.3)' : 'rgba(34,197,94,.3)');
 }
 
-function agForgotStep1Next() {
+async function agForgotSendOtp() {
   var phone = (document.getElementById('agForgotPhone').value || '').replace(/\D/g,'');
   var phoneErr = document.getElementById('agForgotPhoneErr');
+  var hint = document.getElementById('agForgotOtpHint');
+  var btn = document.getElementById('agForgotSendBtn');
+
+  phoneErr.style.display = 'none';
+  hint.style.display = 'none';
+  document.getElementById('agForgotStep1Msg').style.display = 'none';
 
   if (phone.length !== 10) {
     phoneErr.style.display = '';
     return;
   }
-  phoneErr.style.display = 'none';
 
+  // Agency exist karti hai ya nahi check karo
   var agencies = agGetAgencies();
   var idx = -1;
   var found = null;
@@ -29431,7 +29584,6 @@ function agForgotStep1Next() {
     var agPhone = (agencies[i].phone || '').replace(/\D/g,'');
     if (agPhone === phone) { found = agencies[i]; idx = i; break; }
   }
-
   if (!found) {
     agForgotShowMsg('agForgotStep1Msg', '❌ Yeh phone number kisi registered agency se match nahi karta.', true);
     return;
@@ -29439,9 +29591,110 @@ function agForgotStep1Next() {
 
   _agForgotFoundAgency = found;
   _agForgotFoundIndex  = idx;
-  agForgotShowMsg('agForgotStep1Msg', '', false);
 
-  // Step 2 dikhao
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  hint.textContent = 'OTP bheja ja raha hai...';
+  hint.style.color = '#94a3b8';
+  hint.style.display = '';
+
+  // reCAPTCHA verifier banao
+  try {
+    if (_agForgotRecaptchaVerifier) {
+      try { _agForgotRecaptchaVerifier.clear(); } catch(e) {}
+      _agForgotRecaptchaVerifier = null;
+    }
+    var rcEl = document.getElementById('agForgotRecaptchaContainer');
+    if (rcEl) {
+      rcEl.innerHTML = '';
+      var parent = rcEl.parentNode;
+      var next = rcEl.nextSibling;
+      parent.removeChild(rcEl);
+      rcEl.innerHTML = '';
+      if (next) parent.insertBefore(rcEl, next);
+      else parent.appendChild(rcEl);
+    }
+    await new Promise(function(r){ setTimeout(r, 100); });
+
+    _agForgotRecaptchaVerifier = new window.RecaptchaVerifier(window._auth, 'agForgotRecaptchaContainer', {
+      size: 'invisible',
+      callback: function() {},
+      'expired-callback': function() { _agForgotRecaptchaVerifier = null; }
+    });
+    await _agForgotRecaptchaVerifier.render();
+
+    var phoneWithCode = '+91' + phone;
+    _agForgotConfirmationResult = await window.signInWithPhoneNumber(window._auth, phoneWithCode, _agForgotRecaptchaVerifier);
+
+    btn.disabled = false;
+    btn.textContent = 'Resend OTP';
+    hint.textContent = '✅ OTP +91' + phone + ' par bheja gaya!';
+    hint.style.color = '#22c55e';
+    hint.style.display = '';
+
+    // OTP field show karo
+    document.getElementById('agForgotOtpBox').style.display = '';
+    document.getElementById('agForgotVerifyBtn').style.display = '';
+    setTimeout(function(){ document.getElementById('agForgotOtpInput').focus(); }, 100);
+
+  } catch(err) {
+    console.error('Agency OTP error:', err);
+    if (_agForgotRecaptchaVerifier) {
+      try { _agForgotRecaptchaVerifier.clear(); } catch(e) {}
+      _agForgotRecaptchaVerifier = null;
+    }
+    btn.disabled = false;
+    btn.textContent = 'Send OTP';
+    var errMsg = 'OTP bhejne mein error. Dobara try karein.';
+    if (err.code === 'auth/invalid-phone-number') errMsg = 'Phone number format galat hai.';
+    else if (err.code === 'auth/too-many-requests') errMsg = 'Bahut zyada requests. Thodi der baad try karein.';
+    else if (err.code === 'auth/quota-exceeded') errMsg = 'OTP limit exceed ho gayi. Kal try karein.';
+    else if (err.code === 'auth/captcha-check-failed' || err.code === 'auth/internal-error') errMsg = 'Security check fail hua. Page ek baar refresh karein aur dobara try karein.';
+    else if (err.code === 'auth/network-request-failed') errMsg = 'Network error. Internet connection check karein.';
+    hint.textContent = '⚠️ ' + errMsg;
+    hint.style.color = '#ef4444';
+    hint.style.display = '';
+  }
+}
+
+async function agForgotVerifyOtp() {
+  var otp = (document.getElementById('agForgotOtpInput').value || '').trim();
+  var otpErr = document.getElementById('agForgotOtpErr');
+  otpErr.style.display = 'none';
+
+  if (!otp) {
+    otpErr.textContent = 'OTP enter karein.';
+    otpErr.style.display = '';
+    return;
+  }
+  if (!_agForgotConfirmationResult) {
+    otpErr.textContent = 'Pehle "Send OTP" dabao.';
+    otpErr.style.display = '';
+    return;
+  }
+
+  var verifyBtn = document.getElementById('agForgotVerifyBtn');
+  verifyBtn.disabled = true;
+  verifyBtn.textContent = 'Verifying...';
+
+  try {
+    await _agForgotConfirmationResult.confirm(otp);
+  } catch(err) {
+    console.error('Agency OTP verify error:', err);
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = 'Verify OTP →';
+    var msg = 'Galat OTP. Dobara check karein.';
+    if (err.code === 'auth/code-expired') msg = 'OTP expire ho gaya. "Send OTP" dobara dabao.';
+    otpErr.textContent = msg;
+    otpErr.style.display = '';
+    return;
+  }
+
+  verifyBtn.disabled = false;
+  verifyBtn.textContent = 'Verify OTP →';
+  _agForgotConfirmationResult = null;
+
+  // OTP verified! Step 2 dikhao
   document.getElementById('agForgotStep1').style.display = 'none';
   document.getElementById('agForgotStep2').style.display = '';
   document.getElementById('agForgotNewPassErr').style.display = 'none';
