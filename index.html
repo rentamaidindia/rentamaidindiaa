@@ -1077,6 +1077,11 @@
   .dash-city { font-size:13px; opacity:.8; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:14px; position:relative; z-index:1; }
   .dash-phone-row { font-size:13px; opacity:.85; display:flex; align-items:center; justify-content:center; gap:6px; border-top:1px solid rgba(255,255,255,.15); padding-top:14px; margin-top:4px; position:relative; z-index:1; }
   .dash-member-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.14); font-size:11px; font-weight:600; padding:5px 12px; border-radius:999px; margin-top:12px; position:relative; z-index:1; letter-spacing:.02em; }
+  .dash-verif-badge { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; padding:5px 14px; border-radius:999px; margin-top:8px; position:relative; z-index:1; letter-spacing:.03em; transition:all .3s; }
+  .dash-verif-badge.verified { background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; box-shadow:0 2px 10px rgba(34,197,94,.35); }
+  .dash-verif-badge.verified i { color:#fff; }
+  .dash-verif-badge.pending { background:rgba(251,191,36,.22); border:1px solid rgba(251,191,36,.5); color:#fef08a; }
+  .dash-verif-badge.pending i { color:#fbbf24; }
 
   .dash-menu-card { background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.04); }
   .dash-menu { display:flex; flex-direction:column; padding:8px; }
@@ -11026,7 +11031,8 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="container">
       <h1 style="font-family:var(--serif);font-size:clamp(24px,4vw,34px);font-weight:700;margin-bottom:24px;">My Dashboard</h1>
       
-      <!-- Live Credit Bar (Customer-only — a maid has no subscription/credits concept) -->
+      <!-- Maid-only: live status banner (hidden for customers) -->
+      <div id="dashMaidStatusBanner" style="display:none;margin-bottom:20px;"></div>
       <div class="credit-bar" id="dashCreditBar">
         <div class="credit-bar-left">
           <div class="credit-circle" id="dashCreditNum">0</div>
@@ -11050,6 +11056,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="dash-city"><i class="fas fa-location-dot"></i> <span id="dashCity">—</span></div>
             <div class="dash-phone-row"><i class="fas fa-phone"></i> <span id="dashPhone">—</span></div>
             <div class="dash-member-badge"><i class="fas fa-circle-check"></i> <span id="dashMemberSince">Member</span></div>
+            <div id="dashVerifBadge" class="dash-verif-badge" style="display:none;"></div>
           </div>
           <div class="dash-menu-card">
             <div class="dash-menu">
@@ -13358,11 +13365,10 @@ async function submitLogin() {
           const fbReqs = await window._fbGet('siteData', reqKey);
           if (Array.isArray(fbReqs)) {
             const localReqs = JSON.parse(localStorage.getItem(reqKey) || '[]');
-            // Merge: dono ka union lo (duplicate IDs chhodo)
-            const merged = [...localReqs];
-            fbReqs.forEach(r => {
-              if (!merged.find(lr => lr.id === r.id)) merged.push(r);
-            });
+            // FIX: sentRequests strings hain (e.g. 'booking_1234'), objects nahi.
+            // Dono arrays ka proper union lo — string equality se compare karo.
+            // Firebase pe zyada entries hain (dusre device se) toh woh preserve ho.
+            const merged = Array.from(new Set([...localReqs, ...fbReqs]));
             localStorage.setItem(reqKey, JSON.stringify(merged));
           }
           // FIX: contactedMaids (lifetime "already contacted" list) bhi sync karo
@@ -13593,6 +13599,7 @@ function submitBook() {
       phone: token || '',
       service: service || (maid ? maid.services[0] : 'General Help'),
       maidName: maid ? maid.name : '',
+      maidPhone: maid ? maid.phone : '',
       city: city || cust.district || cust.city || '',
       state: cust.state || '',
       date: date,
@@ -14858,6 +14865,7 @@ function sendRequestToMaid(maidId) {
       phone: requestData.customerPhone,
       service: 'Maid Request',
       maidName: requestData.maidName,
+      maidPhone: maidPhone || '',
       city: requestData.customerCity,
       state: requestData.customerState,
       date: new Date().toISOString().split('T')[0],
@@ -15615,20 +15623,10 @@ function dashTab(tab) {
       + '<div class="form-group-v" style="margin-bottom:10px;">'
       <!-- Aadhar number field removed -->
       + '</div>'
-      + '<div style="margin-bottom:12px;">'
-      + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Front Side *</label>'
-      + '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed ' + (aadharData2 && aadharData2.frontUrl ? '#22c55e' : '#d1d5db') + ';border-radius:8px;cursor:pointer;background:' + (aadharData2 && aadharData2.frontUrl ? '#f0fdf4' : '#f9fafb') + ';font-size:13px;color:' + (aadharData2 && aadharData2.frontUrl ? '#15803d' : '#6b7280') + ';">'
-      + '<i class="fas fa-' + (aadharData2 && aadharData2.frontUrl ? 'check-circle' : 'upload') + '"></i> ' + (aadharData2 && aadharData2.frontUrl ? 'Uploaded ✓' : 'Upload Front')
-      + '<input type="file" id="maidAadharFront" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'front\')">'
-      + '</label>'
-      + '</div>'
-      + '<div style="display:none;">'
+      + (aadharStatus2 === 'pending' || aadharStatus2 === 'verified' ? '' :        '<div style="margin-bottom:12px;">'        + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Front Side *</label>'        + '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed ' + (aadharData2 && aadharData2.frontUrl ? '#22c55e' : '#d1d5db') + ';border-radius:8px;cursor:pointer;background:' + (aadharData2 && aadharData2.frontUrl ? '#f0fdf4' : '#f9fafb') + ';font-size:13px;color:' + (aadharData2 && aadharData2.frontUrl ? '#15803d' : '#6b7280') + ';"><i class=\'fas fa-\' + (aadharData2 && aadharData2.frontUrl ? \'check-circle\' : \'upload\') + \'></i> \' + (aadharData2 && aadharData2.frontUrl ? \'Uploaded ✓\' : \'Upload Front\')'        + '<input type=\'file\' id=\'maidAadharFront\' accept=\'image/*\' style=\'display:none;\' onchange=\'handleMaidAadharUpload(event,\\\'front\\\')\'>'        + '</label></div>')      + '<div style="display:none;">'
       + '<label><input type="file" id="maidAadharBack" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'back\')"></label>'
       + '</div>'
-      + '<div id="maidAadharSaveStatus" style="font-size:13px;margin-bottom:10px;display:none;"></div>'
-      + (aadharStatus2 !== 'verified' ? '<button class="btn btn-md btn-primary" onclick="saveMaidAadharFromProfile()" style="width:100%;"><i class="fas fa-paper-plane"></i> Submit Aadhar for Verification</button>' : '<div style="text-align:center;font-size:13px;color:#15803d;font-weight:600;"><i class="fas fa-circle-check"></i> Aadhar Verified by Admin</div>')
-      + '</div>'
-
+      + '<div id="maidAadharSaveStatus" style="font-size:13px;margin-bottom:10px;display:none;"></div>'      + (aadharStatus2 === 'verified'          ? '<div style="text-align:center;font-size:13px;color:#15803d;font-weight:600;padding:10px;"><i class="fas fa-circle-check"></i> Aadhar Verified by Admin</div>'          : aadharStatus2 === 'pending'          ? '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px;">⏳ Verification Pending</div><div style="font-size:13px;color:#78350f;">Aapka Aadhar submit ho gaya hai. Admin review kar raha hai.</div></div>'          : aadharStatus2 === 'rejected'          ? '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:12px;"><div style="font-size:14px;font-weight:700;color:#b91c1c;margin-bottom:4px;">&#x274C; Aadhar Reject Ho Gaya</div><div style="font-size:13px;color:#991b1b;">Admin ne reject kiya hai. Sahi Aadhar dobara upload karein aur submit karein.</div></div><button class=\'btn btn-md btn-primary\' onclick=\'saveMaidAadharFromProfile()\' style=\'width:100%;\'><i class=\'fas fa-paper-plane\'></i> Dobara Submit Karein</button>'          : '<button class=\'btn btn-md btn-primary\' onclick=\'saveMaidAadharFromProfile()\' style=\'width:100%;\'><i class=\'fas fa-paper-plane\'></i> Submit Aadhar for Verification</button>')      + '</div>'
       // ── SUBMIT FOR VERIFICATION ──
       + (!isLive2 && aadharStatus2 !== 'pending' && aadharStatus2 !== 'verified' && hasPhoto2 && hasAadhar2 ? 
           '<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:18px;margin-bottom:14px;text-align:center;">'
@@ -15637,23 +15635,8 @@ function dashTab(tab) {
           + '<button class="btn btn-lg btn-primary" onclick="submitMaidForVerification()" style="min-width:200px;"><i class="fas fa-rocket"></i> Submit for Verification</button>'
           + '</div>' : '')
 
-      // ── PROFILE DETAILS ──
-      + '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;">'
-      + '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;">Profile Details</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;font-size:14px;">'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Phone</div><strong>+91 ' + maidPhone2 + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Experience</div><strong>' + (exp2 !== null ? exp2 + ' years' : 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Salary</div><strong>' + (salary2 || 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Work Type</div><strong>' + (workType2 || 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Services</div><strong>' + (servicesStr2 || 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Languages</div><strong>' + (langStr2 || 'N/A') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Availability</div><strong style="color:' + (isLive2 ? '#16a34a' : '#6b7280') + ';"><i class="fas fa-circle" style="font-size:9px;"></i> ' + (isLive2 ? 'Available (Live)' : 'Pending Approval') + '</strong></div>'
-      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Registered On</div><strong>' + regDate2 + '</strong></div>'
-      + '</div></div>'
-      + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:18px;">'
-      + '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-bottom:18px;">'
-      + '<div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#15803d;font-weight:600;"><i class="fas fa-info-circle" style="font-size:16px;"></i> Ye details aapki registration se hain. Change ke liye admin se contact karein.</div></div>'
-      + '<div style="font-size:14px;font-weight:700;margin-bottom:10px;">Quick Actions</div>'
+      // ── PROFILE DETAILS (Editable) ──
+      + '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:18px;">'      + '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">Profile Details'      + '<button id=\'maidEditProfileBtn\' class=\'btn btn-sm btn-outline\' onclick=\'toggleMaidProfileEdit()\' style=\'font-size:12px;font-weight:600;\'><i class=\'fas fa-pen\'></i> Edit</button></div>'      + '<div id="maidProfileReadView" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;font-size:14px;">'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Phone</div><strong>+91 ' + maidPhone2 + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Experience</div><strong id=\'rdExp\'>' + (exp2 !== null ? exp2 + ' years' : 'N/A') + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Salary</div><strong id=\'rdSalary\'>' + (salary2 || 'N/A') + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Work Type</div><strong id=\'rdWorkType\'>' + (workType2 || 'N/A') + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Services</div><strong id=\'rdServices\'>' + (servicesStr2 || 'N/A') + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Languages</div><strong id=\'rdLanguages\'>' + (langStr2 || 'N/A') + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Availability</div><strong style="color:' + (isLive2 ? '#16a34a' : '#6b7280') + ';"><i class="fas fa-circle" style="font-size:9px;"></i> ' + (isLive2 ? 'Available (Live)' : 'Pending Approval') + '</strong></div>'      + '<div><div style="font-size:11px;color:#9ca3af;margin-bottom:3px;">Registered On</div><strong>' + regDate2 + '</strong></div>'      + '</div>'      + '<div id="maidProfileEditForm" style="display:none;margin-top:16px;border-top:1px solid #e5e7eb;padding-top:16px;">'      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:14px;">'      + '<div><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Experience (years)</label>'      + '<input type=\'number\' id=\'editExp\' min=\'0\' max=\'50\' value=\''      + (exp2 !== null && exp2 !== undefined ? exp2 : '') + '\' placeholder=\'e.g. 3\' style=\'width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;\'></div>'      + '<div><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Salary</label>'      + '<input type=\'text\' id=\'editSalary\' value=\'' + (salary2 || '') + '\' placeholder=\'e.g. ₹8000/month\' style=\'width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;\'></div>'      + '<div><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Work Type</label>'      + '<select id=\'editWorkType\' style=\'width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;\'>'      + '<option value=\'\'>Select...</option>'      + '<option value=\'Live-In\'' + (workType2 === 'Live-In' ? ' selected' : '') + '>Live-In</option>'      + '<option value=\'Live-Out\'' + (workType2 === 'Live-Out' ? ' selected' : '') + '>Live-Out</option>'      + '<option value=\'Part-Time\'' + (workType2 === 'Part-Time' ? ' selected' : '') + '>Part-Time</option>'      + '</select></div>'      + '<div><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Languages (comma-separated)</label>'      + '<input type=\'text\' id=\'editLanguages\' value=\'' + (langStr2 || '') + '\' placeholder=\'e.g. Hindi, English\' style=\'width:100%;padding:8px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;box-sizing:border-box;\'></div>'      + '</div>'      + '<div style="margin-bottom:14px;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:8px;">Services (select all that apply)</label>'      + '<div style="display:flex;flex-wrap:wrap;gap:8px;" id="editServicesGroup">'      + (function(){ var svcs=['Full-Time Maid','Part-Time Maid','Cook / Bai','Babysitter / Nanny','Elder Care','Driver','Japa Maid','Cleaning']; return svcs.map(function(svc){ var chk=servicesArr2.indexOf(svc)!==-1; var bg=chk?'background:#fff7ed;border-color:#f97316;color:#c2410c':'background:#f9fafb;border-color:#e5e7eb;color:#374151'; return '<label style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1.5px solid;border-radius:999px;cursor:pointer;font-size:13px;'+bg+'"><input type=\"checkbox\" value=\"'+svc+'\"'+(chk?' checked':'')+' style=\"accent-color:#f97316\"> '+svc+'</label>'; }).join(''); })()      + '</div></div>'      + '</div></div>'      + '<div id=\'maidProfileSaveStatus\' style=\'font-size:13px;margin-bottom:10px;display:none;padding:8px 12px;border-radius:8px;\'></div>'      + '<div style="display:flex;gap:10px;">'      + '<button class=\'btn btn-md btn-primary\' onclick=\'saveMaidProfileDetails()\' style=\'flex:1;\'><i class=\'fas fa-check\'></i> Save Changes</button>'      + '<button class=\'btn btn-md btn-outline\' onclick=\'toggleMaidProfileEdit()\' style=\'flex:1;\'>Cancel</button>'      + '</div></div>'      + '</div>'      + '<div style="font-size:14px;font-weight:700;margin-bottom:10px;">Quick Actions</div>'
       + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">'
       + '<button class="dash-quick-action" onclick="dashTab(\'maid-requests\')"><i class="fas fa-bell"></i><div><div class="qa-title">Requests Dekho</div><div class="qa-sub">Customer requests</div></div></button>'
       + '<button class="dash-quick-action" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i><div><div class="qa-title">Logout</div><div class="qa-sub">Account se bahar</div></div></button>'
@@ -15891,6 +15874,102 @@ function removeProfilePhoto() {
   showToast('Profile photo removed.');
   initDashboard();
   dashTab('settings');
+}
+
+// ── MAID PROFILE DETAILS EDIT ──
+function toggleMaidProfileEdit() {
+  var readView = document.getElementById('maidProfileReadView');
+  var editForm = document.getElementById('maidProfileEditForm');
+  var btn = document.getElementById('maidEditProfileBtn');
+  if (!readView || !editForm) return;
+  var isEditing = editForm.style.display !== 'none';
+  if (isEditing) {
+    editForm.style.display = 'none';
+    readView.style.display = 'grid';
+    if (btn) btn.innerHTML = '<i class="fas fa-pen"></i> Edit';
+  } else {
+    editForm.style.display = 'block';
+    readView.style.display = 'none';
+    if (btn) btn.innerHTML = '<i class="fas fa-times"></i> Cancel';
+  }
+}
+
+async function saveMaidProfileDetails() {
+  var phone = getLoggedMaidPhone();
+  if (!phone) return;
+
+  var expVal = document.getElementById('editExp') ? document.getElementById('editExp').value.trim() : '';
+  var salaryVal = document.getElementById('editSalary') ? document.getElementById('editSalary').value.trim() : '';
+  var workTypeVal = document.getElementById('editWorkType') ? document.getElementById('editWorkType').value : '';
+  var langsVal = document.getElementById('editLanguages') ? document.getElementById('editLanguages').value.trim() : '';
+  var checkboxes = document.querySelectorAll('#editServicesGroup input[type="checkbox"]:checked');
+  var selectedServices = Array.from(checkboxes).map(function(c){ return c.value; });
+
+  var langs = langsVal ? langsVal.split(',').map(function(l){ return l.trim(); }).filter(Boolean) : [];
+  var expNum = expVal !== '' ? parseInt(expVal, 10) : null;
+
+  var statusEl = document.getElementById('maidProfileSaveStatus');
+  function showStatus(msg, color) {
+    if (!statusEl) return;
+    statusEl.style.display = 'block';
+    statusEl.style.background = color === 'green' ? '#f0fdf4' : color === 'red' ? '#fef2f2' : '#fffbeb';
+    statusEl.style.color = color === 'green' ? '#15803d' : color === 'red' ? '#b91c1c' : '#92400e';
+    statusEl.style.border = '1px solid ' + (color === 'green' ? '#bbf7d0' : color === 'red' ? '#fecaca' : '#fde68a');
+    statusEl.textContent = msg;
+  }
+
+  showStatus('Saving...', 'yellow');
+
+  try {
+    // 1. Update ram_registered_maids (maid's own registration data)
+    var regMaids = readRegisteredMaids();
+    if (!regMaids[phone]) regMaids[phone] = {};
+    if (expNum !== null) regMaids[phone].experience = expNum;
+    if (salaryVal) regMaids[phone].salary = salaryVal;
+    if (workTypeVal) regMaids[phone].workType = workTypeVal;
+    if (langs.length) regMaids[phone].languages = langs;
+    if (selectedServices.length) regMaids[phone].services = selectedServices;
+    writeRegisteredMaids(regMaids);
+
+    // 2. Update ram_admin_maids (admin panel sees this)
+    var adminMaids = [];
+    try { adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(e) {}
+    var idx = adminMaids.findIndex(function(m){ return m.phone === phone; });
+    if (idx !== -1) {
+      if (expNum !== null) adminMaids[idx].experience = expNum;
+      if (salaryVal) adminMaids[idx].salary = salaryVal;
+      if (workTypeVal) adminMaids[idx].workType = workTypeVal;
+      if (langs.length) adminMaids[idx].languages = langs;
+      if (selectedServices.length) adminMaids[idx].services = selectedServices;
+      localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+      // Firebase sync
+      if (typeof window._fbSet === 'function') {
+        try { await window._fbSet('adminData', 'ram_admin_maids', adminMaids); } catch(e) {}
+      }
+    }
+
+    // 3. Update read view inline (no full re-render needed)
+    var rdExp = document.getElementById('rdExp');
+    var rdSalary = document.getElementById('rdSalary');
+    var rdWorkType = document.getElementById('rdWorkType');
+    var rdServices = document.getElementById('rdServices');
+    var rdLanguages = document.getElementById('rdLanguages');
+    if (rdExp) rdExp.textContent = expNum !== null ? expNum + ' years' : 'N/A';
+    if (rdSalary) rdSalary.textContent = salaryVal || 'N/A';
+    if (rdWorkType) rdWorkType.textContent = workTypeVal || 'N/A';
+    if (rdServices) rdServices.textContent = selectedServices.length ? selectedServices.join(', ') : 'N/A';
+    if (rdLanguages) rdLanguages.textContent = langs.length ? langs.join(', ') : 'N/A';
+
+    showStatus('✅ Changes saved successfully!', 'green');
+    setTimeout(function(){ toggleMaidProfileEdit(); }, 1200);
+
+    // Trigger dashboard refresh so any live views update
+    if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
+
+  } catch(err) {
+    showStatus('❌ Save failed. Please try again.', 'red');
+    console.error('saveMaidProfileDetails error:', err);
+  }
 }
 
 // ── MAID PROFILE PHOTO (added later, from My Profile tab — photo is optional at signup) ──
@@ -16516,8 +16595,84 @@ function initDashboard() {
       const since = myMaid.registeredAt ? new Date(myMaid.registeredAt).toLocaleDateString('en-IN', {month:'short', year:'numeric'}) : null;
       memberEl.textContent = since ? ('Member since ' + since) : (myMaid.verified ? 'Verified Maid' : 'Pending Verification');
     }
+    // ── VERIFICATION BADGE (live from admin panel / Firebase) ──
+    (function updateDashVerifBadge() {
+      const badgeEl = document.getElementById('dashVerifBadge');
+      if (!badgeEl) return;
+      let latestMaids = [];
+      try { latestMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(e) {}
+      const latestMaid = latestMaids.find(m => m.phone === token) || {};
+      const isVerif = latestMaid.verified === true || latestMaid.verified === 'true' || latestMaid.verificationStatus === 'verified';
+      if (isVerif) {
+        badgeEl.className = 'dash-verif-badge verified';
+        badgeEl.innerHTML = '<i class="fas fa-shield-halved"></i> Verified';
+      } else {
+        badgeEl.className = 'dash-verif-badge pending';
+        badgeEl.innerHTML = '<i class="fas fa-clock"></i> Verification Pending';
+      }
+      badgeEl.style.display = 'inline-flex';
+    })();
+    // Live re-check every 15s so badge updates when admin verifies
+    if (window._verifBadgeInterval) clearInterval(window._verifBadgeInterval);
+    window._verifBadgeInterval = setInterval(function() {
+      const badgeEl = document.getElementById('dashVerifBadge');
+      if (!badgeEl) { clearInterval(window._verifBadgeInterval); return; }
+      let latestMaids = [];
+      try { latestMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(e) {}
+      const latestMaid = latestMaids.find(m => m.phone === token) || {};
+      const isVerif = latestMaid.verified === true || latestMaid.verified === 'true' || latestMaid.verificationStatus === 'verified';
+      if (isVerif) {
+        if (!badgeEl.classList.contains('verified')) {
+          badgeEl.className = 'dash-verif-badge verified';
+          badgeEl.innerHTML = '<i class="fas fa-shield-halved"></i> Verified';
+          badgeEl.style.display = 'inline-flex';
+        }
+      } else {
+        if (!badgeEl.classList.contains('pending')) {
+          badgeEl.className = 'dash-verif-badge pending';
+          badgeEl.innerHTML = '<i class="fas fa-clock"></i> Verification Pending';
+          badgeEl.style.display = 'inline-flex';
+        }
+      }
+    }, 15000);
+    // ── MAID STATUS BANNER below "My Dashboard" heading (live) ──
+    function renderMaidStatusBanner() {
+      const bannerEl = document.getElementById('dashMaidStatusBanner');
+      if (!bannerEl) return;
+      // ram_admin_maids se verified/available status
+      let latestMaids = [];
+      try { latestMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(e) {}
+      const lm = latestMaids.find(m => m.phone === token) || {};
+      // Photo — ram_registered_maids se check karo (yahan photo save hoti hai)
+      let regMaidsAll = {};
+      try { regMaidsAll = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}'); } catch(e) {}
+      const regEntry = regMaidsAll[token] || {};
+      const hasPhoto = !!(lm.photo || regEntry.photo);
+      // Aadhar — aadhar_ key se check karo
+      let aadharData = null;
+      try { aadharData = JSON.parse(localStorage.getItem('aadhar_' + token) || 'null'); } catch(e) {}
+      const hasAadhar = !!(aadharData && (aadharData.frontUrl || aadharData.front || aadharData.number || aadharData.frontImage || aadharData.backImage));
+      const aadharStatus = (aadharData && aadharData.status) ? aadharData.status : (hasAadhar ? 'pending' : '');
+      const isLive = !!(lm.verified && lm.available);
+      let html = '';
+      if (isLive) {
+        // Profile live — banner hide karo (admin ne verify kar diya)
+        bannerEl.style.display = 'none'; return;
+      } else if (aadharStatus === 'verified') {
+        html = '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;"><i class="fas fa-shield-check" style="font-size:22px;color:#16a34a;flex-shrink:0;"></i><div><div style="font-weight:700;color:#15803d;font-size:14px;">✅ Aadhar Verified — Profile Activate hone wali hai</div><div style="font-size:13px;color:#166534;">Admin ne aadhar verify kar diya. Profile bahut jald live ho jayegi.</div></div></div>';
+      } else if (hasAadhar) {
+        html = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;"><i class="fas fa-clock" style="font-size:22px;color:#d97706;flex-shrink:0;"></i><div><div style="font-weight:700;color:#92400e;font-size:14px;">⏳ Verification Pending</div><div style="font-size:13px;color:#78350f;">Photo aur Aadhar submit ho gayi. Admin review kar raha hai — approve hone ke baad profile live hogi. Aap profile normally use kar sakte hain.</div></div></div>';
+      } else {
+        html = '<div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px;"><i class="fas fa-triangle-exclamation" style="font-size:22px;color:#ea580c;flex-shrink:0;"></i><div><div style="font-weight:700;color:#c2410c;font-size:14px;">⚠️ फोटो और आधार जरूरी है</div><div style="font-size:13px;color:#9a3412;">प्रोफाइल लाइव करने के लिए नीचे से फोटो और आधार अपलोड करें।</div></div></div>';
+      }
+      bannerEl.innerHTML = html;
+      bannerEl.style.display = 'block';
+    }
+    renderMaidStatusBanner();
+    // Live polling every 10s — admin verify karte hi banner update ho jaayega
+    if (window._maidStatusBannerInterval) clearInterval(window._maidStatusBannerInterval);
+    window._maidStatusBannerInterval = setInterval(renderMaidStatusBanner, 10000);
     refreshAllCreditBars();
-    startMaidNotifPolling();
     // 🔥 Naye device pe login kiya — Firebase se requests sync karo
     if (typeof syncMaidRequestsFromFirebase === 'function') syncMaidRequestsFromFirebase(token);
     if (window._requestListeners && !window._requestListeners['maid_' + token]) {
@@ -16547,6 +16702,18 @@ function initDashboard() {
       const since = cust.createdAt ? new Date(cust.createdAt).toLocaleDateString('en-IN', {month:'short', year:'numeric'}) : null;
       memberEl.textContent = since ? ('Member since ' + since) : 'Verified Member';
     }
+    // Customer ke liye maid status banner hide karo
+    const _custBanner = document.getElementById('dashMaidStatusBanner');
+    if (_custBanner) _custBanner.style.display = 'none';
+    if (window._maidStatusBannerInterval) { clearInterval(window._maidStatusBannerInterval); window._maidStatusBannerInterval = null; }
+    // ── VERIFICATION BADGE for customers (always verified once registered) ──
+    const custBadgeEl = document.getElementById('dashVerifBadge');
+    if (custBadgeEl) {
+      custBadgeEl.className = 'dash-verif-badge verified';
+      custBadgeEl.innerHTML = '<i class="fas fa-shield-halved"></i> Verified';
+      custBadgeEl.style.display = 'inline-flex';
+    }
+    if (window._verifBadgeInterval) clearInterval(window._verifBadgeInterval);
     refreshAllCreditBars();
     startCustomerReqPolling(); // Start live polling for maid responses
     // 🔥 Naye device pe login — Firebase se request statuses sync karo
@@ -17229,6 +17396,8 @@ async function rcSubmitLogin() {
       <div class="nav-item" onclick="gotoPage('maids')"><i class="fas fa-user-tie"></i> Maids / Helpers <span class="nav-badge" id="maidNavBadge">0</span></div>
       <div class="nav-item" onclick="gotoPage('maids');setTimeout(()=>{const f=document.getElementById('maidVerifiedFilter');if(f){f.value='no';renderMaids();}},150);" id="pendingApprovalsNav" style="display:none;"><i class="fas fa-user-clock" style="color:#f59e0b;"></i> <span style="color:#f59e0b;font-weight:700;">Pending Approvals</span> <span class="nav-badge" id="pendingMaidNavBadge" style="background:var(--red);">0</span></div>
       <div class="nav-item" onclick="gotoPage('agencies')"><i class="fas fa-building"></i> Agencies <span class="nav-badge" id="agencyNavBadge">0</span></div>
+      <div class="nav-item" onclick="gotoPage('deleted-maids')" style="opacity:0.75;"><i class="fas fa-user-slash" style="color:#ef4444;"></i> Deleted Maids <span class="nav-badge" id="deletedMaidNavBadge" style="background:#ef4444;display:none;">0</span></div>
+      <div class="nav-item" onclick="gotoPage('deleted-customers')" style="opacity:0.75;"><i class="fas fa-user-minus" style="color:#ef4444;"></i> Deleted Customers <span class="nav-badge" id="deletedCustNavBadge" style="background:#ef4444;display:none;">0</span></div>
       <div class="nav-section-label">Business</div>
       <div class="nav-item" onclick="gotoPage('bookings')"><i class="fas fa-calendar-check"></i> Bookings <span class="nav-badge" id="bookNavBadge" style="background:var(--green);">0</span></div>
       <div class="nav-item" onclick="gotoPage('subscriptions')"><i class="fas fa-crown"></i> Subscriptions</div>
@@ -17569,6 +17738,48 @@ async function rcSubmitLogin() {
         </div>
       </div>
 
+      <!-- ══ DELETED MAIDS PAGE ══ -->
+      <div class="admin-page" id="pg-deleted-maids">
+        <div class="section-head">
+          <div><h2>Deleted Maids</h2><p>Yahan deleted maids ka data safe rehta hai — restore ya permanently delete kar sakte ho</p></div>
+        </div>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+            <span id="deletedMaidCount" style="font-weight:700;font-size:15px;">0 Deleted Maids</span>
+            <input type="text" id="deletedMaidSearch" placeholder="Search name / phone..." oninput="renderDeletedMaids()" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-width:220px;">
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr>
+                <th>Name</th><th>Phone</th><th>City / State</th><th>Services</th><th>Agency</th><th>Deleted On</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="deletedMaidTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ DELETED CUSTOMERS PAGE ══ -->
+      <div class="admin-page" id="pg-deleted-customers">
+        <div class="section-head">
+          <div><h2>Deleted Customers</h2><p>Yahan deleted customers ka data safe rehta hai — restore ya permanently delete kar sakte ho</p></div>
+        </div>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+            <span id="deletedCustCount" style="font-weight:700;font-size:15px;">0 Deleted Customers</span>
+            <input type="text" id="deletedCustSearch" placeholder="Search name / phone..." oninput="renderDeletedCustomers()" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;min-width:220px;">
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="data-table">
+              <thead><tr>
+                <th>Name</th><th>Phone</th><th>City / State</th><th>Email</th><th>Plan</th><th>Deleted On</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="deletedCustTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ══ AGENCIES PAGE ══ -->
       <div class="admin-page" id="pg-agencies">
         <div class="section-head">
@@ -17736,6 +17947,7 @@ async function rcSubmitLogin() {
                 <tr>
                   <th>Booking ID</th>
                   <th>Customer</th>
+                  <th>Maid / Helper</th>
                   <th>Service</th>
                   <th>City</th>
                   <th>Date</th>
@@ -19230,6 +19442,14 @@ function setLS(key, val) {
 
 function getCustomers() { return getLS('registeredCustomers', {}); }
 function setCustomers(v) { setLS('registeredCustomers', v); }
+
+// ══════════════════════════════════════
+// DELETED RECORDS — soft delete helpers
+// ══════════════════════════════════════
+function getDeletedCustomers() { return getLS('ram_deleted_customers', []); }
+function setDeletedCustomers(v) { setLS('ram_deleted_customers', v); }
+function getDeletedMaids() { return getLS('ram_deleted_maids', []); }
+function setDeletedMaids(v) { setLS('ram_deleted_maids', v); }
 function getMaids() {
   var stored = null;
   try { var raw = localStorage.getItem('ram_admin_maids'); if (raw) stored = JSON.parse(raw); } catch(e) {}
@@ -19475,6 +19695,13 @@ function updateNavBadges() {
   if(aadharBadge) { aadharBadge.textContent = pendingAadhar; aadharBadge.style.display = pendingAadhar > 0 ? 'inline' : 'none'; }
   // Help enquiries open count
   if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
+  // Deleted badges
+  const delMaidBadge = document.getElementById('deletedMaidNavBadge');
+  const delCustBadge = document.getElementById('deletedCustNavBadge');
+  const delMaidCount = getDeletedMaids().length;
+  const delCustCount = getDeletedCustomers().length;
+  if (delMaidBadge) { delMaidBadge.textContent = delMaidCount; delMaidBadge.style.display = delMaidCount > 0 ? 'inline-block' : 'none'; }
+  if (delCustBadge) { delCustBadge.textContent = delCustCount; delCustBadge.style.display = delCustCount > 0 ? 'inline-block' : 'none'; }
   renderNotifications();
 }
 
@@ -19488,7 +19715,7 @@ function gotoPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
   });
-  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',payments:'Payments',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification',help:'Help & Support',agencies:'Agencies'};
+  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',payments:'Payments',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification',help:'Help & Support',agencies:'Agencies','deleted-maids':'Deleted Maids','deleted-customers':'Deleted Customers'};
   document.getElementById('topbarTitle').textContent = titles[page] || page;
   currentPage = page;
   closeSidebar();
@@ -19527,6 +19754,9 @@ function gotoPage(page) {
       }
     }, 50);
   }
+  // Deleted pages
+  if (page === 'deleted-maids') renderDeletedMaids();
+  if (page === 'deleted-customers') renderDeletedCustomers();
 }
 function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
@@ -19729,7 +19959,14 @@ async function quickVerifyMaid(id) {
 }
 function deleteMaidById(id) {
   confirmAction('Reject Maid', 'Reject and remove this maid registration?', () => {
-    setMaids(getMaids().filter(m => m.id !== id));
+    const all = getMaids();
+    const maid = all.find(m => m.id !== id ? false : true);
+    if (maid) {
+      const deleted = getDeletedMaids();
+      deleted.unshift({ ...maid, deletedAt: new Date().toISOString() });
+      setDeletedMaids(deleted);
+    }
+    setMaids(all.filter(m => m.id !== id));
     renderDashboard();
     renderMaids();
     updateNavBadges();
@@ -19847,22 +20084,36 @@ function saveCustomer() {
   showToast(editingKey ? 'Customer updated!' : 'Customer added!');
 }
 function deleteCustomer(phone) {
-  confirmAction('Delete Customer', `Are you sure you want to delete customer with phone ${phone}? This cannot be undone.`, () => {
+  confirmAction('Delete Customer', `Are you sure you want to delete customer with phone ${phone}?`, () => {
     const custs = getCustomers();
+    const custData = custs[phone];
+    if (custData) {
+      // Deleted list mein move karo
+      const deleted = getDeletedCustomers();
+      deleted.unshift({ ...custData, phone, deletedAt: new Date().toISOString() });
+      setDeletedCustomers(deleted);
+    }
     delete custs[phone];
     setCustomers(custs);
     renderCustomers();
     renderDashboard();
     updateNavBadges();
-    showToast('Customer deleted');
+    showToast('Customer deleted (Deleted Customers mein ja sakta hai restore ke liye)');
   });
 }
 function bulkDeleteCustomers() {
   if (selectedCusts.size === 0) { showToast('Select customers to delete'); return; }
   const count = selectedCusts.size;
-  confirmAction('Delete Selected Customers', `Delete ${count} selected customers? This cannot be undone.`, () => {
+  confirmAction('Delete Selected Customers', `Delete ${count} selected customers?`, () => {
     const custs = getCustomers();
-    selectedCusts.forEach(phone => delete custs[phone]);
+    const deleted = getDeletedCustomers();
+    selectedCusts.forEach(phone => {
+      if (custs[phone]) {
+        deleted.unshift({ ...custs[phone], phone, deletedAt: new Date().toISOString() });
+        delete custs[phone];
+      }
+    });
+    setDeletedCustomers(deleted);
     setCustomers(custs);
     selectedCusts.clear();
     renderCustomers();
@@ -20245,14 +20496,16 @@ function renderAgencyMaids() {
   const cntEl = document.getElementById('agencyMaidsCountBadge');
   if (cntEl) cntEl.textContent = agencyMaids.length + ' Maid' + (agencyMaids.length!==1?'s':'');
   const stars = r => '★'.repeat(Math.round(r||0));
-  document.getElementById('agencyMaidsTbody').innerHTML = agencyMaids.length ? agencyMaids.map(m => `
-    <tr>
+  document.getElementById('agencyMaidsTbody').innerHTML = agencyMaids.length ? agencyMaids.map(m => {
+    const isDeleted = getDeletedMaids().some(dm => dm.id === m.id || dm.phone === m.phone);
+    const deletedBadge = isDeleted ? `<span class="badge" style="background:#fef2f2;color:#ef4444;border:1px solid #fecaca;font-size:11px;margin-left:6px;"><i class="fas fa-user-slash" style="font-size:10px;"></i> Deleted</span>` : '';
+    return `<tr ${isDeleted ? 'style="opacity:0.6;"' : ''}>
       <td>
         <div class="tbl-name-col">
           <div class="tbl-avatar" style="background:${m.available?'linear-gradient(135deg,#22c55e,#16a34a)':'linear-gradient(135deg,#94a3b8,#64748b)'};">
             ${m.photo ? `<img src="${m.photo}" onerror="this.style.display='none'"/>` : escHtml(m.name[0])}
           </div>
-          <div><div class="tbl-name">${escHtml(m.name)}</div><div class="tbl-sub">${escHtml(m.phone||'')}</div></div>
+          <div><div class="tbl-name">${escHtml(m.name)}${deletedBadge}</div><div class="tbl-sub">${escHtml(m.phone||'')}</div></div>
         </div>
       </td>
       <td>${escHtml(m.phone||'—')}</td>
@@ -20267,8 +20520,8 @@ function renderAgencyMaids() {
           <button class="action-btn action-btn-danger action-btn-sm" onclick="removeMaidFromAgency(${m.id})" title="Remove from Agency"><i class="fas fa-unlink"></i></button>
         </div>
       </td>
-    </tr>
-  `).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>Is agency mein koi maid nahi hai</h3><p style="font-size:13px;color:var(--text3);">Upar "Add Maid to Agency" button se maid add karo</p></div></td></tr>';
+    </tr>`;
+  }).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>Is agency mein koi maid nahi hai</h3><p style="font-size:13px;color:var(--text3);">Upar "Add Maid to Agency" button se maid add karo</p></div></td></tr>';
 }
 
 function removeMaidFromAgency(maidId) {
@@ -22484,12 +22737,18 @@ function toggleMaidAvail(id) {
 }
 function deleteMaid(id) {
   confirmAction('Delete Maid', 'Are you sure you want to delete this maid profile?', () => {
-    const maids = getMaids().filter(m => m.id !== id);
-    setMaids(maids);
+    const all = getMaids();
+    const maid = all.find(m => m.id === id);
+    if (maid) {
+      const deleted = getDeletedMaids();
+      deleted.unshift({ ...maid, deletedAt: new Date().toISOString() });
+      setDeletedMaids(deleted);
+    }
+    setMaids(all.filter(m => m.id !== id));
     renderMaids();
     renderDashboard();
     updateNavBadges();
-    showToast('Maid deleted');
+    showToast('Maid deleted (Deleted Maids mein ja sakta hai restore ke liye)');
   });
 }
 function bulkVerifyMaids() {
@@ -22507,8 +22766,15 @@ function bulkVerifyMaids() {
 function bulkDeleteMaids() {
   if (selectedMaids.size === 0) { showToast('Select maids to delete'); return; }
   confirmAction('Delete Maids', `Delete ${selectedMaids.size} selected maids?`, () => {
-    const maids = getMaids().filter(m => !selectedMaids.has(m.id));
-    setMaids(maids);
+    const all = getMaids();
+    const deleted = getDeletedMaids();
+    all.forEach(m => {
+      if (selectedMaids.has(m.id)) {
+        deleted.unshift({ ...m, deletedAt: new Date().toISOString() });
+      }
+    });
+    setDeletedMaids(deleted);
+    setMaids(all.filter(m => !selectedMaids.has(m.id)));
     selectedMaids.clear();
     renderMaids();
     renderDashboard();
@@ -22535,6 +22801,7 @@ function renderBookings() {
     <tr>
       <td style="font-weight:700;font-size:12.5px;color:var(--text2);">${b.id}</td>
       <td><div class="tbl-name">${b.custName}</div><div class="tbl-sub">${b.phone}</div></td>
+      <td>${b.maidName ? `<div class="tbl-name">${b.maidName}</div><div class="tbl-sub">${b.maidPhone||'—'}</div>` : '<span style="color:#9ca3af;font-size:12px;">—</span>'}</td>
       <td>${b.service}</td>
       <td>${b.city||'—'}</td>
       <td>${b.date||'—'}</td>
@@ -22548,7 +22815,7 @@ function renderBookings() {
         </div>
       </td>
     </tr>
-  `).join('') : '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-calendar"></i><h3>No bookings</h3></div></td></tr>';
+  `).join('') : '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-calendar"></i><h3>No bookings</h3></div></td></tr>';
 }
 function resetBookFilter() {
   ['bookSearch','bookStatusFilter','bookServiceFilter'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -22688,6 +22955,14 @@ window.adminManuallyActivatePlan = async function(paymentLogId) {
     // localStorage mein bhi save karo (agar admin same device pe hai)
     localStorage.setItem(subKey, JSON.stringify(subData));
 
+    // ✅ FIX: sentRequests reset karo taaki customer ko fresh credits milein
+    // (Normal Razorpay flow mein bhi yahi hota hai — naya plan = fresh slate)
+    var reqKey = 'sentRequests_' + rec.userPhone;
+    if (typeof window._fbSet === 'function') {
+      await window._fbSet('siteData', reqKey, []);
+    }
+    localStorage.setItem(reqKey, JSON.stringify([]));
+
     // Payment log mein bhi success mark karo
     updatePaymentStatus(paymentLogId, 'success', {
       razorpay_payment_id: rec.razorpay_payment_id || 'MANUAL_ADMIN_ACTIVATE',
@@ -22701,6 +22976,145 @@ window.adminManuallyActivatePlan = async function(paymentLogId) {
     showToast('❌ Error: ' + (e.message || e));
   }
 };
+
+// ══════════════════════════════════════
+// DELETED MAIDS
+// ══════════════════════════════════════
+function renderDeletedMaids() {
+  let list = getDeletedMaids();
+  const q = (document.getElementById('deletedMaidSearch')?.value || '').toLowerCase();
+  if (q) list = list.filter(m => (m.name||'').toLowerCase().includes(q) || (m.phone||'').includes(q));
+  const el = document.getElementById('deletedMaidCount');
+  if (el) el.textContent = list.length + ' Deleted Maid' + (list.length !== 1 ? 's' : '');
+  const tbody = document.getElementById('deletedMaidTbody');
+  if (!tbody) return;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-slash"></i><h3>Koi deleted maid nahi hai</h3></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map((m, idx) => {
+    const agencyLabel = m.agencyName ? `<span class="badge badge-blue" style="font-size:11px;">${escHtml(m.agencyName)}</span>` : '—';
+    const deletedDate = m.deletedAt ? m.deletedAt.split('T')[0] : '—';
+    const services = (m.services || []).map(s => `<span class="badge badge-gray" style="font-size:10px;">${escHtml(s)}</span>`).join(' ');
+    return `<tr style="opacity:0.85;">
+      <td><div class="tbl-name-col"><div class="tbl-avatar" style="background:linear-gradient(135deg,#94a3b8,#64748b);">${escHtml((m.name||'?')[0])}</div><div><div class="tbl-name">${escHtml(m.name||'N/A')}</div></div></div></td>
+      <td>${escHtml(m.phone||'—')}</td>
+      <td>${escHtml(m.city||'')}${m.city&&m.state?', ':''}${escHtml(m.state||'')}</td>
+      <td style="max-width:160px;">${services||'—'}</td>
+      <td>${agencyLabel}</td>
+      <td style="color:#ef4444;font-size:13px;">${deletedDate}</td>
+      <td>
+        <div class="btn-group">
+          <button class="action-btn action-btn-outline action-btn-sm" onclick="restoreDeletedMaid(${idx})" title="Restore"><i class="fas fa-rotate-left"></i> Restore</button>
+          <button class="action-btn action-btn-danger action-btn-sm" onclick="permanentDeleteMaid(${idx})" title="Delete Forever"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function restoreDeletedMaid(idx) {
+  confirmAction('Restore Maid', 'Is maid ko wapas Maids list mein restore karna chahte ho?', () => {
+    const deleted = getDeletedMaids();
+    const maid = deleted[idx];
+    if (!maid) return;
+    // deletedAt remove karo
+    const { deletedAt, ...maidData } = maid;
+    // Maids list mein wapas add karo
+    const maids = getMaids();
+    // Duplicate check — same id already hai toh skip
+    if (!maids.find(m => m.id === maidData.id)) {
+      maids.unshift(maidData);
+      setMaids(maids);
+    }
+    // Deleted list se hata do
+    deleted.splice(idx, 1);
+    setDeletedMaids(deleted);
+    renderDeletedMaids();
+    updateNavBadges();
+    showToast('✅ Maid restore ho gayi!');
+  });
+}
+
+function permanentDeleteMaid(idx) {
+  confirmAction('Permanently Delete', 'Ye maid hamesha ke liye delete ho jayegi. Confirm karo?', () => {
+    const deleted = getDeletedMaids();
+    deleted.splice(idx, 1);
+    setDeletedMaids(deleted);
+    renderDeletedMaids();
+    updateNavBadges();
+    showToast('Maid permanently deleted');
+  });
+}
+
+// ══════════════════════════════════════
+// DELETED CUSTOMERS
+// ══════════════════════════════════════
+function renderDeletedCustomers() {
+  let list = getDeletedCustomers();
+  const q = (document.getElementById('deletedCustSearch')?.value || '').toLowerCase();
+  if (q) list = list.filter(c => (c.name||'').toLowerCase().includes(q) || (c.phone||'').includes(q));
+  const el = document.getElementById('deletedCustCount');
+  if (el) el.textContent = list.length + ' Deleted Customer' + (list.length !== 1 ? 's' : '');
+  const tbody = document.getElementById('deletedCustTbody');
+  if (!tbody) return;
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-minus"></i><h3>Koi deleted customer nahi hai</h3></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map((c, idx) => {
+    const deletedDate = c.deletedAt ? c.deletedAt.split('T')[0] : '—';
+    // Plan info from their subscription if available
+    const subRaw = localStorage.getItem('userSubscription_' + c.phone);
+    let planLabel = '—';
+    try {
+      const sub = subRaw ? JSON.parse(subRaw) : null;
+      if (sub && sub.planKey) planLabel = `<span class="badge badge-green" style="font-size:11px;">${escHtml(sub.planKey)}</span>`;
+    } catch(e) {}
+    return `<tr style="opacity:0.85;">
+      <td><div class="tbl-name-col"><div class="tbl-avatar" style="background:linear-gradient(135deg,#94a3b8,#64748b);">${escHtml((c.name||'?')[0])}</div><div><div class="tbl-name">${escHtml(c.name||'N/A')}</div><div class="tbl-sub">${escHtml(c.email||'')}</div></div></div></td>
+      <td>${escHtml(c.phone||'—')}</td>
+      <td>${escHtml(c.district||c.city||'')}${(c.district||c.city)&&c.state?', ':''}${escHtml(c.state||'')}</td>
+      <td>${escHtml(c.email||'—')}</td>
+      <td>${planLabel}</td>
+      <td style="color:#ef4444;font-size:13px;">${deletedDate}</td>
+      <td>
+        <div class="btn-group">
+          <button class="action-btn action-btn-outline action-btn-sm" onclick="restoreDeletedCustomer(${idx})" title="Restore"><i class="fas fa-rotate-left"></i> Restore</button>
+          <button class="action-btn action-btn-danger action-btn-sm" onclick="permanentDeleteCustomer(${idx})" title="Delete Forever"><i class="fas fa-trash"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function restoreDeletedCustomer(idx) {
+  confirmAction('Restore Customer', 'Is customer ko wapas Customers list mein restore karna chahte ho?', () => {
+    const deleted = getDeletedCustomers();
+    const cust = deleted[idx];
+    if (!cust) return;
+    const { deletedAt, phone, ...custData } = cust;
+    const custs = getCustomers();
+    custs[phone] = { ...custData, phone };
+    setCustomers(custs);
+    deleted.splice(idx, 1);
+    setDeletedCustomers(deleted);
+    renderDeletedCustomers();
+    updateNavBadges();
+    showToast('✅ Customer restore ho gaya!');
+  });
+}
+
+function permanentDeleteCustomer(idx) {
+  confirmAction('Permanently Delete', 'Ye customer hamesha ke liye delete ho jayega. Confirm karo?', () => {
+    const deleted = getDeletedCustomers();
+    deleted.splice(idx, 1);
+    setDeletedCustomers(deleted);
+    renderDeletedCustomers();
+    updateNavBadges();
+    showToast('Customer permanently deleted');
+  });
+}
 
 // ══════════════════════════════════════
 // CITIES
@@ -26227,6 +26641,101 @@ function setupRealtimeSync() {
       } catch(e) {}
     }, 120000);
   })();
+
+  // ══════════════════════════════════════════════════════════════════════
+  // 🔥 CREDIT REAL-TIME SYNC — sentRequests + subscription live listener
+  // Koi bhi device pe credit use karo — dono devices pe turant update hoga.
+  // ══════════════════════════════════════════════════════════════════════
+  (function _startCreditRealtimeSync() {
+    window._creditListeners = window._creditListeners || {};
+
+    function startCreditListener(phone) {
+      if (!phone) return;
+      // Purane listeners band karo pehle (re-login case)
+      ['sentRequests_' + phone, 'userSubscription_' + phone].forEach(function(key) {
+        if (window._creditListeners[key]) {
+          try { window._creditListeners[key](); } catch(e) {}
+          delete window._creditListeners[key];
+        }
+      });
+
+      // 1️⃣ sentRequests real-time listener — credit deductions ka live sync
+      try {
+        const reqDocKey = ('sentRequests_' + phone).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const unsubReq = onSnapshot(doc(_db, 'siteData', reqDocKey), function(snap) {
+          if (!snap.exists()) return;
+          const fbData = snap.data().data;
+          if (!Array.isArray(fbData)) return;
+          // Firebase ka data authoritative hai — local ke saath union lo
+          // (local mein kuch naya ho sakta hai jo Firebase pe abhi nahi pahuncha)
+          const localReqs = (function() {
+            try { return JSON.parse(localStorage.getItem('sentRequests_' + phone) || '[]'); } catch(e) { return []; }
+          })();
+          const merged = Array.from(new Set([...fbData, ...localReqs]));
+          // Sirf tab localStorage update karo jab kuch naya aaya ho Firebase se
+          if (merged.length > localReqs.length || fbData.length > localReqs.length) {
+            localStorage.setItem('sentRequests_' + phone, JSON.stringify(merged));
+            if (typeof refreshAllCreditBars === 'function') {
+              try { refreshAllCreditBars(); } catch(e) {}
+            }
+          }
+        });
+        window._creditListeners['sentRequests_' + phone] = unsubReq;
+      } catch(e) { console.warn('SentRequests credit listener failed:', e); }
+
+      // 2️⃣ userSubscription real-time listener — plan change/upgrade live sync
+      try {
+        const subDocKey = ('userSubscription_' + phone).replace(/[^a-zA-Z0-9_-]/g, '_');
+        const unsubSub = onSnapshot(doc(_db, 'siteData', subDocKey), function(snap) {
+          if (!snap.exists()) return;
+          const fbSub = snap.data().data || snap.data();
+          if (!fbSub || !fbSub.planKey || !fbSub.expiry) return;
+          const localSub = (function() {
+            try { return JSON.parse(localStorage.getItem('userSubscription_' + phone) || 'null'); } catch(e) { return null; }
+          })();
+          // Firebase subscription zyada fresh hai ya local kuch nahi hai toh update karo
+          const fbExpiry = new Date(fbSub.expiry);
+          const localExpiry = localSub ? new Date(localSub.expiry) : new Date(0);
+          if (!localSub || fbExpiry > localExpiry) {
+            localStorage.setItem('userSubscription_' + phone, JSON.stringify(fbSub));
+            if (typeof refreshAllCreditBars === 'function') {
+              try { refreshAllCreditBars(); } catch(e) {}
+            }
+          }
+        });
+        window._creditListeners['userSubscription_' + phone] = unsubSub;
+      } catch(e) { console.warn('Subscription credit listener failed:', e); }
+    }
+
+    function stopCreditListeners() {
+      Object.keys(window._creditListeners).forEach(function(k) {
+        try { window._creditListeners[k](); } catch(e) {}
+      });
+      window._creditListeners = {};
+    }
+
+    window._startCreditRealtimeListener = startCreditListener;
+    window._stopCreditRealtimeListeners = stopCreditListeners;
+
+    // Page load pe agar customer already logged in hai toh turant start karo
+    setTimeout(function() {
+      try {
+        if (typeof getAuthToken !== 'function') return;
+        const token = getAuthToken();
+        if (!token) return;
+        if (typeof isMaidUser === 'function' && isMaidUser()) return; // maids ke liye nahi
+        startCreditListener(token);
+      } catch(e) {}
+    }, 1000);
+
+    // Login ke baad customer ke liye credit listener start karo
+    const _origCreditLogin = window.onUserLogin;
+    window.onUserLogin = function(phone, isMaid) {
+      if (_origCreditLogin) _origCreditLogin(phone, isMaid);
+      if (!isMaid && phone) startCreditListener(phone);
+    };
+
+  })();
   // ══════════════════════════════════════════════════════════════════════
 }
 
@@ -28415,7 +28924,7 @@ function agEditMaid(phone) {
   document.getElementById('agEM_salary').value = (m.salary||'').replace(/[^0-9]/g,'');
   document.getElementById('agEM_shift').value = m.workShift||'Day';
   document.getElementById('agEM_wtype').value = m.workType||'Live-Out';
-  document.getElementById('agEM_aadharNum').value = m.aadharNumber||'';
+  var agEM_aadharNumEl = document.getElementById('agEM_aadharNum'); if (agEM_aadharNumEl) agEM_aadharNumEl.value = m.aadharNumber||'';
   document.getElementById('agEM_originalPhone').value = phone;
 
   // Services checkboxes
@@ -28431,16 +28940,135 @@ function agEditMaid(phone) {
     prev.innerHTML = '<i class="fas fa-user" style="font-size:22px;color:#9ca3af;"></i>';
   }
 
-  // Aadhaar status
-  document.getElementById('agEM_aadharFrontStatus').textContent = m.aadharFront ? '✓ Front uploaded' : '';
-  // agEM_aadharBackStatus removed
+  // Aadhaar status — Firebase se sync karo
+  var aadharKey = 'aadhar_' + phone;
+  var aadharData = null;
+  try { aadharData = JSON.parse(localStorage.getItem(aadharKey)||'null'); } catch(e){}
+
+  var aadharStatus = aadharData ? (aadharData.status || 'none') : 'none';
+  var hasFrontUploaded = !!(aadharData && aadharData.frontUrl) || !!(m.aadharFront);
+
+  // Aadhaar section dynamically render karo based on status
+  var aadharSectionEl = document.getElementById('agEM_aadharSection');
+  if (aadharSectionEl) {
+    if (aadharStatus === 'verified') {
+      // Admin ne approve kar diya — success dikhao, section hide karo
+      aadharSectionEl.innerHTML = '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:10px;padding:14px;text-align:center;">'
+        + '<div style="font-size:22px;margin-bottom:6px;">✅</div>'
+        + '<div style="font-size:14px;font-weight:700;color:#15803d;">Aadhaar Verified</div>'
+        + '<div style="font-size:12px;color:#166534;margin-top:4px;">Admin ne Aadhaar verify kar diya hai. Profile active hai.</div>'
+        + '</div>';
+    } else if (aadharStatus === 'pending' || (hasFrontUploaded && aadharStatus !== 'rejected')) {
+      // Upload ho chuki, pending review
+      aadharSectionEl.innerHTML = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:14px;text-align:center;">'
+        + '<div style="font-size:22px;margin-bottom:6px;">⏳</div>'
+        + '<div style="font-size:14px;font-weight:700;color:#92400e;">Verification Pending</div>'
+        + '<div style="font-size:12px;color:#78350f;margin-top:4px;">Aadhaar submit ho chuki hai. Admin review kar raha hai — approve hone ke baad profile live hogi.</div>'
+        + '</div>';
+    } else if (aadharStatus === 'rejected') {
+      // Admin ne reject kiya — purani file delete, fresh upload option do
+      // Clear stored aadhaar files
+      if (aadharData) { aadharData.frontUrl = ''; aadharData.backUrl = ''; aadharData.status = 'rejected'; localStorage.setItem(aadharKey, JSON.stringify(aadharData)); }
+      if (m) { m.aadharFront = ''; m.aadharBack = ''; }
+      // Show rejected banner + fresh upload
+      aadharSectionEl.innerHTML = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+        + '<div style="font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:3px;">❌ Aadhaar Reject Ho Gaya</div>'
+        + '<div style="font-size:12px;color:#991b1b;">Admin ne reject kiya. Sahi Aadhaar dobara upload karein.</div>'
+        + '</div>'
+        + '<div class="ag-form-g"><label>Aadhaar Number</label>'
+        + '<input id="agEM_aadharNum" type="text" maxlength="12" placeholder="12-digit Aadhaar number" value="' + (aadharData && aadharData.aadharNum ? aadharData.aadharNum : (m.aadharNumber||'')) + '" /></div>'
+        + '<div style="display:grid;grid-template-columns:1fr;gap:10px;">'
+        + '<div><div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Front Side</div>'
+        + '<label style="display:block;padding:8px;background:#fff;border:1.5px dashed #fca5a5;border-radius:8px;text-align:center;font-size:12px;color:#dc2626;cursor:pointer;">'
+        + '📤 Upload Front (New)'
+        + '<input type="file" accept="image/*,application/pdf" style="display:none;" onchange="agEMAadharUpload(event,\'front\')" />'
+        + '</label>'
+        + '<div id="agEM_aadharFrontStatus" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>'
+        + '</div></div>'
+        + '<div style="font-size:11px;color:#6b7280;margin-top:8px;">⚠️ Uploading new Aadhaar will reset verification status and send for re-review by admin.</div>';
+    } else {
+      // Koi upload nahi hui abhi — normal upload form dikhao
+      aadharSectionEl.innerHTML = '<div class="ag-form-g"><label>Aadhaar Number</label>'
+        + '<input id="agEM_aadharNum" type="text" maxlength="12" placeholder="12-digit Aadhaar number" value="' + (m.aadharNumber||'') + '" /></div>'
+        + '<div style="display:grid;grid-template-columns:1fr;gap:10px;">'
+        + '<div><div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Front Side</div>'
+        + '<label style="display:block;padding:8px;background:#fff;border:1.5px dashed #86efac;border-radius:8px;text-align:center;font-size:12px;color:#16a34a;cursor:pointer;">'
+        + '📤 Upload Front'
+        + '<input type="file" accept="image/*,application/pdf" style="display:none;" onchange="agEMAadharUpload(event,\'front\')" />'
+        + '</label>'
+        + '<div id="agEM_aadharFrontStatus" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>'
+        + '</div></div>'
+        + '<div style="font-size:11px;color:#6b7280;margin-top:8px;">⚠️ Uploading new Aadhaar will reset verification status and send for re-review by admin.</div>';
+    }
+  }
 
   // Reset temp vars
   window._agEMPhotoBase64 = null;
   window._agEMAadharFrontBase64 = null;
   window._agEMAadharBackBase64 = null;
 
+  // Button aur title: pending/verified = simple save, rejected/none = re-submit
+  var _isVerifiedOrPending = (aadharStatus === 'verified' || aadharStatus === 'pending' || (hasFrontUploaded && aadharStatus !== 'rejected'));
+  var _saveBtn = document.getElementById('agEM_saveBtn');
+  var _modalTitle = document.getElementById('agEM_modalTitle');
+  if (_saveBtn) {
+    _saveBtn.textContent = _isVerifiedOrPending ? '💾 Save Changes' : '💾 Save & Submit for Verification';
+  }
+  if (_modalTitle) {
+    _modalTitle.textContent = _isVerifiedOrPending ? 'Edit Maid Profile' : 'Update & Submit for Verification';
+  }
+
   document.getElementById('agEditMaidModal').style.display = 'flex';
+
+  // Firebase se bhi latest aadhar status fetch karo (async)
+  if (typeof window._fbGet === 'function') {
+    window._fbGet('adminData', aadharKey).then(function(fbAadhar) {
+      if (fbAadhar && fbAadhar.status && fbAadhar.status !== aadharStatus) {
+        // Firebase pe updated status mila — localStorage update karo aur re-render karo
+        localStorage.setItem(aadharKey, JSON.stringify(fbAadhar));
+        // Re-call agEditMaid to refresh the aadhaar section only
+        var aadharSecEl = document.getElementById('agEM_aadharSection');
+        if (!aadharSecEl) return;
+        var fbStatus = fbAadhar.status;
+        var fbHasFront = !!(fbAadhar.frontUrl);
+        var _fbIsVerifiedOrPending = (fbStatus === 'verified' || fbStatus === 'pending' || fbHasFront);
+        var _fbSaveBtn = document.getElementById('agEM_saveBtn');
+        var _fbModalTitle = document.getElementById('agEM_modalTitle');
+        if (_fbSaveBtn) _fbSaveBtn.textContent = _fbIsVerifiedOrPending ? '💾 Save Changes' : '💾 Save & Submit for Verification';
+        if (_fbModalTitle) _fbModalTitle.textContent = _fbIsVerifiedOrPending ? 'Edit Maid Profile' : 'Update & Submit for Verification';
+
+        if (fbStatus === 'verified') {
+          aadharSecEl.innerHTML = '<div style="background:#dcfce7;border:1.5px solid #86efac;border-radius:10px;padding:14px;text-align:center;">'
+            + '<div style="font-size:22px;margin-bottom:6px;">✅</div>'
+            + '<div style="font-size:14px;font-weight:700;color:#15803d;">Aadhaar Verified</div>'
+            + '<div style="font-size:12px;color:#166534;margin-top:4px;">Admin ne Aadhaar verify kar diya hai. Profile active hai.</div>'
+            + '</div>';
+        } else if (fbStatus === 'pending' || fbHasFront) {
+          aadharSecEl.innerHTML = '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:14px;text-align:center;">'
+            + '<div style="font-size:22px;margin-bottom:6px;">⏳</div>'
+            + '<div style="font-size:14px;font-weight:700;color:#92400e;">Verification Pending</div>'
+            + '<div style="font-size:12px;color:#78350f;margin-top:4px;">Aadhaar submit ho chuki hai. Admin review kar raha hai.</div>'
+            + '</div>';
+        } else if (fbStatus === 'rejected') {
+          aadharSecEl.innerHTML = '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+            + '<div style="font-size:13px;font-weight:700;color:#b91c1c;margin-bottom:3px;">❌ Aadhaar Reject Ho Gaya</div>'
+            + '<div style="font-size:12px;color:#991b1b;">Admin ne reject kiya. Sahi Aadhaar dobara upload karein.</div>'
+            + '</div>'
+            + '<div class="ag-form-g"><label>Aadhaar Number</label>'
+            + '<input id="agEM_aadharNum" type="text" maxlength="12" placeholder="12-digit Aadhaar number" value="' + (fbAadhar.aadharNum||'') + '" /></div>'
+            + '<div style="display:grid;grid-template-columns:1fr;gap:10px;">'
+            + '<div><div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Front Side</div>'
+            + '<label style="display:block;padding:8px;background:#fff;border:1.5px dashed #fca5a5;border-radius:8px;text-align:center;font-size:12px;color:#dc2626;cursor:pointer;">'
+            + '📤 Upload Front (New)'
+            + '<input type="file" accept="image/*,application/pdf" style="display:none;" onchange="agEMAadharUpload(event,\'front\')" />'
+            + '</label>'
+            + '<div id="agEM_aadharFrontStatus" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>'
+            + '</div></div>'
+            + '<div style="font-size:11px;color:#6b7280;margin-top:8px;">⚠️ Uploading new Aadhaar will send for re-review by admin.</div>';
+        }
+      }
+    }).catch(function(){});
+  }
 }
 
 function agCloseEditMaid() {
@@ -28478,7 +29106,11 @@ function agSaveEditMaid() {
   var salary = (document.getElementById('agEM_salary').value||'').trim();
   var shift  = document.getElementById('agEM_shift').value;
   var wtype  = document.getElementById('agEM_wtype').value;
-  var aadharNum = (document.getElementById('agEM_aadharNum').value||'').trim();
+  var aadharNumEl2 = document.getElementById('agEM_aadharNum');
+  // Agar input exist nahi karta (verified/pending state mein hidden hai) to existing value use karo
+  var _regForNum = {}; try { _regForNum = JSON.parse(localStorage.getItem('ram_registered_maids')||'{}'); } catch(e){}
+  var _mForNum = _regForNum[origPhone] || {};
+  var aadharNum = aadharNumEl2 ? (aadharNumEl2.value||'').trim() : (_mForNum.aadharNumber||'');
   var services = Array.from(document.querySelectorAll('.ag-em-svc-cb:checked')).map(function(cb){ return cb.value; });
 
   if (!name) { showToast('Name is required.'); return; }
@@ -28505,11 +29137,21 @@ function agSaveEditMaid() {
   if (window._agEMAadharFrontBase64) m.aadharFront = window._agEMAadharFrontBase64;
   if (window._agEMAadharBackBase64) m.aadharBack = window._agEMAadharBackBase64;
 
-  // FIX: Ab oldAadharNum se compare karo (m.aadharNumber se nahi — wo update ho chuka hai)
-  if (window._agEMAadharFrontBase64 || window._agEMAadharBackBase64 || aadharNum !== oldAadharNum) {
+  // FIX: Sirf tab resubmit karo jab new aadhaar file upload ho ya number change ho
+  // Agar status pending/verified hai aur koi aadhaar change nahi hua — normal save karo
+  var _curAadharStatus = 'none';
+  try {
+    var _aadharKeyS = 'aadhar_' + origPhone;
+    var _aadharDataS = JSON.parse(localStorage.getItem(_aadharKeyS)||'null');
+    if (_aadharDataS && _aadharDataS.status) _curAadharStatus = _aadharDataS.status;
+  } catch(e){}
+  var _aadhaarChanged = window._agEMAadharFrontBase64 || window._agEMAadharBackBase64 || aadharNum !== oldAadharNum;
+  if (_aadhaarChanged) {
+    // Sirf tab verified false karo jab aadhaar actually change hua ho
     m.verified = false;
     m.verificationStatus = 'resubmitted';
   }
+  // Agar pending/verified hai aur koi aadhaar change nahi — verificationStatus/verified chhod do jaisi hai
 
   reg[origPhone] = m;
   localStorage.setItem('ram_registered_maids', JSON.stringify(reg));
@@ -28576,7 +29218,7 @@ function agSaveEditMaid() {
     } catch(eN) {}
   }
 
-  showToast('✅ Maid updated! Submitted for re-verification.');
+  showToast(_aadhaarChanged ? '✅ Maid updated! Submitted for re-verification.' : '✅ Maid profile updated successfully!');
   agCloseEditMaid();
   var sess = agGetSession();
   if (sess) renderAgencyDashboard(sess);
@@ -28934,6 +29576,9 @@ async function submitAgencyAddMaid() {
     // Upload fail ho to bhi registration continue karo (URL empty rahega)
   }
 
+  // Firebase URL nahi mila to base64 fallback use karo (photo ke liye)
+  var finalPhotoUrl = photoUrl || window._agNMPhotoBase64 || '';
+
   if (btn) btn.textContent = 'Saving…';
 
   var simpleHash = function(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h)^s.charCodeAt(i); h=h&h; } return 'h'+Math.abs(h).toString(36); };
@@ -28946,7 +29591,7 @@ async function submitAgencyAddMaid() {
     experience: 0, rating: 0, reviewCount: 0,
     agencyStatus: 'yes', agencyPhone: sess.phone, agencyName: sess.agencyName,
     passwordHash: simpleHash(password),
-    photo: photoUrl, available: false, verified: false,
+    photo: finalPhotoUrl, available: false, verified: false,
     aadharNumber: (document.getElementById('agNMAadharNumber')||{}).value||'',
     aadharFront: aadharFrontUrl,
     aadharBack: aadharBackUrl,
@@ -29570,7 +30215,7 @@ async function submitAgencyAddMaid() {
     <div class="ag-em-header">
       <div>
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;opacity:.8;margin-bottom:2px;">✏️ Edit Maid Profile</div>
-        <div style="font-size:16px;font-weight:800;">Update & Re-submit for Verification</div>
+        <div id="agEM_modalTitle" style="font-size:16px;font-weight:800;">Edit Maid Profile</div>
       </div>
       <button onclick="agCloseEditMaid()" style="background:rgba(255,255,255,.2);border:none;color:#fff;border-radius:8px;padding:7px 12px;font-size:18px;cursor:pointer;">&times;</button>
     </div>
@@ -29653,25 +30298,14 @@ async function submitAgencyAddMaid() {
       <!-- Aadhaar Section -->
       <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:14px;margin-bottom:16px;">
         <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">🪪 Aadhaar Details (for Verification)</div>
-        <div class="ag-form-g">
-          <label>Aadhaar Number</label>
-          <input id="agEM_aadharNum" type="text" maxlength="12" placeholder="12-digit Aadhaar number" />
+        <div id="agEM_aadharSection">
+          <!-- JS se dynamically fill hoga based on aadhaar status -->
+          <div style="font-size:12px;color:#6b7280;text-align:center;padding:10px;">Loading...</div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr;gap:10px;">
-          <div>
-            <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:5px;">Front Side</div>
-            <label style="display:block;padding:8px;background:#fff;border:1.5px dashed #86efac;border-radius:8px;text-align:center;font-size:12px;color:#16a34a;cursor:pointer;">
-              📤 Upload Front
-              <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="agEMAadharUpload(event,'front')" />
-            </label>
-            <div id="agEM_aadharFrontStatus" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>
-          </div>
-        </div>
-        <div style="font-size:11px;color:#6b7280;margin-top:8px;">⚠️ Uploading new Aadhaar will reset verification status and send for re-review by admin.</div>
       </div>
 
-      <button onclick="agSaveEditMaid()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.02em;">
-        💾 Save & Submit for Re-Verification
+      <button id="agEM_saveBtn" onclick="agSaveEditMaid()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.02em;">
+        💾 Save Changes
       </button>
 
     </div>
