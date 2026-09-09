@@ -19658,6 +19658,100 @@ function initApp() {
   renderAdmins();
   loadWebsiteEditorForm();
   if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras();
+  // Firebase se latest maids sync karo (admin panel mein turant dikhe)
+  _syncAdminMaidsFromFirebase();
+}
+
+async function _syncAdminMaidsFromFirebase(retryCount) {
+  retryCount = retryCount || 0;
+  if (typeof window._fbGet !== "function" || typeof window._fbGetAll !== "function") {
+    if (retryCount < 10) setTimeout(function(){ _syncAdminMaidsFromFirebase(retryCount + 1); }, 2000);
+    return;
+  }
+  try {
+    var fbMaids = null;
+
+    // Source 1: ram_admin_maids (array)
+    try { fbMaids = await window._fbGet("adminData", "ram_admin_maids"); } catch(e1) {}
+
+    // Source 2: ram_registered_maids (object {phone: data})
+    if (!fbMaids || !Array.isArray(fbMaids) || fbMaids.length === 0) {
+      try {
+        var regObj = await window._fbGet("adminData", "ram_registered_maids");
+        if (regObj && typeof regObj === "object" && !Array.isArray(regObj)) {
+          fbMaids = Object.values(regObj).filter(function(m){ return m && m.name; });
+        } else if (Array.isArray(regObj) && regObj.length > 0) {
+          fbMaids = regObj;
+        }
+      } catch(e2) {}
+    }
+
+    // Source 3: adminData collection ke saare maid_PHONE documents scan karo
+    // Yeh sabse accurate source hai — har maid ka individual doc hai
+    try {
+      var allAdminDocs = await window._fbGetAll("adminData");
+      if (allAdminDocs && typeof allAdminDocs === "object") {
+        var maidDocs = [];
+        Object.keys(allAdminDocs).forEach(function(docId) {
+          if (docId.startsWith("maid_") && docId !== "maid_pwd_") {
+            var mData = allAdminDocs[docId];
+            if (mData && mData.name) maidDocs.push(mData);
+          }
+        });
+        if (maidDocs.length > 0) {
+          // Merge maidDocs into fbMaids (add missing ones)
+          fbMaids = fbMaids && Array.isArray(fbMaids) ? [...fbMaids] : [];
+          maidDocs.forEach(function(md) {
+            if (!fbMaids.find(function(fm){ return fm.phone === md.phone; })) {
+              fbMaids.push(md);
+            } else {
+              // Individual doc se latest data se update karo
+              var idx = fbMaids.findIndex(function(fm){ return fm.phone === md.phone; });
+              if (idx !== -1) fbMaids[idx] = Object.assign({}, fbMaids[idx], md);
+            }
+          });
+        }
+      }
+    } catch(e3) { console.warn("adminData collection scan failed:", e3); }
+
+    if (fbMaids && Array.isArray(fbMaids) && fbMaids.length > 0) {
+      // Safe defaults har maid ke liye
+      fbMaids = fbMaids.map(function(m, idx) {
+        return Object.assign({
+          id: idx + 1, name: "", phone: "", city: "", state: "",
+          services: [], rating: 0, reviewCount: 0, experience: 0,
+          available: true, verified: false
+        }, m, {
+          id: m.id || (idx + 1),
+          services: Array.isArray(m.services) ? m.services : [],
+          name: String(m.name || ""),
+          phone: String(m.phone || ""),
+          city: String(m.city || ""),
+          state: String(m.state || "")
+        });
+      });
+
+      // localStorage ke saath merge (local mein naye maids bhi rakhho)
+      var localMaids = getMaids();
+      var merged = [...fbMaids];
+      localMaids.forEach(function(lm) {
+        if (lm.phone && !merged.find(function(fm){ return fm.phone === lm.phone; })) merged.push(lm);
+      });
+
+      // Firebase pe bhi updated merged list save karo (future syncs ke liye)
+      try { if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_admin_maids", merged).catch(function(){}); } catch(eS) {}
+
+      localStorage.setItem("ram_admin_maids", JSON.stringify(merged));
+      renderMaids();
+      updateNavBadges();
+      renderDashboard();
+    } else if (retryCount < 5) {
+      setTimeout(function(){ _syncAdminMaidsFromFirebase(retryCount + 1); }, 3000);
+    }
+  } catch(e) {
+    console.warn("Admin maids Firebase sync failed:", e);
+    if (retryCount < 5) setTimeout(function(){ _syncAdminMaidsFromFirebase(retryCount + 1); }, 3000);
+  }
 }
 function populateStateDropdowns() {
   // Admin panel static dropdowns
@@ -20161,6 +20255,8 @@ function renderMaids() {
   const svcF = document.getElementById('maidServiceFilter')?.value || '';
   const availF = document.getElementById('maidAvailFilter')?.value || '';
   const verF = document.getElementById('maidVerifiedFilter')?.value || '';
+  // Safety: services array ensure karo (agar kisi maid ka services undefined/null hai to crash na ho)
+  maids = maids.map(m => ({ ...m, services: Array.isArray(m.services) ? m.services : [], name: m.name || '', city: m.city || '', state: m.state || '' }));
   if (search) maids = maids.filter(m => m.name.toLowerCase().includes(search) || m.phone?.includes(search) || m.city?.toLowerCase().includes(search));
   if (stateF) maids = maids.filter(m => m.state === stateF);
   if (svcF) maids = maids.filter(m => m.services.some(s => s.toLowerCase().includes(svcF.toLowerCase())));
@@ -20190,56 +20286,87 @@ function renderMaids() {
   }
 
   const total = maids.length;
-  const pages = Math.ceil(total / PER_PAGE);
-  maidPage = Math.min(maidPage, pages || 1);
+  const pages = total > 0 ? Math.ceil(total / PER_PAGE) : 1;
+  // Filter change hone pe agar current page out-of-range ho to page 1 pe reset karo
+  if (maidPage > pages) maidPage = 1;
   const slice = maids.slice((maidPage-1)*PER_PAGE, maidPage*PER_PAGE);
 
   document.getElementById('maidCount').textContent = total + ' Maid' + (total!==1?'s':'');
-  const stars = r => '★'.repeat(Math.round(r));
-  document.getElementById('maidTbody').innerHTML = slice.length ? slice.map(m => `
-    <tr>
-      <td><input type="checkbox" class="maid-cb" value="${m.id}" onchange="toggleSelect('maid',${m.id})"/></td>
-      <td>
-        <div class="tbl-name-col">
-          <div class="tbl-avatar" style="background:${m.available?'linear-gradient(135deg,#22c55e,#16a34a)':'linear-gradient(135deg,#94a3b8,#64748b)'};">
-            ${m.photo ? `<img src="${m.photo}" onerror="this.style.display='none'"/>` : m.name[0]}
-          </div>
-          <div><div class="tbl-name">${m.name}</div><div class="tbl-sub">${m.phone||'N/A'}</div></div>
-        </div>
-      </td>
-      <td>${m.phone||'—'}</td>
-      <td>${m.city}, ${m.state}</td>
-      <td style="max-width:160px;"><div style="display:flex;flex-wrap:wrap;gap:3px;">${m.services.map(s=>`<span class="badge badge-blue" style="font-size:10px;padding:2px 7px;">${s}</span>`).join('')}</div></td>
-      <td><span style="color:#f59e0b;">${stars(m.rating)}</span> <span style="font-size:12px;color:var(--text2);">${m.rating} (${m.reviewCount})</span></td>
-      <td>${m.experience} yr${m.experience!==1?'s':''}</td>
-      <td><span class="badge ${m.available?'badge-green':'badge-gray'}">${m.available?'Available':'Busy'}</span></td>
-      <td>${(()=>{
-        if (m.verified) return '<span class="badge badge-blue">Verified</span>';
-        if (m.verificationStatus === 'resubmitted') return '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:700;">🔄 Re-submitted</span>';
-        return '<span class="badge badge-yellow">Pending</span>';
-      })()}</td>
-      <td>${(()=>{
-        if (m.agencyId) {
-          const ag = getAgencies().find(a => a.id === m.agencyId || String(a.id) === String(m.agencyId));
-          if (ag) return `<span class="badge badge-blue" style="cursor:pointer;font-size:11px;padding:2px 8px;" onclick="openAgencyMaids(${ag.id})" title="Agency kholo">${escHtml(ag.name)}</span>`;
-          return '<span class="badge badge-gray" style="font-size:11px;">Linked</span>';
-        }
-        if (m.agencyStatus === 'yes' && m.agencyPhone) return `<span class="badge badge-yellow" style="font-size:11px;" title="Agency phone: ${escHtml(m.agencyPhone)}">⏳ ${escHtml(m.agencyPhone)}</span>`;
-        return '<span style="font-size:11px;color:var(--text3);">—</span>';
-      })()}</td>
-      <td>
-        <div class="btn-group">
-          <button class="action-btn action-btn-outline action-btn-sm" onclick="viewMaid(${m.id})"><i class="fas fa-eye"></i></button>
-          <button class="action-btn action-btn-outline action-btn-sm" onclick="openEditMaidModal(${m.id})"><i class="fas fa-edit"></i></button>
-          <button class="action-btn action-btn-outline action-btn-sm" onclick="openMaidFolderModal('${m.phone||''}',${m.id})" title="Folder" style="color:#f59e0b;border-color:#fde68a;"><i class="fas fa-folder-open"></i></button>
-          <button class="action-btn ${m.verified?'action-btn-outline':'action-btn-success'} action-btn-sm" onclick="toggleMaidVerified(${m.id})" title="${m.verified?'Unverify':'Verify'}"><i class="fas fa-${m.verified?'times':'check'}"></i></button>
-          <button class="action-btn ${m.available?'action-btn-outline':'action-btn-success'} action-btn-sm" onclick="toggleMaidAvail(${m.id})" title="Toggle Availability"><i class="fas fa-toggle-${m.available?'on':'off'}"></i></button>
-          <button class="action-btn action-btn-outline action-btn-sm" onclick="openAssignMaidToAgencyModal(${m.id})" title="${m.agencyId||m.agencyPhone?'Agency change/remove karo':'Agency mein add karo'}" style="color:#7c3aed;border-color:#ddd4fe;"><i class="fas fa-building"></i></button>
-          <button class="action-btn action-btn-danger action-btn-sm" onclick="deleteMaid(${m.id})"><i class="fas fa-trash"></i></button>
-        </div>
-      </td>
-    </tr>
-  `).join('') : '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>No maids found</h3></div></td></tr>';
+  const stars = r => { try { return '★'.repeat(Math.min(5, Math.max(0, Math.round(Number(r) || 0)))); } catch(e) { return ''; } };
+  const safeAgencies = (function(){ try { return getAgencies(); } catch(e) { return []; } })();
+  let rowsHtml = '';
+  if (slice.length === 0) {
+    rowsHtml = '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>No maids found</h3></div></td></tr>';
+  } else {
+    slice.forEach(function(m) {
+      try {
+        // Safe defaults for every field
+        var mid = m.id || 0;
+        var mname = String(m.name || '');
+        var mphone = String(m.phone || '');
+        var mcity = String(m.city || '');
+        var mstate = String(m.state || '');
+        var mservices = Array.isArray(m.services) ? m.services : [];
+        var mrating = Number(m.rating) || 0;
+        var mreviewCount = Number(m.reviewCount) || 0;
+        var mexperience = Number(m.experience) || 0;
+        var mavail = !!m.available;
+        var mverified = !!m.verified;
+        var mphoto = m.photo || '';
+        var mfirstChar = mname[0] || '?';
+
+        // Verified badge
+        var verBadge = mverified
+          ? '<span class="badge badge-blue">Verified</span>'
+          : (m.verificationStatus === 'resubmitted'
+              ? '<span class="badge" style="background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;font-weight:700;">🔄 Re-submitted</span>'
+              : '<span class="badge badge-yellow">Pending</span>');
+
+        // Agency badge
+        var agBadge = '';
+        try {
+          if (m.agencyId) {
+            var ag = safeAgencies.find(function(a){ return a.id === m.agencyId || String(a.id) === String(m.agencyId); });
+            agBadge = ag
+              ? '<span class="badge badge-blue" style="cursor:pointer;font-size:11px;padding:2px 8px;" onclick="openAgencyMaids('+ag.id+')" title="Agency kholo">'+escHtml(ag.name)+'</span>'
+              : '<span class="badge badge-gray" style="font-size:11px;">Linked</span>';
+          } else if (m.agencyStatus === 'yes' && m.agencyPhone) {
+            agBadge = '<span class="badge badge-yellow" style="font-size:11px;" title="Agency phone: '+escHtml(String(m.agencyPhone||''))+'">⏳ '+escHtml(String(m.agencyPhone||''))+'</span>';
+          } else {
+            agBadge = '<span style="font-size:11px;color:var(--text3);">—</span>';
+          }
+        } catch(agE) { agBadge = '<span style="font-size:11px;color:var(--text3);">—</span>'; }
+
+        rowsHtml += '<tr>'
+          + '<td><input type="checkbox" class="maid-cb" value="'+mid+'" onchange="toggleSelect(\'maid\','+mid+')"/></td>'
+          + '<td><div class="tbl-name-col"><div class="tbl-avatar" style="background:'+(mavail?'linear-gradient(135deg,#22c55e,#16a34a)':'linear-gradient(135deg,#94a3b8,#64748b)')+';">'
+          + (mphoto ? '<img src="'+mphoto+'" onerror="this.style.display=\'none\'"/>' : mfirstChar)
+          + '</div><div><div class="tbl-name">'+escHtml(mname)+'</div><div class="tbl-sub">'+escHtml(mphone||'N/A')+'</div></div></div></td>'
+          + '<td>'+escHtml(mphone||'—')+'</td>'
+          + '<td>'+escHtml(mcity)+', '+escHtml(mstate)+'</td>'
+          + '<td style="max-width:160px;"><div style="display:flex;flex-wrap:wrap;gap:3px;">'+mservices.map(function(s){ return '<span class="badge badge-blue" style="font-size:10px;padding:2px 7px;">'+escHtml(String(s||''))+'</span>'; }).join('')+'</div></td>'
+          + '<td><span style="color:#f59e0b;">'+stars(mrating)+'</span> <span style="font-size:12px;color:var(--text2);">'+mrating+' ('+mreviewCount+')</span></td>'
+          + '<td>'+mexperience+' yr'+(mexperience!==1?'s':'')+'</td>'
+          + '<td><span class="badge '+(mavail?'badge-green':'badge-gray')+'">'+(mavail?'Available':'Busy')+'</span></td>'
+          + '<td>'+verBadge+'</td>'
+          + '<td>'+agBadge+'</td>'
+          + '<td><div class="btn-group">'
+          + '<button class="action-btn action-btn-outline action-btn-sm" onclick="viewMaid('+mid+')"><i class="fas fa-eye"></i></button>'
+          + '<button class="action-btn action-btn-outline action-btn-sm" onclick="openEditMaidModal('+mid+')"><i class="fas fa-edit"></i></button>'
+          + '<button class="action-btn action-btn-outline action-btn-sm" onclick="openMaidFolderModal(\''+mphone+'\','+mid+')" title="Folder" style="color:#f59e0b;border-color:#fde68a;"><i class="fas fa-folder-open"></i></button>'
+          + '<button class="action-btn '+(mverified?'action-btn-outline':'action-btn-success')+' action-btn-sm" onclick="toggleMaidVerified('+mid+')" title="'+(mverified?'Unverify':'Verify')+'"><i class="fas fa-'+(mverified?'times':'check')+'"></i></button>'
+          + '<button class="action-btn '+(mavail?'action-btn-outline':'action-btn-success')+' action-btn-sm" onclick="toggleMaidAvail('+mid+')" title="Toggle Availability"><i class="fas fa-toggle-'+(mavail?'on':'off')+'"></i></button>'
+          + '<button class="action-btn action-btn-outline action-btn-sm" onclick="openAssignMaidToAgencyModal('+mid+')" title="'+(m.agencyId||m.agencyPhone?'Agency change/remove karo':'Agency mein add karo')+'" style="color:#7c3aed;border-color:#ddd4fe;"><i class="fas fa-building"></i></button>'
+          + '<button class="action-btn action-btn-danger action-btn-sm" onclick="deleteMaid('+mid+')"><i class="fas fa-trash"></i></button>'
+          + '</div></td></tr>';
+      } catch(rowE) {
+        // Ek maid crash kare to baaki render hoti rahein
+        console.warn('Maid row render error:', rowE, m);
+      }
+    });
+    if (!rowsHtml) rowsHtml = '<tr><td colspan="11"><div class="empty-state"><i class="fas fa-user-tie"></i><h3>No maids found</h3></div></td></tr>';
+  }
+  document.getElementById('maidTbody').innerHTML = rowsHtml;
 
   renderPagination('maid', total, maidPage, pages);
 }
@@ -22834,11 +22961,17 @@ function renderBookings() {
       const _m = _allMaids.find(function(m){ return m.phone === b.maidPhone; });
       if (_m && _m.agencyStatus === 'yes') { agencyName = _m.agencyName || ''; agencyPhone = _m.agencyPhone || ''; }
     }
+    // maidPhone: booking mein na ho to allMaids se name match karke dhundho
+    let resolvedMaidPhone = b.maidPhone || '';
+    if (!resolvedMaidPhone && b.maidName) {
+      const _mByName = _allMaids.find(function(m){ return m.name && m.name.trim().toLowerCase() === b.maidName.trim().toLowerCase(); });
+      if (_mByName) resolvedMaidPhone = _mByName.phone || '';
+    }
     return `
     <tr>
       <td style="font-weight:700;font-size:12.5px;color:var(--text2);">${b.id}</td>
       <td><div class="tbl-name">${b.custName}</div><div class="tbl-sub">${b.phone || b.customerPhone || '—'}</div></td>
-      <td>${b.maidName ? `<div class="tbl-name">${b.maidName}</div><div class="tbl-sub">${b.maidPhone||'—'}</div>${agencyName ? `<div class="tbl-sub" style="color:#f97316;font-size:11px;margin-top:2px;"><i class="fas fa-building" style="font-size:10px;"></i> ${agencyName}${agencyPhone ? ' · ' + agencyPhone : ''}</div>` : ''}` : '<span style="color:#9ca3af;font-size:12px;">—</span>'}</td>
+      <td>${b.maidName ? `<div class="tbl-name">${b.maidName}</div><div class="tbl-sub">${resolvedMaidPhone||'—'}</div>${agencyName ? `<div class="tbl-sub" style="color:#f97316;font-size:11px;margin-top:2px;"><i class="fas fa-building" style="font-size:10px;"></i> ${agencyName}${agencyPhone ? ' · ' + agencyPhone : ''}</div>` : ''}` : '<span style="color:#9ca3af;font-size:12px;">—</span>'}</td>
       <td>${b.service}</td>
       <td>${b.city||'—'}</td>
       <td>${b.date||'—'}</td>
