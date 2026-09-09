@@ -13600,6 +13600,8 @@ function submitBook() {
       service: service || (maid ? maid.services[0] : 'General Help'),
       maidName: maid ? maid.name : '',
       maidPhone: maid ? maid.phone : '',
+      maidAgencyName: (maid && maid.agencyStatus === 'yes') ? (maid.agencyName || '') : '',
+      maidAgencyPhone: (maid && maid.agencyStatus === 'yes') ? (maid.agencyPhone || '') : '',
       city: city || cust.district || cust.city || '',
       state: cust.state || '',
       date: date,
@@ -13900,30 +13902,39 @@ function submitMaidLogin() {
     const storedHash = maids[phone].passwordHash;
     const passHash = simpleHash(pass);
 
-    // Agar passwordHash nahi hai — Firebase se check karo (2 jagah: full list + alag doc)
+    // Firebase se HAMESHA latest passwordHash fetch karo
+    // (Agency password change kar sakti hai — local cache stale ho sakta hai)
     let finalStoredHash = storedHash;
-    if (!finalStoredHash) {
-      try {
-        if (typeof window._fbGet === 'function') {
-          // Pehle poori list se try karo
-          const freshMaids = await window._fbGet('adminData', 'ram_registered_maids');
+    try {
+      if (typeof window._fbGet === 'function') {
+        // 1. Sabse pehle dedicated lightweight pwd doc check karo (fastest)
+        const pwdDoc = await window._fbGet('adminData', 'maid_pwd_' + phone).catch(() => null);
+        if (pwdDoc && pwdDoc.passwordHash) {
+          finalStoredHash = pwdDoc.passwordHash;
+          // Local cache update karo
+          const _cur = readRegisteredMaids();
+          if (_cur[phone]) { _cur[phone].passwordHash = pwdDoc.passwordHash; localStorage.setItem('ram_registered_maids', JSON.stringify(_cur)); }
+        }
+        // 2. Agar pwd doc nahi mila — full maid doc check karo
+        if (!finalStoredHash || finalStoredHash === storedHash) {
+          const maidDoc = await window._fbGet('adminData', 'maid_' + phone).catch(() => null);
+          if (maidDoc && maidDoc.passwordHash) {
+            finalStoredHash = maidDoc.passwordHash;
+            maids[phone] = Object.assign({}, maids[phone], maidDoc);
+            localStorage.setItem('ram_registered_maids', JSON.stringify(Object.assign(readRegisteredMaids(), { [phone]: maids[phone] })));
+          }
+        }
+        // 3. Full list fallback (last resort)
+        if (!finalStoredHash) {
+          const freshMaids = await window._fbGet('adminData', 'ram_registered_maids').catch(() => null);
           if (freshMaids && freshMaids[phone] && freshMaids[phone].passwordHash) {
             finalStoredHash = freshMaids[phone].passwordHash;
             maids[phone] = Object.assign({}, maids[phone], freshMaids[phone]);
             localStorage.setItem('ram_registered_maids', JSON.stringify(Object.assign(readRegisteredMaids(), { [phone]: maids[phone] })));
           }
-          // Agar abhi bhi nahi mila — alag maid_phone document check karo (backup)
-          if (!finalStoredHash) {
-            const maidDoc = await window._fbGet('adminData', 'maid_' + phone);
-            if (maidDoc && maidDoc.passwordHash) {
-              finalStoredHash = maidDoc.passwordHash;
-              maids[phone] = Object.assign({}, maids[phone], maidDoc);
-              localStorage.setItem('ram_registered_maids', JSON.stringify(Object.assign(readRegisteredMaids(), { [phone]: maids[phone] })));
-            }
-          }
         }
-      } catch(e) {}
-    }
+      }
+    } catch(e) {}
 
     // Fresh Firebase check ke baad bhi nahi mila — pehli baar password set karo
     if (!finalStoredHash) {
@@ -17050,6 +17061,7 @@ document.addEventListener('DOMContentLoaded', function() {
      admin rejects the Aadhar later. -->
 <div id="maidVerifyPopup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:20000;align-items:center;justify-content:center;padding:16px;overflow-y:auto;">
   <div style="background:#fff;border-radius:20px;width:100%;max-width:440px;padding:26px 22px;position:relative;animation:slideUp .28s ease;max-height:92vh;overflow-y:auto;">
+    <button onclick="document.getElementById('maidVerifyPopup').style.display='none';" style="position:absolute;top:14px;right:14px;background:#f3f4f6;border:none;width:32px;height:32px;border-radius:50%;font-size:18px;color:#6b7280;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;">&#x2715;</button>
     <div style="text-align:center;margin-bottom:18px;">
       <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-dark));display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px;">🪪</div>
       <h2 style="font-family:var(--serif);font-size:19px;font-weight:700;color:#111827;margin-bottom:4px;">Verification Zaroori Hai</h2>
@@ -18812,6 +18824,15 @@ async function rcSubmitLogin() {
                   <button class="action-btn action-btn-outline" onclick="document.getElementById('importFile').click()"><i class="fas fa-upload"></i> Import Data</button>
                   <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)"/>
                 </div>
+                <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 16px;margin-bottom:16px;">
+                  <div style="font-size:13px;font-weight:700;color:#c2410c;margin-bottom:6px;"><i class="fas fa-rotate-right"></i> Data Recovery — Agar Maids / Customers Admin Panel Mein Nahi Dikh Rahe</div>
+                  <div style="font-size:12px;color:#92400e;margin-bottom:10px;">Firebase se sabka data rebuild karega — koi bhi delete nahi hoga, sirf missing records wapas aayenge.</div>
+                  <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="action-btn" style="background:#f97316;color:#fff;border:none;" onclick="recoverLostMaids()"><i class="fas fa-user-tie"></i> Recover Lost Maids</button>
+                    <button class="action-btn" style="background:#3b82f6;color:#fff;border:none;" onclick="recoverLostCustomers()"><i class="fas fa-users"></i> Recover Lost Customers</button>
+                  </div>
+                  <div id="recoverStatusMsg" style="font-size:12px;margin-top:8px;display:none;"></div>
+                </div>
                 <hr class="settings-divider"/>
                 <h3 style="color:var(--red);margin-bottom:4px;">Danger Zone</h3>
                 <p style="color:var(--text2);font-size:13px;margin-bottom:14px;">These actions are irreversible. Please be careful.</p>
@@ -19516,7 +19537,14 @@ function setServiceIcons(v) {
     try { window.renderAllServiceIconGrids(); } catch(e) {}
   }
 }
-function getBookings() { return getLS('ram_admin_bookings', DEFAULT_BOOKINGS); }
+function getBookings() {
+  const books = getLS('ram_admin_bookings', DEFAULT_BOOKINGS);
+  // Normalize: ensure phone field always exists (fallback to customerPhone or customerId)
+  return books.map(b => ({
+    ...b,
+    phone: b.phone || b.customerPhone || b.customerId || ''
+  }));
+}
 function setBookings(v) { setLS('ram_admin_bookings', v); }
 function getSubscribers() { return getLS('ram_admin_subscribers', DEFAULT_SUBSCRIBERS); }
 function setSubscribers(v) {
@@ -22791,17 +22819,26 @@ function renderBookings() {
   const search = (document.getElementById('bookSearch')?.value||'').toLowerCase();
   const statusF = document.getElementById('bookStatusFilter')?.value||'';
   const svcF = document.getElementById('bookServiceFilter')?.value||'';
-  if (search) books = books.filter(b => b.custName?.toLowerCase().includes(search) || b.service?.toLowerCase().includes(search));
+  if (search) books = books.filter(b => b.custName?.toLowerCase().includes(search) || b.service?.toLowerCase().includes(search) || (b.phone||'').includes(search));
   if (statusF) books = books.filter(b => b.status === statusF);
   if (svcF) books = books.filter(b => b.service === svcF);
 
   document.getElementById('bookCount').textContent = books.length + ' Booking' + (books.length!==1?'s':'');
   const statusColors = {Pending:'badge-yellow',Confirmed:'badge-blue',Active:'badge-green',Completed:'badge-purple',Cancelled:'badge-gray'};
-  document.getElementById('bookTbody').innerHTML = books.length ? books.map(b => `
+  // Cross-reference maid agency info from adminMaids for old bookings
+  const _allMaids = getMaids ? getMaids() : [];
+  document.getElementById('bookTbody').innerHTML = books.length ? books.map(b => {
+    let agencyName = b.maidAgencyName || '';
+    let agencyPhone = b.maidAgencyPhone || '';
+    if (b.maidPhone && !agencyName) {
+      const _m = _allMaids.find(function(m){ return m.phone === b.maidPhone; });
+      if (_m && _m.agencyStatus === 'yes') { agencyName = _m.agencyName || ''; agencyPhone = _m.agencyPhone || ''; }
+    }
+    return `
     <tr>
       <td style="font-weight:700;font-size:12.5px;color:var(--text2);">${b.id}</td>
-      <td><div class="tbl-name">${b.custName}</div><div class="tbl-sub">${b.phone}</div></td>
-      <td>${b.maidName ? `<div class="tbl-name">${b.maidName}</div><div class="tbl-sub">${b.maidPhone||'—'}</div>` : '<span style="color:#9ca3af;font-size:12px;">—</span>'}</td>
+      <td><div class="tbl-name">${b.custName}</div><div class="tbl-sub">${b.phone || b.customerPhone || '—'}</div></td>
+      <td>${b.maidName ? `<div class="tbl-name">${b.maidName}</div><div class="tbl-sub">${b.maidPhone||'—'}</div>${agencyName ? `<div class="tbl-sub" style="color:#f97316;font-size:11px;margin-top:2px;"><i class="fas fa-building" style="font-size:10px;"></i> ${agencyName}${agencyPhone ? ' · ' + agencyPhone : ''}</div>` : ''}` : '<span style="color:#9ca3af;font-size:12px;">—</span>'}</td>
       <td>${b.service}</td>
       <td>${b.city||'—'}</td>
       <td>${b.date||'—'}</td>
@@ -22815,7 +22852,7 @@ function renderBookings() {
         </div>
       </td>
     </tr>
-  `).join('') : '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-calendar"></i><h3>No bookings</h3></div></td></tr>';
+  `;}).join('') : '<tr><td colspan="8"><div class="empty-state"><i class="fas fa-calendar"></i><h3>No bookings</h3></div></td></tr>';
 }
 function resetBookFilter() {
   ['bookSearch','bookStatusFilter','bookServiceFilter'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
@@ -24871,6 +24908,113 @@ function exportCSV(type){
     downloadCSV(rows, 'payments.csv');
   }
 }
+// ── DATA RECOVERY FUNCTIONS ──
+// Firebase ke individual maid documents + registeredCustomers se lost data rebuild karo
+async function recoverLostMaids() {
+  var statusEl = document.getElementById('recoverStatusMsg');
+  if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#92400e'; statusEl.textContent='🔄 Firebase se data fetch ho raha hai...'; }
+  try {
+    var recovered = 0;
+    var currentMaids = [];
+    try { currentMaids = JSON.parse(localStorage.getItem('ram_admin_maids')||'[]'); } catch(e) {}
+
+    // Step 1: ram_registered_maids se rebuild karo (sab registered maids ka store)
+    var regMaids = null;
+    if (typeof window._fbGet === 'function') {
+      try { regMaids = await window._fbGet('adminData', 'ram_registered_maids'); } catch(e) {}
+    }
+    if (regMaids && typeof regMaids === 'object' && !Array.isArray(regMaids)) {
+      Object.values(regMaids).forEach(function(maid) {
+        if (!maid || !maid.phone) return;
+        var exists = currentMaids.find(function(m){ return m.phone === maid.phone; });
+        if (!exists) {
+          var maxId = currentMaids.reduce(function(mx,m){ return Math.max(mx,m.id||0); }, 0);
+          currentMaids.push(Object.assign({id: maxId+1}, maid));
+          recovered++;
+        }
+      });
+    }
+
+    // Step 2: Firebase se maid_* individual documents bhi scan karo
+    if (typeof window._fbGetAll === 'function') {
+      try {
+        var allAdminDocs = await window._fbGetAll('adminData');
+        if (allAdminDocs) {
+          Object.keys(allAdminDocs).forEach(function(docId) {
+            if (!docId.startsWith('maid_')) return;
+            var maid = allAdminDocs[docId];
+            if (!maid || !maid.phone) return;
+            var exists = currentMaids.find(function(m){ return m.phone === maid.phone; });
+            if (!exists) {
+              var maxId = currentMaids.reduce(function(mx,m){ return Math.max(mx,m.id||0); }, 0);
+              currentMaids.push(Object.assign({id: maxId+1}, maid));
+              recovered++;
+            }
+          });
+        }
+      } catch(e) { console.warn('maid_* scan failed:', e); }
+    }
+
+    if (recovered > 0) {
+      localStorage.setItem('ram_admin_maids', JSON.stringify(currentMaids));
+      if (typeof window._fbSet === 'function') {
+        await window._fbSet('adminData', 'ram_admin_maids', currentMaids);
+      }
+      if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
+      if (typeof window.renderMaids === 'function') window.renderMaids();
+      if (typeof window.renderDashboard === 'function') window.renderDashboard();
+      if (statusEl) { statusEl.style.color='#15803d'; statusEl.textContent='✅ '+recovered+' maid(s) recover ho gayi! Admin panel refresh ho gaya.'; }
+      showToast('✅ '+recovered+' lost maid(s) recover ho gayi!');
+    } else {
+      if (statusEl) { statusEl.style.color='#374151'; statusEl.textContent='ℹ️ Koi missing maid nahi mili — sab data already present hai.'; }
+    }
+  } catch(err) {
+    console.error('recoverLostMaids failed:', err);
+    if (statusEl) { statusEl.style.color='#dc2626'; statusEl.textContent='❌ Recovery fail ho gayi: '+err.message; }
+  }
+}
+
+async function recoverLostCustomers() {
+  var statusEl = document.getElementById('recoverStatusMsg');
+  if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#92400e'; statusEl.textContent='🔄 Firebase se customers fetch ho rahe hain...'; }
+  try {
+    var recovered = 0;
+    var currentCusts = {};
+    try { currentCusts = JSON.parse(localStorage.getItem('registeredCustomers')||'{}'); } catch(e) {}
+
+    // Firebase se registeredCustomers fetch karo
+    if (typeof window._fbGet === 'function') {
+      try {
+        var fbCusts = await window._fbGet('siteData', 'registeredCustomers');
+        if (fbCusts && typeof fbCusts === 'object') {
+          Object.keys(fbCusts).forEach(function(phone) {
+            if (!currentCusts[phone]) {
+              currentCusts[phone] = fbCusts[phone];
+              recovered++;
+            }
+          });
+        }
+      } catch(e) { console.warn('registeredCustomers FB fetch failed:', e); }
+    }
+
+    if (recovered > 0) {
+      localStorage.setItem('registeredCustomers', JSON.stringify(currentCusts));
+      if (typeof window._fbSet === 'function') {
+        await window._fbSet('siteData', 'registeredCustomers', currentCusts);
+      }
+      if (typeof window.renderCustomers === 'function') window.renderCustomers();
+      if (typeof window.renderDashboard === 'function') window.renderDashboard();
+      if (statusEl) { statusEl.style.color='#15803d'; statusEl.textContent='✅ '+recovered+' customer(s) recover ho gaye! Admin panel refresh ho gaya.'; }
+      showToast('✅ '+recovered+' lost customer(s) recover ho gaye!');
+    } else {
+      if (statusEl) { statusEl.style.color='#374151'; statusEl.textContent='ℹ️ Koi missing customer nahi mila — sab data already present hai.'; }
+    }
+  } catch(err) {
+    console.error('recoverLostCustomers failed:', err);
+    if (statusEl) { statusEl.style.color='#dc2626'; statusEl.textContent='❌ Recovery fail ho gayi: '+err.message; }
+  }
+}
+
 function exportData(type){
   let data,fname;
   if(type==='customers'){
@@ -26094,7 +26238,26 @@ async function loadFromFirebase() {
   try {
     const adminSnap = await getDocs(collection(_db, 'adminData'));
     adminSnap.forEach(d => {
-      if (d.data().data !== undefined) localStorage.setItem(d.id, JSON.stringify(d.data().data));
+      if (d.data().data !== undefined) {
+        var _fbVal = d.data().data;
+        // Array data (maids, agencies etc.) ke liye: sirf valid non-empty array se overwrite karo
+        // Empty array Firebase se aaye to local data wipe mat karo (partial/corrupt save se bachaao)
+        if (Array.isArray(_fbVal)) {
+          if (_fbVal.length > 0) {
+            localStorage.setItem(d.id, JSON.stringify(_fbVal));
+          } else {
+            // Empty array — sirf tab set karo jab local mein bhi kuch na ho
+            var _localArr = null;
+            try { _localArr = JSON.parse(localStorage.getItem(d.id)); } catch(_e) {}
+            if (!Array.isArray(_localArr) || _localArr.length === 0) {
+              localStorage.setItem(d.id, JSON.stringify(_fbVal));
+            }
+          }
+        } else {
+          // Object/primitive data — seedha set karo (customers, settings etc.)
+          localStorage.setItem(d.id, JSON.stringify(_fbVal));
+        }
+      }
     });
     const siteSnap = await getDocs(collection(_db, 'siteData'));
     siteSnap.forEach(d => {
@@ -26190,7 +26353,22 @@ function setupRealtimeSync() {
         }
       } catch(e) {}
 
-      localStorage.setItem('ram_admin_maids', JSON.stringify(snap.data().data));
+      // ── Safety: sirf valid non-empty array se overwrite karo ──
+      // Agar Firebase se null/undefined/object aaya (corrupted/partial save) toh
+      // existing localStorage data wipe mat karo — warna sari maids gayab ho jaati hain.
+      var _fbMaidsSnap = snap.data().data;
+      if (Array.isArray(_fbMaidsSnap) && _fbMaidsSnap.length > 0) {
+        localStorage.setItem('ram_admin_maids', JSON.stringify(_fbMaidsSnap));
+      } else if (Array.isArray(_fbMaidsSnap) && _fbMaidsSnap.length === 0) {
+        // Genuinely empty array — sirf tab overwrite karo jab local bhi empty ho
+        var _existingMaidsSnap = [];
+        try { _existingMaidsSnap = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(_em) {}
+        if (!Array.isArray(_existingMaidsSnap) || _existingMaidsSnap.length === 0) {
+          localStorage.setItem('ram_admin_maids', JSON.stringify(_fbMaidsSnap));
+        }
+        // else: Firebase empty bheja, local mein data hai — local rakho
+      }
+      // Array nahi aaya (null/object/undefined) — localStorage bilkul mat chhuona
       if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
       else if (typeof window.renderMaidCards === 'function') window.renderMaidCards();
       if (typeof window.renderMaids === 'function') { try { window.renderMaids(); } catch(e) {} }
@@ -26229,7 +26407,17 @@ function setupRealtimeSync() {
     // Skip if this device just saved something newer than what's coming in —
     // avoids a delayed/stale snapshot wiping out a just-changed password.
     if (lastLocalSave && incomingTime && new Date(lastLocalSave) > new Date(incomingTime)) return;
-    localStorage.setItem('registeredCustomers', JSON.stringify(snap.data().data));
+    // Safety: customers object ke liye — null/empty object se overwrite mat karo
+    var _fbCustData = snap.data().data;
+    if (_fbCustData && typeof _fbCustData === 'object' && Object.keys(_fbCustData).length > 0) {
+      localStorage.setItem('registeredCustomers', JSON.stringify(_fbCustData));
+    } else if (_fbCustData && typeof _fbCustData === 'object' && Object.keys(_fbCustData).length === 0) {
+      var _existingCust = null;
+      try { _existingCust = JSON.parse(localStorage.getItem('registeredCustomers')); } catch(_ec) {}
+      if (!_existingCust || typeof _existingCust !== 'object' || Object.keys(_existingCust).length === 0) {
+        localStorage.setItem('registeredCustomers', JSON.stringify(_fbCustData));
+      }
+    }
     if (typeof window.renderCustomers === 'function') { try { window.renderCustomers(); } catch(e) {} }
     if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
   });
@@ -27947,8 +28135,8 @@ clearAuthErrors = function() {
         </div>
 
         <div style="margin-bottom:13px;padding:11px 14px;background:rgba(255,255,255,.04);border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
-          <div style="font-weight:700;color:#fff;margin-bottom:4px;">6. Document Verification is the Agency's Responsibility</div>
-          <div>The agency is solely responsible for verifying the original identity documents of each maid it registers (including Aadhaar card, address proof, and any other required documents). The platform does not verify documents on behalf of the agency. Any fraud arising from unverified documents shall be the agency's liability.</div>
+          <div style="font-weight:700;color:#fff;margin-bottom:4px;">6. Document Verification is Exclusively the Agency's Responsibility</div>
+          <div>The agency is solely and exclusively responsible for verifying the original identity documents of every maid it registers on this platform — including but not limited to Aadhaar card, address proof, police verification certificate, and any other document required by law or by customers. <strong style="color:#fbbf24;">Rent a Maid India does not verify, authenticate, or cross-check any document submitted by the agency or any maid registered under the agency. The platform bears absolutely no responsibility for Aadhaar verification, police verification, background checks, criminal record checks, address verification, or any other form of maid verification for agency-registered maids.</strong> Any fraud, loss, harm, or legal consequence arising from unverified, forged, or incorrect documents is entirely and exclusively the legal and financial liability of the agency. The platform cannot be held responsible or made a party to any such matter under any circumstances.</div>
         </div>
 
         <div style="margin-bottom:13px;padding:11px 14px;background:rgba(255,255,255,.04);border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
@@ -27992,8 +28180,8 @@ clearAuthErrors = function() {
         </div>
 
         <div style="margin-bottom:13px;padding:11px 14px;background:rgba(255,255,255,.04);border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
-          <div style="font-weight:700;color:#fff;margin-bottom:4px;">15. Aadhaar &amp; Other Verification — Agency's Sole Responsibility</div>
-          <div>Aadhaar card verification, police verification, background checks, address verification, and any other identity or credential verification of maids shall be carried out exclusively by the agency itself. <strong style="color:#fbbf24;">Rent a Maid India company ki is sambandh mein koi bhi zimmedari nahi hai.</strong> The platform does not verify, authenticate, or cross-check any documents submitted by the agency or its registered maids. Any fraudulent document, false identity, or unverified background that causes loss or harm to any party shall be the sole legal and financial responsibility of the agency. The platform shall not be liable or held accountable in any such matter under any circumstances.</div>
+          <div style="font-weight:700;color:#fff;margin-bottom:4px;">15. All Maid Verification — Exclusively the Agency's Responsibility</div>
+          <div>Aadhaar card verification, police verification, criminal background checks, address verification, character verification, health checks, and any other identity or credential verification of maids registered under the agency shall be carried out exclusively by the agency itself, before listing any maid on this platform. <strong style="color:#fbbf24;">Rent a Maid India has absolutely no responsibility, liability, or obligation — legal, financial, or moral — with respect to the verification of any maid listed under an agency account.</strong> The platform does not verify, authenticate, or cross-check any document or detail submitted by the agency or its maids. Any fraudulent document, false identity, unverified background, or misrepresentation by any agency-registered maid that results in loss, harm, theft, fraud, or legal proceedings against any party shall be the sole legal and financial responsibility of the agency. The platform shall not be liable, named, or held accountable in any such matter under any circumstances, including police complaints, consumer complaints, court proceedings, or media inquiries.</div>
         </div>
 
         <div style="margin-bottom:20px;padding:11px 14px;background:rgba(249,115,22,.12);border-left:3px solid #f97316;border-radius:0 8px 8px 0;">
@@ -28056,6 +28244,9 @@ function closeAgTcModal() {
 function agTcAgreeAndClose() {
   var chk = document.getElementById('agTcCheckbox');
   if (chk) chk.checked = true;
+  // Also tick the maid registration T&C checkbox if it exists (step 2)
+  var maidChk = document.getElementById('agNM_termsCheck');
+  if (maidChk) { maidChk.checked = true; var err = document.getElementById('agNM_termsErr'); if(err) err.style.display='none'; }
   var err = document.getElementById('agTcErr');
   if (err) err.style.display = 'none';
   closeAgTcModal();
@@ -29004,6 +29195,7 @@ function agEditMaid(phone) {
 
   // Reset temp vars
   window._agEMPhotoBase64 = null;
+  window._agEMPhotoFile = null;
   window._agEMAadharFrontBase64 = null;
   window._agEMAadharBackBase64 = null;
 
@@ -29073,11 +29265,15 @@ function agEditMaid(phone) {
 
 function agCloseEditMaid() {
   document.getElementById('agEditMaidModal').style.display = 'none';
+  var p1 = document.getElementById('agEM_newPassword'); if(p1) { p1.value=''; p1.type='password'; }
+  var p2 = document.getElementById('agEM_confirmPassword'); if(p2) { p2.value=''; p2.type='password'; }
+  var pm = document.getElementById('agEM_pwdMsg'); if(pm) pm.style.display='none';
 }
 
 function agEMPhotoUpload(event) {
   var file = event.target.files[0]; if (!file) return;
   if (file.size > 5*1024*1024) { showToast('File too large (max 5MB)'); return; }
+  window._agEMPhotoFile = file; // Firebase Storage upload ke liye file store karo
   var reader = new FileReader();
   reader.onload = function(e) {
     window._agEMPhotoBase64 = e.target.result;
@@ -29098,7 +29294,7 @@ function agEMAadharUpload(event, side) {
   reader.readAsDataURL(file);
 }
 
-function agSaveEditMaid() {
+async function agSaveEditMaid() {
   var origPhone = document.getElementById('agEM_originalPhone').value;
   var name   = (document.getElementById('agEM_name').value||'').trim();
   var age    = (document.getElementById('agEM_age').value||'').trim();
@@ -29112,6 +29308,15 @@ function agSaveEditMaid() {
   var _mForNum = _regForNum[origPhone] || {};
   var aadharNum = aadharNumEl2 ? (aadharNumEl2.value||'').trim() : (_mForNum.aadharNumber||'');
   var services = Array.from(document.querySelectorAll('.ag-em-svc-cb:checked')).map(function(cb){ return cb.value; });
+
+  var newPwd = (document.getElementById('agEM_newPassword').value||'').trim();
+  var confirmPwd = (document.getElementById('agEM_confirmPassword').value||'').trim();
+  var pwdMsg = document.getElementById('agEM_pwdMsg');
+  if (newPwd || confirmPwd) {
+    if (newPwd.length < 6) { pwdMsg.textContent = '❌ Password kam se kam 6 characters ka hona chahiye.'; pwdMsg.style.color='#dc2626'; pwdMsg.style.display='block'; return; }
+    if (newPwd !== confirmPwd) { pwdMsg.textContent = '❌ Dono passwords match nahi karte.'; pwdMsg.style.color='#dc2626'; pwdMsg.style.display='block'; return; }
+    pwdMsg.style.display='none';
+  }
 
   if (!name) { showToast('Name is required.'); return; }
   if (!origPhone) { showToast('Session error. Please close and try again.'); return; }
@@ -29132,8 +29337,29 @@ function agSaveEditMaid() {
   m.workShift = shift;
   m.workType = wtype;
   m.aadharNumber = aadharNum;
+  if (newPwd) { var _hashFn2 = (typeof simpleHash === "function") ? simpleHash : function(s){ var h=5381; for(var i=0;i<s.length;i++){ h=((h<<5)+h)^s.charCodeAt(i); h=h&h; } return "h"+Math.abs(h).toString(36); }; m.passwordHash = _hashFn2(newPwd); delete m.password; }
   if (services.length) m.services = services;
-  if (window._agEMPhotoBase64) m.photo = window._agEMPhotoBase64;
+
+  // ── Photo: Firebase Storage mein upload karo ──
+  if (window._agEMPhotoFile && typeof window._fbUploadPhoto === 'function') {
+    var _emSaveBtn = document.getElementById('agEM_saveBtn');
+    var _emSaveBtnOldText = _emSaveBtn ? _emSaveBtn.textContent : '';
+    try {
+      if (_emSaveBtn) { _emSaveBtn.disabled = true; _emSaveBtn.textContent = 'Uploading photo…'; }
+      var _emPhotoPath = 'maid-photos/' + origPhone + '_' + Date.now() + '.jpg';
+      var _emPhotoUrl = await window._fbUploadPhoto(window._agEMPhotoFile, _emPhotoPath) || '';
+      if (_emPhotoUrl) {
+        m.photo = _emPhotoUrl;
+      }
+      // _agEMPhotoFile clear karo taaki duplicate upload na ho
+      window._agEMPhotoFile = null;
+    } catch(_emPhErr) {
+      console.warn('Edit maid photo upload failed:', _emPhErr);
+    } finally {
+      if (_emSaveBtn) { _emSaveBtn.disabled = false; _emSaveBtn.textContent = _emSaveBtnOldText || '💾 Save Changes'; }
+    }
+  }
+
   if (window._agEMAadharFrontBase64) m.aadharFront = window._agEMAadharFrontBase64;
   if (window._agEMAadharBackBase64) m.aadharBack = window._agEMAadharBackBase64;
 
@@ -29157,20 +29383,64 @@ function agSaveEditMaid() {
   localStorage.setItem('ram_registered_maids', JSON.stringify(reg));
 
   // Update in ram_admin_maids too
+  // Local ram_admin_maids mein sirf is maid ko update karo (baki mat chhuona)
   var adminMaids = [];
   try { adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids')||'[]'); } catch(e){}
   var idx = adminMaids.findIndex(function(x){ return x.phone===origPhone; });
   if (idx !== -1) { adminMaids[idx] = Object.assign(adminMaids[idx], m); localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids)); }
 
-  // Firebase sync — sab jagah update karo taaki website + admin + agency sab live ho jayein
+  // Firebase sync
+  var _mForFb = Object.assign({}, m);
+  if (_mForFb.photo && _mForFb.photo.startsWith('data:')) _mForFb.photo = '';
+  if (_mForFb.aadharFront && _mForFb.aadharFront.startsWith('data:')) _mForFb.aadharFront = '';
+  if (_mForFb.aadharBack && _mForFb.aadharBack.startsWith('data:')) _mForFb.aadharBack = '';
+  var _regForFb = {};
+  Object.keys(reg).forEach(function(k) {
+    var r = Object.assign({}, reg[k]);
+    if (r.photo && r.photo.startsWith('data:')) r.photo = '';
+    if (r.aadharFront && r.aadharFront.startsWith('data:')) r.aadharFront = '';
+    if (r.aadharBack && r.aadharBack.startsWith('data:')) r.aadharBack = '';
+    _regForFb[k] = r;
+  });
+
   if (typeof window._fbSet === 'function') {
-    window._fbSet('adminData','maid_'+origPhone, m).catch(function(){});
-    window._fbSet('adminData','ram_admin_maids', adminMaids).catch(function(){});
-    window._fbSet('adminData','ram_registered_maids', reg).catch(function(){});
+    // (a) Individual maid doc — primary
+    window._fbSet('adminData','maid_'+origPhone, _mForFb).catch(function(){});
+
+    // (b) ram_admin_maids — Firebase se latest fetch karo, sirf is maid ko update karo
+    //     Agency ke device pe incomplete local array se overwrite NAHI karna
+    (async function() {
+      try {
+        var fbMaids = null;
+        if (typeof window._fbGet === 'function') fbMaids = await window._fbGet('adminData', 'ram_admin_maids');
+        var mergedEM = Array.isArray(fbMaids) ? fbMaids.slice() : adminMaids.slice();
+        // Local se bhi koi miss ho to add karo
+        adminMaids.forEach(function(lm) {
+          if (!mergedEM.find(function(fm){ return fm.phone === lm.phone; })) {
+            var lmS = Object.assign({}, lm);
+            if (lmS.photo && lmS.photo.startsWith('data:')) lmS.photo = '';
+            mergedEM.push(lmS);
+          }
+        });
+        var emIdx = mergedEM.findIndex(function(x){ return x.phone === origPhone; });
+        if (emIdx !== -1) { mergedEM[emIdx] = Object.assign(mergedEM[emIdx], _mForFb); }
+        else { mergedEM.push(_mForFb); }
+        localStorage.setItem('ram_admin_maids', JSON.stringify(mergedEM));
+        await window._fbSet('adminData','ram_admin_maids', mergedEM);
+      } catch(_emErr) { console.warn('agSaveEditMaid admin_maids merge-save failed:', _emErr); }
+    })();
+
+    // (c) ram_registered_maids — fire-and-forget
+    window._fbSet('adminData','ram_registered_maids', _regForFb).catch(function(){});
+    if (newPwd) {
+      window._fbSet('adminData', 'maid_pwd_'+origPhone, { passwordHash: _mForFb.passwordHash, phone: origPhone, updatedAt: new Date().toISOString() }).catch(function(){});
+    }
   } else if (typeof window._fbSetWhenReady === 'function') {
-    window._fbSetWhenReady('adminData','maid_'+origPhone, m).catch(function(){});
-    window._fbSetWhenReady('adminData','ram_admin_maids', adminMaids).catch(function(){});
-    window._fbSetWhenReady('adminData','ram_registered_maids', reg).catch(function(){});
+    window._fbSetWhenReady('adminData','maid_'+origPhone, _mForFb).catch(function(){});
+    window._fbSetWhenReady('adminData','ram_registered_maids', _regForFb).catch(function(){});
+    if (newPwd) {
+      window._fbSetWhenReady('adminData', 'maid_pwd_'+origPhone, { passwordHash: _mForFb.passwordHash, phone: origPhone, updatedAt: new Date().toISOString() }).catch(function(){});
+    }
   }
 
   // ── Aadhaar data ko aadhar_${phone} format mein bhi save karo ──
@@ -29218,8 +29488,20 @@ function agSaveEditMaid() {
     } catch(eN) {}
   }
 
-  showToast(_aadhaarChanged ? '✅ Maid updated! Submitted for re-verification.' : '✅ Maid profile updated successfully!');
+  var _toastMsg = _aadhaarChanged ? '✅ Maid updated! Submitted for re-verification.' : (newPwd ? '✅ Profile & password updated! Maid ab naye password se login kar sakti hai.' : '✅ Maid profile updated successfully!'); showToast(_toastMsg);
   agCloseEditMaid();
+
+  // ── In-memory MAIDS array update karo taaki website listing bhi live ho ──
+  if (typeof window.MAIDS !== 'undefined' && Array.isArray(window.MAIDS)) {
+    var _maidIdx = window.MAIDS.findIndex(function(x){ return x.phone === origPhone; });
+    if (_maidIdx !== -1) {
+      window.MAIDS[_maidIdx] = Object.assign(window.MAIDS[_maidIdx], m);
+    }
+  }
+  // Website listing re-render karo
+  if (typeof window.syncAndRenderMaids === 'function') { try { window.syncAndRenderMaids(); } catch(e) {} }
+  else if (typeof window.renderMaidCards === 'function') { try { window.renderMaidCards(); } catch(e) {} }
+
   var sess = agGetSession();
   if (sess) renderAgencyDashboard(sess);
   renderAgencyMaidsList();
@@ -29521,6 +29803,42 @@ function agRespondEnquiryByIdx(idx, newStatus) {
 /* ═══════════════════════════════════════════════════════
    ADD NEW MAID (by Agency)
 ═══════════════════════════════════════════════════════ */
+// ── Agency Add Maid: Step Navigation ──
+function agNMGoStep2() {
+  // Validate Step 1 fields first
+  var name   = (document.getElementById('agNewMaidName').value||'').trim();
+  var phone  = (document.getElementById('agNewMaidPhone').value||'').replace(/\D/g,'');
+  var state  = (document.getElementById('agNewMaidState').value||'').trim();
+  var dist   = (document.getElementById('agNewMaidDistrict').value||'').trim();
+  var password = (document.getElementById('agNewMaidPassword').value||'');
+  var ok = true;
+  var showE = function(id,show){ var el=document.getElementById(id); if(el) el.style.display=show?'block':'none'; };
+  showE('agNM_nameErr',!name); if(!name) ok=false;
+  showE('agNM_phoneErr',phone.length!==10); if(phone.length!==10) ok=false;
+  showE('agNM_stateErr',!state); if(!state) ok=false;
+  showE('agNM_distErr',!dist); if(!dist) ok=false;
+  showE('agNM_passErr',password.length<8); if(password.length<8) ok=false;
+  if (!ok) return;
+  // Show step 2
+  document.getElementById('agNM_step1').style.display='none';
+  document.getElementById('agNM_step2').style.display='block';
+  // Update step indicator
+  var c2 = document.getElementById('agNM_step2Circle');
+  var l2 = document.getElementById('agNM_step2Label');
+  if(c2){ c2.style.background='linear-gradient(135deg,#f97316,#ea580c)'; c2.style.color='#fff'; }
+  if(l2){ l2.style.color='#f97316'; }
+}
+
+function agNMGoStep1() {
+  document.getElementById('agNM_step2').style.display='none';
+  document.getElementById('agNM_step1').style.display='block';
+  // Reset step 2 indicator
+  var c2 = document.getElementById('agNM_step2Circle');
+  var l2 = document.getElementById('agNM_step2Label');
+  if(c2){ c2.style.background='#e5e7eb'; c2.style.color='#9ca3af'; }
+  if(l2){ l2.style.color='#9ca3af'; }
+}
+
 async function submitAgencyAddMaid() {
   var sess = agGetSession(); if (!sess) return;
   var btn = document.getElementById('agAddMaidBtn');
@@ -29545,6 +29863,8 @@ async function submitAgencyAddMaid() {
   showE('agNM_stateErr',!state); if(!state) ok=false;
   showE('agNM_distErr',!dist); if(!dist) ok=false;
   showE('agNM_passErr',password.length<8); if(password.length<8) ok=false;
+  var termsChecked = document.getElementById('agNM_termsCheck') && document.getElementById('agNM_termsCheck').checked;
+  showE('agNM_termsErr',!termsChecked); if(!termsChecked) ok=false;
   if (!ok) return;
 
   // Check duplicate
@@ -29553,31 +29873,23 @@ async function submitAgencyAddMaid() {
   if (existing[phone]) { agMsg('agAddMaidMsg','This phone number is already registered.',true); return; }
 
   if (btn) { btn.disabled=true; btn.textContent='Saving…'; }
+  try {
 
-  // ── Firebase Storage mein photos upload karo (base64 nahi, URL save hoga) ──
-  var photoUrl = '';
+  // ── Photo: Firebase Storage mein upload karo (compress + upload + URL) ──
   var aadharFrontUrl = '';
   var aadharBackUrl = '';
+  var finalPhotoUrl = '';
 
-  try {
-    if (window._agNMPhotoFile && typeof window._fbUploadPhoto === 'function') {
+  if (window._agNMPhotoFile && typeof window._fbUploadPhoto === 'function') {
+    try {
       if (btn) btn.textContent = 'Uploading photo…';
-      photoUrl = await window._fbUploadPhoto(window._agNMPhotoFile, 'maid-photos/' + phone + '_' + Date.now() + '.jpg') || '';
+      var _agPhotoPath = 'maid-photos/' + phone + '_' + Date.now() + '.jpg';
+      finalPhotoUrl = await window._fbUploadPhoto(window._agNMPhotoFile, _agPhotoPath) || '';
+    } catch(_agPhErr) {
+      console.warn('Agency maid photo upload failed:', _agPhErr);
+      finalPhotoUrl = ''; // photo fail ho to bhi registration continue karo
     }
-    if (window._agNMAadharFrontFile && typeof window._fbUploadPhoto === 'function') {
-      if (btn) btn.textContent = 'Uploading Aadhaar…';
-      aadharFrontUrl = await window._fbUploadPhoto(window._agNMAadharFrontFile, 'aadhar-photos/' + phone + '_front_' + Date.now() + '.jpg') || '';
-    }
-    if (window._agNMAadharBackFile && typeof window._fbUploadPhoto === 'function') {
-      aadharBackUrl = await window._fbUploadPhoto(window._agNMAadharBackFile, 'aadhar-photos/' + phone + '_back_' + Date.now() + '.jpg') || '';
-    }
-  } catch(uploadErr) {
-    console.warn('Agency maid photo upload error:', uploadErr);
-    // Upload fail ho to bhi registration continue karo (URL empty rahega)
   }
-
-  // Firebase URL nahi mila to base64 fallback use karo (photo ke liye)
-  var finalPhotoUrl = photoUrl || window._agNMPhotoBase64 || '';
 
   if (btn) btn.textContent = 'Saving…';
 
@@ -29607,12 +29919,9 @@ async function submitAgencyAddMaid() {
     maidRec.agencyName = sessAgency.name || sess.agencyName || '';
   }
 
-  // Aadhaar data ko admin panel format mein bhi save karo (aadhar_{phone} key)
-  // Taaki admin panel mein Aadhaar Verification section mein dikh sake
-  // FIX: Aadhaar number ya koi bhi photo ho to record banao
-  // Agar Firebase URL nahi mila to base64 fallback use karo
-  var finalFrontUrl = aadharFrontUrl || window._agNMAadharFrontBase64 || '';
-  var finalBackUrl = aadharBackUrl || window._agNMAadharBackBase64 || '';
+  // Aadhaar: base64 use karo directly
+  var finalFrontUrl = window._agNMAadharFrontBase64 || '';
+  var finalBackUrl = window._agNMAadharBackBase64 || '';
   if (finalFrontUrl || maidRec.aadharNumber) {
     var aadharRecord = {
       phone: phone,
@@ -29665,25 +29974,14 @@ async function submitAgencyAddMaid() {
   localStorage.setItem('ram_registered_maids', JSON.stringify(existing));
   localStorage.setItem('ram_registered_maids_savedAt', new Date().toISOString());
 
-  // Save to ram_admin_maids (agency dashboard + admin panel dono mein dikhe)
-  var adminMaids = [];
-  try { adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids')||'[]'); } catch(e){}
-  // Duplicate check
-  var alreadyIdx = adminMaids.findIndex(function(m){ return m.phone === phone; });
-  if (alreadyIdx !== -1) {
-    adminMaids[alreadyIdx] = Object.assign(adminMaids[alreadyIdx], maidRec);
-  } else {
-    var maxId = adminMaids.reduce(function(mx,m){ return Math.max(mx,m.id||0); }, 0);
-    adminMaids.push(Object.assign({id: maxId+1}, maidRec));
-  }
-  localStorage.setItem('ram_admin_maids', JSON.stringify(adminMaids));
+  // Firebase mein save karo
+  // CRITICAL FIX: Agency apni local incomplete ram_admin_maids se Firebase overwrite
+  // NAHI karegi — kyunki agency ke device pe sirf uski maids hain, admin ke sare nahi.
+  // Strategy: (a) individual maid document save karo (b) Firebase se latest full array
+  //           fetch karo, sirf is maid ko merge/add karo, phir save karo.
 
-  // Firebase mein save karo (same pattern as normal registration):
-  // 1. Individual maid document: adminData/maid_{phone}  ← PRIMARY (reliable, small)
-  // 2. Full ram_registered_maids document ← admin panel + website listing ke liye
-  // 3. ram_admin_maids ← website MAIDS array sync ke liye
+  // Firebase ready hone ka wait karo (max 10 sec)
   if (typeof window._fbSet !== 'function') {
-    // Firebase load hone ka wait karo (max 10 sec)
     await new Promise(function(resolve) {
       var start = Date.now();
       var poll = setInterval(function() {
@@ -29693,32 +29991,72 @@ async function submitAgencyAddMaid() {
       }, 100);
     });
   }
+
+  var maidRecSafe = Object.assign({}, maidRec);
+  if (maidRecSafe.photo && maidRecSafe.photo.startsWith('data:')) maidRecSafe.photo = '';
+  if (maidRecSafe.aadharFront && maidRecSafe.aadharFront.startsWith('data:')) maidRecSafe.aadharFront = '';
+  if (maidRecSafe.aadharBack && maidRecSafe.aadharBack.startsWith('data:')) maidRecSafe.aadharBack = '';
+
   if (typeof window._fbSet === 'function') {
-    // (a) Per-maid alag document — AWAIT karo, sabse important
-    try { await window._fbSet('adminData', 'maid_'+phone, maidRec); } catch(e) { console.warn('Firebase maid_phone save failed:', e); }
-    // (b) Poora ram_registered_maids collection — fire-and-forget
+    // (a) Individual maid document — AWAIT karo, primary record
+    try { await window._fbSet('adminData', 'maid_'+phone, maidRecSafe); } catch(e) { console.warn('Firebase maid_phone save failed:', e); }
+
+    // (b) ram_admin_maids — Firebase se latest fetch karo, merge karo, save karo
+    //     Yeh ensure karta hai ki baki admin maids kabhi na jaayein
+    try {
+      var fbLatestMaids = null;
+      try {
+        if (typeof window._fbGet === 'function') fbLatestMaids = await window._fbGet('adminData', 'ram_admin_maids');
+      } catch(_fge) {}
+      var mergedAdminMaids = Array.isArray(fbLatestMaids) ? fbLatestMaids.slice() : [];
+      // Local se bhi merge karo (agar Firebase se zyada ho)
+      var localMaidsForMerge = [];
+      try { localMaidsForMerge = JSON.parse(localStorage.getItem('ram_admin_maids')||'[]'); } catch(_lm) {}
+      if (Array.isArray(localMaidsForMerge)) {
+        localMaidsForMerge.forEach(function(lm) {
+          if (!mergedAdminMaids.find(function(fm){ return fm.phone === lm.phone; })) {
+            var lmSafe = Object.assign({}, lm);
+            if (lmSafe.photo && lmSafe.photo.startsWith('data:')) lmSafe.photo = '';
+            mergedAdminMaids.push(lmSafe);
+          }
+        });
+      }
+      // Is nayi maid ko add/update karo
+      var mergeIdx = mergedAdminMaids.findIndex(function(m){ return m.phone === phone; });
+      if (mergeIdx !== -1) {
+        mergedAdminMaids[mergeIdx] = Object.assign(mergedAdminMaids[mergeIdx], maidRecSafe);
+      } else {
+        var maxMergedId = mergedAdminMaids.reduce(function(mx,m){ return Math.max(mx,m.id||0); }, 0);
+        mergedAdminMaids.push(Object.assign({id: maxMergedId+1}, maidRecSafe));
+      }
+      // Local update karo taaki current page bhi reflect kare
+      localStorage.setItem('ram_admin_maids', JSON.stringify(mergedAdminMaids));
+      await window._fbSet('adminData', 'ram_admin_maids', mergedAdminMaids);
+    } catch(e) { console.warn('Firebase admin_maids merge-save failed:', e); }
+
+    // (c) ram_registered_maids — fire-and-forget
     try {
       var safeAll = {};
       Object.keys(existing).forEach(function(k) {
         var r = Object.assign({}, existing[k]);
         if (r.photo && r.photo.startsWith('data:')) r.photo = '';
+        if (r.aadharFront && r.aadharFront.startsWith('data:')) r.aadharFront = '';
+        if (r.aadharBack && r.aadharBack.startsWith('data:')) r.aadharBack = '';
         safeAll[k] = r;
       });
       window._fbSet('adminData', 'ram_registered_maids', safeAll).catch(function(e) { console.warn('Full maids Firebase save failed:', e); });
     } catch(e) { console.warn('Firebase registered_maids save failed:', e); }
-    // (c) ram_admin_maids — website MAIDS array aur admin panel ke liye
-    try {
-      var adminMaidsSafe = adminMaids.map(function(m) {
-        var r = Object.assign({}, m);
-        if (r.photo && r.photo.startsWith('data:')) r.photo = '';
-        return r;
-      });
-      window._fbSet('adminData', 'ram_admin_maids', adminMaidsSafe).catch(function(e) { console.warn('Firebase admin_maids save failed:', e); });
-    } catch(e) { console.warn('Firebase admin_maids save failed:', e); }
+
   } else if (typeof window._fbSetWhenReady === 'function') {
-    window._fbSetWhenReady('adminData', 'maid_'+phone, maidRec);
+    window._fbSetWhenReady('adminData', 'maid_'+phone, maidRecSafe);
     window._fbSetWhenReady('adminData', 'ram_registered_maids', existing);
-    window._fbSetWhenReady('adminData', 'ram_admin_maids', adminMaids);
+    // _fbSetWhenReady ke saath bhi merge — local array use karo (best effort)
+    var localMaidsWR = [];
+    try { localMaidsWR = JSON.parse(localStorage.getItem('ram_admin_maids')||'[]'); } catch(_lw) {}
+    var wrMergeIdx = localMaidsWR.findIndex(function(m){ return m.phone === phone; });
+    if (wrMergeIdx !== -1) { localMaidsWR[wrMergeIdx] = Object.assign(localMaidsWR[wrMergeIdx], maidRecSafe); }
+    else { var wrMaxId = localMaidsWR.reduce(function(mx,m){ return Math.max(mx,m.id||0); },0); localMaidsWR.push(Object.assign({id:wrMaxId+1},maidRecSafe)); }
+    window._fbSetWhenReady('adminData', 'ram_admin_maids', localMaidsWR);
   }
 
   // Admin ko notification do ki nayi maid agency ne add ki
@@ -29726,24 +30064,28 @@ async function submitAgencyAddMaid() {
     addNotification({ audience: 'admin', title: '🏢 Agency Maid Added', message: (sess.agencyName||'Agency')+' ne nayi maid add ki: '+name+' ('+phone+')', page: 'maids' });
   }
 
+  } catch(_regErr) {
+    console.error('Agency maid registration error:', _regErr);
+    if (btn) { btn.disabled=false; btn.textContent='Register Maid'; }
+    agMsg('agAddMaidMsg','❌ Kuch galat ho gaya. Dobara try karein.', true);
+    return;
+  }
   agMsg('agAddMaidMsg','✅ Maid registered successfully! She will appear in the main listing after admin verification.',false);
   // Clear form
   ['agNewMaidName','agNewMaidPhone','agNewMaidAge','agNewMaidSalary','agNewMaidPassword']
     .forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
   document.querySelectorAll('.ag-svc-cb').forEach(function(cb){ cb.checked=false; });
-  // Clear photo & aadhaar
+  // Clear photo & reset form
   var photoPrev = document.getElementById('agNMPhotoPreview');
   if (photoPrev) { photoPrev.innerHTML='<i class="fas fa-user"></i>'; photoPrev.style.border='2.5px solid #e5e7eb'; }
   var photoFN = document.getElementById('agNMPhotoFileName'); if (photoFN) photoFN.textContent='';
   var photoInp = document.getElementById('agNMPhotoInput'); if (photoInp) photoInp.value='';
-  var aadharNum = document.getElementById('agNMAadharNumber'); if (aadharNum) aadharNum.value='';
-  var aFront = document.getElementById('agNMAadharFrontName'); if (aFront) aFront.textContent='';
-  var aFrontInp = document.getElementById('agNMAadharFrontInput'); if (aFrontInp) aFrontInp.value='';
-  var aBack = document.getElementById('agNMAadharBackName'); if (aBack) aBack.textContent='';
-  var aBackInp = document.getElementById('agNMAadharBackInput'); if (aBackInp) aBackInp.value='';
+  var termsChk = document.getElementById('agNM_termsCheck'); if (termsChk) termsChk.checked=false;
   window._agNMPhotoBase64=null; window._agNMAadharFrontBase64=null; window._agNMAadharBackBase64=null;
   window._agNMPhotoFile=null; window._agNMAadharFrontFile=null; window._agNMAadharBackFile=null;
   if (btn) { btn.disabled=false; btn.textContent='Register Maid'; }
+  // Go back to step 1 view
+  agNMGoStep1();
 
   // Refresh stats & maid list
   renderAgencyDashboard(sess);
@@ -29899,160 +30241,182 @@ async function submitAgencyAddMaid() {
 
     <!-- Pane: Add Maid -->
     <div id="agPane_add" class="ag-dash-pane" style="display:none;">
-      <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Register a new maid under your agency. She will appear on the platform like a normal maid. Customers will see <strong>her phone number</strong> — but enquiries will also notify your agency.</div>
 
-      <div class="ag-form-row">
-        <div class="ag-form-g">
-          <label>Maid Name *</label>
-          <input id="agNewMaidName" placeholder="e.g. Sunita Devi" type="text" />
-          <div class="ag-nmerr" id="agNM_nameErr">Name is required.</div>
+      <!-- Step Indicator -->
+      <div style="display:flex;align-items:center;gap:0;margin-bottom:20px;">
+        <div id="agNM_stepInd1" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;">1</div>
+          <div style="font-size:11px;font-weight:600;color:#f97316;">Basic Details</div>
         </div>
-        <div class="ag-form-g">
-          <label>Phone Number *</label>
-          <input id="agNewMaidPhone" placeholder="9876543210" type="tel" maxlength="10" />
-          <div class="ag-nmerr" id="agNM_phoneErr">Valid 10-digit number required.</div>
+        <div style="flex:1;height:2px;background:#e5e7eb;margin-top:-16px;"></div>
+        <div id="agNM_stepInd2" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div id="agNM_step2Circle" style="width:32px;height:32px;border-radius:50%;background:#e5e7eb;color:#9ca3af;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;">2</div>
+          <div id="agNM_step2Label" style="font-size:11px;font-weight:600;color:#9ca3af;">Photo & Confirm</div>
         </div>
       </div>
 
-      <div class="ag-form-row">
-        <div class="ag-form-g">
-          <label>Age</label>
-          <input id="agNewMaidAge" placeholder="e.g. 28" type="number" min="18" max="65" />
-        </div>
-        <div class="ag-form-g">
-          <label>Gender</label>
-          <select id="agNewMaidGender">
-            <option value="Female">Female</option>
-            <option value="Male">Male</option>
-          </select>
-        </div>
-      </div>
+      <!-- ═══ STEP 1: Basic Details ═══ -->
+      <div id="agNM_step1">
+        <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Maid ki basic details bharo. Enquiries aapki agency ko bhi notify karengi.</div>
 
-      <div class="ag-form-row">
-        <div class="ag-form-g">
-          <label>State *</label>
-          <select id="agNewMaidState" onchange="agNMUpdateDistrict()">
-            <option value="">— Select —</option>
-            <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
-            <option>Chhattisgarh</option><option>Delhi</option><option>Goa</option>
-            <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
-            <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
-            <option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option>
-            <option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option>
-            <option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
-            <option>West Bengal</option><option>Other</option>
-          </select>
-          <div class="ag-nmerr" id="agNM_stateErr">State is required.</div>
-        </div>
-        <div class="ag-form-g">
-          <label>District / City *</label>
-          <select id="agNewMaidDistrict" onchange="agNMUpdateArea()">
-            <option value="">— Select District —</option>
-          </select>
-          <div class="ag-nmerr" id="agNM_distErr">District is required.</div>
-        </div>
-      </div>
-
-      <div class="ag-form-row">
-        <div class="ag-form-g">
-          <label>Area / Locality</label>
-          <select id="agNewMaidArea">
-            <option value="">— Select Area —</option>
-          </select>
-        </div>
-        <div class="ag-form-g">
-          <label>Expected Salary (₹/month)</label>
-          <input id="agNewMaidSalary" placeholder="e.g. 8000" type="number" />
-        </div>
-      </div>
-
-      <div class="ag-form-row">
-        <div class="ag-form-g">
-          <label>Work Shift</label>
-          <select id="agNewMaidShift">
-            <option value="Day">Day</option>
-            <option value="Night">Night</option>
-            <option value="Both">Both</option>
-          </select>
-        </div>
-        <div class="ag-form-g">
-          <label>Work Type</label>
-          <select id="agNewMaidWorkType">
-            <option value="Live-Out">Live-Out (Part/Full Time)</option>
-            <option value="Live-In">Live-In</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="ag-form-g">
-        <label>Services Offered</label>
-        <div class="ag-svc-grid">
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Full-Time Maid" />🏠 Full-Time Maid</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Part-Time Maid" />⏰ Part-Time Maid</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Live-In Maid" />🛏️ Live-In Maid</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Cook / Bai" />🍳 Cook / Bai</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Kitchen Helper" />🥘 Kitchen Helper</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Babysitter / Nanny" />👶 Babysitter / Nanny</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Japa Maid / Newborn Care" />🍼 Japa Maid / Newborn Care</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Elder Care" />👵 Elder Care</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Patient Care" />🏥 Patient Care</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Nurse / Medical Attendant" />💉 Nurse / Medical</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Cleaning / Safai" />🧹 Cleaning / Safai</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Laundry & Ironing" />👔 Laundry & Ironing</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Driver" />🚗 Driver</label>
-          <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Home Tutor" />📚 Home Tutor</label>
-        </div>
-      </div>
-
-      <!-- Photo Upload -->
-      <div class="ag-form-g">
-        <label>Maid Photo / मेड की फोटो <span style="font-weight:400;text-transform:none;font-size:10px;color:#9ca3af;">(Optional — JPG/PNG, max 5MB)</span></label>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:4px;">
-          <div id="agNMPhotoPreview" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:2.5px solid #e5e7eb;">
-            <i class="fas fa-user"></i>
+        <div class="ag-form-row">
+          <div class="ag-form-g">
+            <label>Maid Name *</label>
+            <input id="agNewMaidName" placeholder="e.g. Sunita Devi" type="text" />
+            <div class="ag-nmerr" id="agNM_nameErr">Name is required.</div>
           </div>
-          <div>
-            <label for="agNMPhotoInput" style="display:inline-flex;align-items:center;gap:7px;padding:8px 16px;background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;transition:all .15s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
-              <i class="fas fa-camera" style="color:#f97316;"></i> Upload Photo
-            </label>
-            <input type="file" id="agNMPhotoInput" accept="image/*" style="display:none;" onchange="agNMPreviewPhoto(event)" />
-            <div id="agNMPhotoFileName" style="font-size:12px;color:#6b7280;margin-top:5px;"></div>
+          <div class="ag-form-g">
+            <label>Phone Number *</label>
+            <input id="agNewMaidPhone" placeholder="9876543210" type="tel" maxlength="10" />
+            <div class="ag-nmerr" id="agNM_phoneErr">Valid 10-digit number required.</div>
           </div>
         </div>
+
+        <div class="ag-form-row">
+          <div class="ag-form-g">
+            <label>Age</label>
+            <input id="agNewMaidAge" placeholder="e.g. 28" type="number" min="18" max="65" />
+          </div>
+          <div class="ag-form-g">
+            <label>Gender</label>
+            <select id="agNewMaidGender">
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ag-form-row">
+          <div class="ag-form-g">
+            <label>State *</label>
+            <select id="agNewMaidState" onchange="agNMUpdateDistrict()">
+              <option value="">— Select —</option>
+              <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+              <option>Chhattisgarh</option><option>Delhi</option><option>Goa</option>
+              <option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option>
+              <option>Jharkhand</option><option>Karnataka</option><option>Kerala</option>
+              <option>Madhya Pradesh</option><option>Maharashtra</option><option>Odisha</option>
+              <option>Punjab</option><option>Rajasthan</option><option>Tamil Nadu</option>
+              <option>Telangana</option><option>Uttar Pradesh</option><option>Uttarakhand</option>
+              <option>West Bengal</option><option>Other</option>
+            </select>
+            <div class="ag-nmerr" id="agNM_stateErr">State is required.</div>
+          </div>
+          <div class="ag-form-g">
+            <label>District / City *</label>
+            <select id="agNewMaidDistrict" onchange="agNMUpdateArea()">
+              <option value="">— Select District —</option>
+            </select>
+            <div class="ag-nmerr" id="agNM_distErr">District is required.</div>
+          </div>
+        </div>
+
+        <div class="ag-form-row">
+          <div class="ag-form-g">
+            <label>Area / Locality</label>
+            <select id="agNewMaidArea">
+              <option value="">— Select Area —</option>
+            </select>
+          </div>
+          <div class="ag-form-g">
+            <label>Expected Salary (₹/month)</label>
+            <input id="agNewMaidSalary" placeholder="e.g. 8000" type="number" />
+          </div>
+        </div>
+
+        <div class="ag-form-row">
+          <div class="ag-form-g">
+            <label>Work Shift</label>
+            <select id="agNewMaidShift">
+              <option value="Day">Day</option>
+              <option value="Night">Night</option>
+              <option value="Both">Both</option>
+            </select>
+          </div>
+          <div class="ag-form-g">
+            <label>Work Type</label>
+            <select id="agNewMaidWorkType">
+              <option value="Live-Out">Live-Out (Part/Full Time)</option>
+              <option value="Live-In">Live-In</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ag-form-g">
+          <label>Services Offered</label>
+          <div class="ag-svc-grid">
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Full-Time Maid" />🏠 Full-Time Maid</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Part-Time Maid" />⏰ Part-Time Maid</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Live-In Maid" />🛏️ Live-In Maid</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Cook / Bai" />🍳 Cook / Bai</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Kitchen Helper" />🥘 Kitchen Helper</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Babysitter / Nanny" />👶 Babysitter / Nanny</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Japa Maid / Newborn Care" />🍼 Japa Maid / Newborn Care</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Elder Care" />👵 Elder Care</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Patient Care" />🏥 Patient Care</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Nurse / Medical Attendant" />💉 Nurse / Medical</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Cleaning / Safai" />🧹 Cleaning / Safai</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Laundry & Ironing" />👔 Laundry & Ironing</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Driver" />🚗 Driver</label>
+            <label class="ag-svc-label"><input type="checkbox" class="ag-svc-cb" value="Home Tutor" />📚 Home Tutor</label>
+          </div>
+        </div>
+
+        <div class="ag-form-g">
+          <label>Login Password for Maid *<span style="font-weight:400;text-transform:none;font-size:10px;color:#9ca3af;"> (min 8 chars, maid can login with this)</span></label>
+          <div style="position:relative;">
+            <input id="agNewMaidPassword" type="password" placeholder="Set a password for maid login" style="padding-right:42px;" />
+            <button type="button" onclick="togglePwd('agNewMaidPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
+          </div>
+          <div class="ag-nmerr" id="agNM_passErr">Password must be at least 8 characters.</div>
+        </div>
+
+        <button onclick="agNMGoStep2()" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;">
+          Next: Photo &amp; Confirm <i class="fas fa-arrow-right" style="margin-left:6px;"></i>
+        </button>
       </div>
 
-      <!-- Aadhaar Upload -->
-      <div class="ag-form-g" style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px 16px;">
-        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#374151;display:block;margin-bottom:10px;"><i class="fas fa-id-card" style="color:#f97316;margin-right:6px;"></i>Aadhaar Card / आधार कार्ड <span style="font-weight:400;text-transform:none;font-size:10px;color:#9ca3af;">(Optional)</span></label>
-        <div class="ag-form-g" style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:600;color:#374151;">Aadhaar Number / आधार नंबर</label>
-          <input type="tel" id="agNMAadharNumber" maxlength="12" placeholder="12-digit Aadhaar number" style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;background:#fff;outline:none;box-sizing:border-box;" />
+      <!-- ═══ STEP 2: Photo + Terms ═══ -->
+      <div id="agNM_step2" style="display:none;">
+
+        <!-- Back button -->
+        <button onclick="agNMGoStep1()" style="background:none;border:none;color:#f97316;font-size:13px;font-weight:600;cursor:pointer;padding:0;margin-bottom:16px;display:flex;align-items:center;gap:6px;">
+          <i class="fas fa-arrow-left"></i> Back to Basic Details
+        </button>
+
+        <!-- Photo Upload -->
+        <div class="ag-form-g" style="margin-bottom:20px;">
+          <label>Maid Photo / मेड की फोटो <span style="font-weight:400;text-transform:none;font-size:10px;color:#9ca3af;">(Optional — JPG/PNG, max 5MB)</span></label>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:8px;">
+            <div id="agNMPhotoPreview" style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;border:2.5px solid #e5e7eb;">
+              <i class="fas fa-user"></i>
+            </div>
+            <div>
+              <label for="agNMPhotoInput" style="display:inline-flex;align-items:center;gap:7px;padding:10px 18px;background:#f3f4f6;border:1.5px solid #d1d5db;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#374151;transition:all .15s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                <i class="fas fa-camera" style="color:#f97316;"></i> Upload Photo
+              </label>
+              <input type="file" id="agNMPhotoInput" accept="image/*" style="display:none;" onchange="agNMPreviewPhoto(event)" />
+              <div id="agNMPhotoFileName" style="font-size:12px;color:#6b7280;margin-top:5px;"></div>
+            </div>
+          </div>
         </div>
-        <div>
-          <label style="font-size:11px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">Aadhaar Photo / आधार फोटो</label>
-          <label for="agNMAadharFrontInput" style="display:inline-flex;align-items:center;gap:6px;padding:10px 16px;background:#fff;border:1.5px dashed #d1d5db;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:#374151;transition:all .15s;" onmouseover="this.style.borderColor='#f97316';this.style.background='#fff7ed'" onmouseout="this.style.borderColor='#d1d5db';this.style.background='#fff'">
-            <i class="fas fa-upload" style="color:#f97316;"></i> Upload Aadhaar
+
+        <!-- Terms & Conditions -->
+        <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:16px;margin-bottom:18px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="agNM_termsCheck" style="margin-top:3px;width:16px;height:16px;accent-color:#f97316;flex-shrink:0;" />
+            <span style="font-size:13px;color:#374151;line-height:1.6;">I have read and agree to the <span onclick="openAgTcModal();event.preventDefault();" style="color:#f97316;font-weight:700;text-decoration:underline;cursor:pointer;">Terms &amp; Conditions</span> of Rent a Maid India. I understand that all Aadhaar verification, police verification, and background checks of maids registered under my agency are solely my responsibility. The platform bears no liability whatsoever for any maid listed under my agency. <span style="color:#dc2626;font-weight:700;">*</span></span>
           </label>
-          <input type="file" id="agNMAadharFrontInput" accept="image/*,application/pdf" style="display:none;" onchange="agNMAadharUpload(event,'front')" />
-          <div id="agNMAadharFrontName" style="font-size:11px;color:#16a34a;margin-top:4px;"></div>
+          <div class="ag-nmerr" id="agNM_termsErr" style="margin-top:8px;">You must accept the Terms &amp; Conditions to register a maid.</div>
         </div>
-        <div id="agNMAadharStatus" style="font-size:12px;margin-top:8px;"></div>
+
+        <div id="agAddMaidMsg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
+
+        <button id="agAddMaidBtn" onclick="submitAgencyAddMaid()" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">
+          <i class="fas fa-user-plus"></i> Register Maid
+        </button>
       </div>
 
-      <div class="ag-form-g">
-        <label>Login Password for Maid *<span style="font-weight:400;text-transform:none;font-size:10px;color:#9ca3af;"> (min 8 chars, maid can login with this)</span></label>
-        <div style="position:relative;">
-          <input id="agNewMaidPassword" type="password" placeholder="Set a password for maid login" style="padding-right:42px;" />
-          <button type="button" onclick="togglePwd('agNewMaidPassword',this)" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#9ca3af;font-size:15px;"><i class="fas fa-eye"></i></button>
-        </div>
-        <div class="ag-nmerr" id="agNM_passErr">Password must be at least 8 characters.</div>
-      </div>
-
-      <div id="agAddMaidMsg" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:12px;"></div>
-
-      <button id="agAddMaidBtn" onclick="submitAgencyAddMaid()" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;">
-        <i class="fas fa-user-plus"></i> Register Maid
-      </button>
     </div>
 
     <!-- Pane: Profile -->
@@ -30295,13 +30659,24 @@ async function submitAgencyAddMaid() {
         </div>
       </div>
 
-      <!-- Aadhaar Section -->
-      <div style="background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:12px;padding:14px;margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">🪪 Aadhaar Details (for Verification)</div>
-        <div id="agEM_aadharSection">
-          <!-- JS se dynamically fill hoga based on aadhaar status -->
-          <div style="font-size:12px;color:#6b7280;text-align:center;padding:10px;">Loading...</div>
+      <!-- Password Change Section -->
+      <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:16px;">
+        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">🔒 Change Password (Optional)</div>
+        <div class="ag-form-g" style="margin-bottom:10px;">
+          <label>New Password</label>
+          <div style="position:relative;">
+            <input id="agEM_newPassword" type="password" placeholder="New password (khali chhodo agar change nahi karna)" style="padding-right:40px;" />
+            <span onclick="var el=document.getElementById('agEM_newPassword');el.type=el.type==='password'?'text':'password';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:#9ca3af;">👁</span>
+          </div>
         </div>
+        <div class="ag-form-g">
+          <label>Confirm New Password</label>
+          <div style="position:relative;">
+            <input id="agEM_confirmPassword" type="password" placeholder="Password dobara daalo" style="padding-right:40px;" />
+            <span onclick="var el=document.getElementById('agEM_confirmPassword');el.type=el.type==='password'?'text':'password';" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:15px;color:#9ca3af;">👁</span>
+          </div>
+        </div>
+        <div id="agEM_pwdMsg" style="font-size:12px;margin-top:8px;display:none;"></div>
       </div>
 
       <button id="agEM_saveBtn" onclick="agSaveEditMaid()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.02em;">
