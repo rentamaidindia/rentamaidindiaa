@@ -15628,16 +15628,14 @@ function dashTab(tab) {
       + '<input type="file" id="maidProfilePhotoInput" accept="image/png, image/jpeg, image/jpg" style="display:none;" onchange="handleMaidProfilePhotoUpload(event)">'
       + '</div>'
 
-      // ── AADHAR SECTION (Required) ──
-      + '<div style="background:#fff;border:' + (hasAadhar2 ? '1px solid #bbf7d0' : '2px dashed #fed7aa') + ';border-radius:14px;padding:18px 20px;margin-bottom:14px;">'
-      + '<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;">🪪 Aadhar Verification <span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">Required</span>' + (aadharStatus2==='verified' ? ' <span style="margin-left:auto;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">✓ Verified</span>' : aadharStatus2==='pending' ? ' <span style="margin-left:auto;background:#fffbeb;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">⏳ Under Review</span>' : aadharStatus2==='rejected' ? ' <span style="margin-left:auto;background:#fef2f2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">❌ Rejected</span>' : '') + '</div>'
-      + '<div class="form-group-v" style="margin-bottom:10px;">'
-      <!-- Aadhar number field removed -->
-      + '</div>'
-      + (aadharStatus2 === 'pending' || aadharStatus2 === 'verified' ? '' :        '<div style="margin-bottom:12px;">'        + '<label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Front Side *</label>'        + '<label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed ' + (aadharData2 && aadharData2.frontUrl ? '#22c55e' : '#d1d5db') + ';border-radius:8px;cursor:pointer;background:' + (aadharData2 && aadharData2.frontUrl ? '#f0fdf4' : '#f9fafb') + ';font-size:13px;color:' + (aadharData2 && aadharData2.frontUrl ? '#15803d' : '#6b7280') + ';"><i class=\'fas fa-\' + (aadharData2 && aadharData2.frontUrl ? \'check-circle\' : \'upload\') + \'></i> \' + (aadharData2 && aadharData2.frontUrl ? \'Uploaded ✓\' : \'Upload Front\')'        + '<input type=\'file\' id=\'maidAadharFront\' accept=\'image/*\' style=\'display:none;\' onchange=\'handleMaidAadharUpload(event,\\\'front\\\')\'>'        + '</label></div>')      + '<div style="display:none;">'
+      // ── AADHAR SECTION (Required) — hide when admin has verified & made live ──
+      + (!isLive2 ? '<div style="background:#fff;border:' + (hasAadhar2 ? '1px solid #bbf7d0' : '2px dashed #fed7aa') + ';border-radius:14px;padding:18px 20px;margin-bottom:14px;">' : '')
+      + (!isLive2 ? ('<div style="font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px;">🪪 Aadhar Verification <span style="background:#dc2626;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;">Required</span>' + (aadharStatus2==='verified' ? ' <span style="margin-left:auto;background:#dcfce7;color:#15803d;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">✓ Verified</span>' : aadharStatus2==='pending' ? ' <span style="margin-left:auto;background:#fffbeb;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">⏳ Under Review</span>' : aadharStatus2==='rejected' ? ' <span style="margin-left:auto;background:#fef2f2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;">❌ Rejected</span>' : '') + '</div>'
+      + '<div class="form-group-v" style="margin-bottom:10px;"></div>'
+      + (aadharStatus2 === 'pending' || aadharStatus2 === 'verified' ? '' : (function(){ var _hasF=(aadharData2 && aadharData2.frontUrl); return '<div style="margin-bottom:12px;"><label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:5px;">Aadhar Front Side *</label><label id="maidAadharFrontLbl" style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1.5px dashed ' + (_hasF ? '#22c55e' : '#d1d5db') + ';border-radius:8px;cursor:pointer;background:' + (_hasF ? '#f0fdf4' : '#f9fafb') + ';font-size:13px;color:' + (_hasF ? '#15803d' : '#6b7280') + ';"><i class="fas fa-' + (_hasF ? 'check-circle' : 'upload') + '"></i> ' + (_hasF ? 'Uploaded \u2713' : 'Upload Front') + '<input type="file" id="maidAadharFront" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'front\')"></label></div>'; })())      + '<div style="display:none;">'
       + '<label><input type="file" id="maidAadharBack" accept="image/*" style="display:none;" onchange="handleMaidAadharUpload(event,\'back\')"></label>'
       + '</div>'
-      + '<div id="maidAadharSaveStatus" style="font-size:13px;margin-bottom:10px;display:none;"></div>'      + (aadharStatus2 === 'verified'          ? '<div style="text-align:center;font-size:13px;color:#15803d;font-weight:600;padding:10px;"><i class="fas fa-circle-check"></i> Aadhar Verified by Admin</div>'          : aadharStatus2 === 'pending'          ? '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px;">⏳ Verification Pending</div><div style="font-size:13px;color:#78350f;">Aapka Aadhar submit ho gaya hai. Admin review kar raha hai.</div></div>'          : aadharStatus2 === 'rejected'          ? '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:12px;"><div style="font-size:14px;font-weight:700;color:#b91c1c;margin-bottom:4px;">&#x274C; Aadhar Reject Ho Gaya</div><div style="font-size:13px;color:#991b1b;">Admin ne reject kiya hai. Sahi Aadhar dobara upload karein aur submit karein.</div></div><button class=\'btn btn-md btn-primary\' onclick=\'saveMaidAadharFromProfile()\' style=\'width:100%;\'><i class=\'fas fa-paper-plane\'></i> Dobara Submit Karein</button>'          : '<button class=\'btn btn-md btn-primary\' onclick=\'saveMaidAadharFromProfile()\' style=\'width:100%;\'><i class=\'fas fa-paper-plane\'></i> Submit Aadhar for Verification</button>')      + '</div>'
+      + '<div id="maidAadharSaveStatus" style="font-size:13px;margin-bottom:10px;display:none;"></div>'      + (aadharStatus2 === 'verified'          ? '<div style="text-align:center;font-size:13px;color:#15803d;font-weight:600;padding:10px;"><i class="fas fa-circle-check"></i> Aadhar Verified by Admin</div>'          : aadharStatus2 === 'pending'          ? '<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:10px;padding:14px;text-align:center;"><div style="font-size:14px;font-weight:700;color:#92400e;margin-bottom:4px;">⏳ Verification Pending</div><div style="font-size:13px;color:#78350f;">Aapka Aadhar submit ho gaya hai. Admin review kar raha hai.</div></div>'          : aadharStatus2 === 'rejected'          ? '<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:10px;padding:14px;margin-bottom:12px;"><div style="font-size:14px;font-weight:700;color:#b91c1c;margin-bottom:4px;">&#x274C; Aadhar Reject Ho Gaya</div><div style="font-size:13px;color:#991b1b;">Admin ne reject kiya hai. Sahi Aadhar dobara upload karein aur submit karein.</div></div><button class=\'btn btn-md btn-primary\' onclick=\'saveMaidAadharFromProfile()\' style=\'width:100%;\'><i class=\'fas fa-paper-plane\'></i> Dobara Submit Karein</button>'          : '<button class=\'btn btn-md btn-primary\' onclick=\'saveMaidAadharFromProfile()\' style=\'width:100%;\'><i class=\'fas fa-paper-plane\'></i> Submit Aadhar for Verification</button>')      + '</div>') : '')
       // ── SUBMIT FOR VERIFICATION ──
       + (!isLive2 && aadharStatus2 !== 'pending' && aadharStatus2 !== 'verified' && hasPhoto2 && hasAadhar2 ? 
           '<div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:18px;margin-bottom:14px;text-align:center;">'
@@ -16106,24 +16104,24 @@ async function saveMaidAadharFromProfile() {
     let frontUrl = existingAadhar && existingAadhar.frontUrl || '';
     let backUrl = existingAadhar && existingAadhar.backUrl || '';
 
-    // Upload new files if selected
+    // Upload new files if selected — no base64 fallback, Firebase required
     if (frontFile && typeof window._fbUploadPhoto === 'function') {
-      try {
-        frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + maidPhone + '_front_' + Date.now() + '.jpg') || '';
-      } catch(e) { /* fallback to base64 */ }
+      if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#d97706'; statusEl.innerHTML='<i class="fas fa-spinner fa-spin"></i> Aadhar front photo upload ho rahi hai...'; }
+      frontUrl = await window._fbUploadPhoto(frontFile, 'aadhar-photos/' + maidPhone + '_front_' + Date.now() + '.jpg') || '';
       if (!frontUrl) {
-        const compressed = typeof window._compressImage === 'function' ? await window._compressImage(frontFile, 800, 0.70) : frontFile;
-        frontUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(compressed); });
+        if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#dc2626'; statusEl.innerHTML='<i class="fas fa-circle-xmark"></i> Photo upload fail — Internet slow hai, Try Again karein.'; }
+        showToast('❌ Photo upload fail — Internet slow hai, Try Again karein.');
+        return;
       }
     }
     // Back side optional
     if (backFile && typeof window._fbUploadPhoto === 'function') {
-      try {
-        backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + maidPhone + '_back_' + Date.now() + '.jpg') || '';
-      } catch(e) { /* fallback to base64 */ }
+      if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#d97706'; statusEl.innerHTML='<i class="fas fa-spinner fa-spin"></i> Aadhar back photo upload ho rahi hai...'; }
+      backUrl = await window._fbUploadPhoto(backFile, 'aadhar-photos/' + maidPhone + '_back_' + Date.now() + '.jpg') || '';
       if (!backUrl) {
-        const compressed = typeof window._compressImage === 'function' ? await window._compressImage(backFile, 800, 0.70) : backFile;
-        backUrl = await new Promise(r => { const fr = new FileReader(); fr.onload = e => r(e.target.result); fr.readAsDataURL(compressed); });
+        if (statusEl) { statusEl.style.display='block'; statusEl.style.color='#dc2626'; statusEl.innerHTML='<i class="fas fa-circle-xmark"></i> Photo upload fail — Internet slow hai, Try Again karein.'; }
+        showToast('❌ Photo upload fail — Internet slow hai, Try Again karein.');
+        return;
       }
     }
 
@@ -17171,6 +17169,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <style>
 @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes dashPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
 </style>
 
 <script>
@@ -17420,6 +17419,7 @@ async function rcSubmitLogin() {
       <div class="nav-item" onclick="gotoPage('services')"><i class="fas fa-concierge-bell"></i> Services</div>
       <div class="nav-item" onclick="gotoPage('cities')"><i class="fas fa-city"></i> Cities</div>
       <div class="nav-item" onclick="gotoPage('testimonials')"><i class="fas fa-quote-left"></i> Testimonials</div>
+      <div class="nav-item" onclick="gotoPage('annbar')"><i class="fas fa-bullhorn"></i> Announcement Bar</div>
       <div class="nav-section-label">Verification</div>
       <div class="nav-item" onclick="gotoPage('aadhar')"><i class="fas fa-id-card" style="color:#f59e0b;"></i> Aadhar Verification <span class="nav-badge" id="aadharNavBadge" style="background:#f59e0b;">0</span></div>
       <div class="nav-item" onclick="gotoPage('help')"><i class="fas fa-headset" style="color:#8b5cf6;"></i> Help & Support <span class="nav-badge" id="helpNavBadge" style="background:#8b5cf6;display:none;">0</span></div>
@@ -17472,11 +17472,11 @@ async function rcSubmitLogin() {
       <div class="admin-page active" id="pg-dashboard">
         <div class="section-head">
           <div>
-            <h2>Dashboard Overview</h2>
-            <p>Welcome back! Here's what's happening on your platform.</p>
+            <h2>Dashboard Overview <span id="dashLiveBadge" style="display:inline-flex;align-items:center;gap:5px;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;vertical-align:middle;margin-left:8px;"><span style="width:7px;height:7px;background:#22c55e;border-radius:50%;display:inline-block;animation:dashPulse 1.5s infinite;"></span>LIVE</span></h2>
+            <p>Welcome back! Here's what's happening on your platform. <span style="color:#6b7280;font-size:12px;" id="dashLastUpdated"></span></p>
           </div>
           <div class="section-head-btns">
-            <button class="action-btn action-btn-outline" onclick="refreshAllData()"><i class="fas fa-rotate-right"></i> Refresh</button>
+            <button class="action-btn action-btn-outline" onclick="refreshAllData()" id="dashRefreshBtn"><i class="fas fa-rotate-right" id="dashRefreshIcon"></i> Refresh</button>
             <button class="action-btn action-btn-primary" onclick="exportData('dashboard')"><i class="fas fa-download"></i> Export</button>
           </div>
         </div>
@@ -18087,7 +18087,6 @@ async function rcSubmitLogin() {
             <div class="settings-nav-item" onclick="switchWebTab('animations')"><i class="fas fa-wand-magic-sparkles"></i> Animations</div>
             <div class="settings-nav-item" onclick="switchWebTab('gallery')"><i class="fas fa-images"></i> Photo Gallery</div>
             <div class="settings-nav-item" onclick="switchWebTab('welcomepopup')"><i class="fas fa-door-open"></i> Welcome Popup</div>
-            <div class="settings-nav-item" onclick="switchWebTab('annbar')"><i class="fas fa-bullhorn"></i> Announcement Bar</div>
 
           </div>
           <div>
@@ -18503,124 +18502,6 @@ async function rcSubmitLogin() {
               </div>
 
 
-            <!-- ══ ANNOUNCEMENT BAR TAB ══ -->
-            <div class="settings-section" id="wtab-annbar">
-              <div class="settings-card">
-                <h3><i class="fas fa-bullhorn" style="color:var(--primary);margin-right:8px;"></i>Announcement Bar</h3>
-                <p style="color:var(--muted);font-size:13px;margin-bottom:0;">Nav ke neeche dikhne wala scrolling bar — text, color, speed sab yahan se control karein. Save karte hi <strong>sabke browser mein turant live</strong> ho jaata hai.</p>
-                <hr class="settings-divider"/>
-
-                <!-- ON / OFF -->
-                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--muted-bg,#f1f5f9);border-radius:12px;padding:16px 18px;margin-bottom:14px;gap:12px;border:2px solid transparent;transition:border-color .2s;" id="ann2-onoff-box">
-                  <div>
-                    <div style="font-size:15px;font-weight:700;color:var(--secondary);"><i class="fas fa-toggle-on" style="color:var(--primary);margin-right:6px;"></i>Bar On / Off</div>
-                    <div style="font-size:12px;color:var(--muted);margin-top:3px;">Off karoge toh <strong>sabke liye</strong> bar band ho jayega. On karoge toh turant wapas aayega.</div>
-                    <div id="ann2-onoff-status" style="margin-top:6px;font-size:12px;font-weight:700;color:#22c55e;">🟢 Abhi ON hai — website par dikh raha hai</div>
-                  </div>
-                  <label style="position:relative;display:inline-block;width:56px;height:30px;flex-shrink:0;cursor:pointer;">
-                    <input type="checkbox" id="ann2-enabled" checked style="opacity:0;width:0;height:0;position:absolute;" onchange="ann2TogglePreview()">
-                    <span id="ann2-track" style="position:absolute;inset:0;border-radius:28px;background:#22c55e;transition:background .25s;"></span>
-                    <span id="ann2-thumb" style="position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .25s;transform:translateX(26px);"></span>
-                  </label>
-                </div>
-
-                <!-- BADGE OPTIONS -->
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
-                  <div style="flex:1;min-width:140px;">
-                    <label style="font-size:12px;font-weight:700;color:var(--secondary);display:block;margin-bottom:5px;">🏷️ Badge Text</label>
-                    <input type="text" id="ann2-badge" value="NOTICE" placeholder="NOTICE / OFFER / NEW" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;box-sizing:border-box;outline:none;" oninput="ann2UpdatePreview()">
-                  </div>
-                  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px;">
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
-                      <input type="checkbox" id="ann2-show-badge" onchange="ann2UpdatePreview()"> Badge dikhao
-                    </label>
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
-                      <input type="checkbox" id="ann2-show-close" onchange="ann2UpdatePreview()"> Close button
-                    </label>
-                  </div>
-                </div>
-
-                <hr class="settings-divider"/>
-
-                <!-- TEXT -->
-                <div class="form-group">
-                  <label style="font-size:12px;font-weight:700;color:var(--secondary);">📝 Announcement Text</label>
-                  <textarea id="ann2-text" rows="3" placeholder="Apna announcement yahan likho... Emojis bhi use kar sakte ho 🎉" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:inherit;" oninput="ann2UpdatePreview()" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! &nbsp;|&nbsp; ✅ Verified &amp; Background-Checked Maids &nbsp;|&nbsp; 🏠 Part-Time, Full-Time, Live-In &nbsp;|&nbsp; ⭐ 4.8 Rating | 4200+ Happy Families</textarea>
-                </div>
-
-                <hr class="settings-divider"/>
-
-                <!-- SIZE & SPEED -->
-                <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📐 Size &amp; Speed</h3>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;">
-                  <div style="flex:1;min-width:160px;">
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Font Size: <strong id="ann2-font-val" style="color:var(--primary);">14px</strong></label>
-                    <input type="range" id="ann2-font" min="11" max="22" value="14" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann2-font-val').textContent=this.value+'px';ann2UpdatePreview();">
-                  </div>
-                  <div style="flex:1;min-width:160px;">
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Bar Height: <strong id="ann2-height-val" style="color:var(--primary);">44px</strong></label>
-                    <input type="range" id="ann2-height" min="28" max="80" value="44" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann2-height-val').textContent=this.value+'px';ann2UpdatePreview();">
-                    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;"><span>Chhota (28px)</span><span>Bada (80px)</span></div>
-                  </div>
-                  <div style="flex:1;min-width:160px;">
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Scroll Speed: <strong id="ann2-speed-val" style="color:var(--primary);">Normal</strong></label>
-                    <input type="range" id="ann2-speed" min="1" max="10" value="4" style="width:100%;accent-color:var(--primary);" oninput="ann2SpeedLabel();ann2UpdatePreview();">
-                    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;"><span>Slow</span><span>Fast</span></div>
-                  </div>
-                </div>
-
-                <hr class="settings-divider"/>
-
-                <!-- COLORS -->
-                <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🎨 Colors</h3>
-                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
-                  <div>
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">Text Color</label>
-                    <input type="color" id="ann2-text-color" value="#ffffff" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
-                  </div>
-                  <div>
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">BG Color 1</label>
-                    <input type="color" id="ann2-bg1" value="#1a3c5e" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
-                  </div>
-                  <div>
-                    <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">BG Color 2</label>
-                    <input type="color" id="ann2-bg2" value="#0f2940" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
-                  </div>
-                </div>
-                <!-- Quick color presets -->
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-                  <span style="font-size:12px;font-weight:600;color:var(--muted);align-self:center;">Quick:</span>
-                  <button onclick="ann2Preset('#1a3c5e','#0f2940')" style="width:38px;height:26px;background:linear-gradient(90deg,#1a3c5e,#0f2940);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Navy"></button>
-                  <button onclick="ann2Preset('#166534','#14532d')" style="width:38px;height:26px;background:linear-gradient(90deg,#166534,#14532d);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Green"></button>
-                  <button onclick="ann2Preset('#7c3aed','#5b21b6')" style="width:38px;height:26px;background:linear-gradient(90deg,#7c3aed,#5b21b6);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Purple"></button>
-                  <button onclick="ann2Preset('#dc2626','#991b1b')" style="width:38px;height:26px;background:linear-gradient(90deg,#dc2626,#991b1b);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Red"></button>
-                  <button onclick="ann2Preset('#f97316','#ea580c')" style="width:38px;height:26px;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Orange"></button>
-                  <button onclick="ann2Preset('#0891b2','#0e7490')" style="width:38px;height:26px;background:linear-gradient(90deg,#0891b2,#0e7490);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Cyan"></button>
-                  <button onclick="ann2Preset('#111827','#374151')" style="width:38px;height:26px;background:linear-gradient(90deg,#111827,#374151);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Black"></button>
-                </div>
-
-                <hr class="settings-divider"/>
-
-                <!-- LIVE PREVIEW -->
-                <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">👀 Live Preview</h3>
-                <div id="ann2-preview" style="height:44px;display:flex;align-items:center;overflow:hidden;border-radius:10px;border:1.5px solid var(--border);margin-bottom:18px;background:linear-gradient(90deg,#1a3c5e,#0f2940,#1a3c5e);font-size:14px;color:#fff;white-space:nowrap;font-weight:500;position:relative;">
-                  <div id="ann2-preview-badge" style="display:none;flex-shrink:0;height:100%;align-items:center;padding:0 14px;background:rgba(0,0,0,0.2);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;">
-                    <i class="fas fa-bullhorn" style="margin-right:5px;font-size:11px;"></i><span>NOTICE</span>
-                  </div>
-                  <div style="flex:1;overflow:hidden;padding:0 14px;">
-                    <span id="ann2-preview-text" style="font-weight:500;">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available!</span>
-                  </div>
-                  <div style="flex-shrink:0;padding:0 12px;opacity:.6;font-size:15px;">✕</div>
-                </div>
-
-                <!-- SAVE BUTTON -->
-                <button onclick="ann2Save()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.02em;box-shadow:0 4px 16px rgba(249,115,22,.3);display:flex;align-items:center;justify-content:center;gap:10px;">
-                  <i class="fas fa-rocket"></i> Save &amp; Live Update — Sabke Browser Mein Turant
-                </button>
-                <p id="ann2-save-status" style="text-align:center;font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;min-height:20px;"></p>
-              </div>
-            </div>
-
             </div>
           </div>
         </div>
@@ -18668,6 +18549,115 @@ async function rcSubmitLogin() {
           <div class="tbl-wrapper">
             <table><thead><tr><th>Name</th><th>City</th><th>Service</th><th>Rating</th><th>Review</th><th>Actions</th></tr></thead>
             <tbody id="testiTbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ANNOUNCEMENT BAR PAGE ══ -->
+      <div class="admin-page" id="pg-annbar">
+        <div class="section-head">
+          <div><h2><i class="fas fa-bullhorn" style="color:var(--primary);margin-right:8px;"></i>Announcement Bar</h2><p>Nav ke neeche dikhne wala scrolling bar — text, color, speed sab yahan se control karein</p></div>
+        </div>
+        <div class="table-card" style="padding:24px;">
+          <div id="wtab-annbar-standalone">
+            <!-- ON / OFF -->
+            <div style="display:flex;align-items:center;justify-content:space-between;background:var(--muted-bg,#f1f5f9);border-radius:12px;padding:16px 18px;margin-bottom:14px;gap:12px;border:2px solid transparent;transition:border-color .2s;" id="ann2-onoff-box">
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--secondary);"><i class="fas fa-toggle-on" style="color:var(--primary);margin-right:6px;"></i>Bar On / Off</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:3px;">Off karoge toh <strong>sabke liye</strong> bar band ho jayega. On karoge toh turant wapas aayega.</div>
+                <div id="ann2-onoff-status" style="margin-top:6px;font-size:12px;font-weight:700;color:#22c55e;">🟢 Abhi ON hai — website par dikh raha hai</div>
+              </div>
+              <label style="position:relative;display:inline-block;width:56px;height:30px;flex-shrink:0;cursor:pointer;">
+                <input type="checkbox" id="ann2-enabled" checked style="opacity:0;width:0;height:0;position:absolute;" onchange="ann2TogglePreview()">
+                <span id="ann2-track" style="position:absolute;inset:0;border-radius:28px;background:#22c55e;transition:background .25s;"></span>
+                <span id="ann2-thumb" style="position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:transform .25s;transform:translateX(26px);"></span>
+              </label>
+            </div>
+            <!-- BADGE OPTIONS -->
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+              <div style="flex:1;min-width:140px;">
+                <label style="font-size:12px;font-weight:700;color:var(--secondary);display:block;margin-bottom:5px;">🏷️ Badge Text</label>
+                <input type="text" id="ann2-badge" value="NOTICE" placeholder="NOTICE / OFFER / NEW" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13px;box-sizing:border-box;outline:none;" oninput="ann2UpdatePreview()">
+              </div>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px;">
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input type="checkbox" id="ann2-show-badge" onchange="ann2UpdatePreview()"> Badge dikhao
+                </label>
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:flex;align-items:center;gap:6px;cursor:pointer;">
+                  <input type="checkbox" id="ann2-show-close" onchange="ann2UpdatePreview()"> Close button
+                </label>
+              </div>
+            </div>
+            <hr class="settings-divider"/>
+            <!-- TEXT -->
+            <div class="form-group">
+              <label style="font-size:12px;font-weight:700;color:var(--secondary);">📝 Announcement Text</label>
+              <textarea id="ann2-text" rows="3" placeholder="Apna announcement yahan likho... Emojis bhi use kar sakte ho 🎉" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;color:#111;box-sizing:border-box;resize:vertical;outline:none;font-family:inherit;" oninput="ann2UpdatePreview()" onfocus="this.style.borderColor='#f97316'" onblur="this.style.borderColor='var(--border)'">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available! &nbsp;|&nbsp; ✅ Verified &amp; Background-Checked Maids &nbsp;|&nbsp; 🏠 Part-Time, Full-Time, Live-In &nbsp;|&nbsp; ⭐ 4.8 Rating | 4200+ Happy Families</textarea>
+            </div>
+            <hr class="settings-divider"/>
+            <!-- SIZE & SPEED -->
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">📐 Size &amp; Speed</h3>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:160px;">
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Font Size: <strong id="ann2-font-val" style="color:var(--primary);">14px</strong></label>
+                <input type="range" id="ann2-font" min="11" max="22" value="14" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann2-font-val').textContent=this.value+'px';ann2UpdatePreview();">
+              </div>
+              <div style="flex:1;min-width:160px;">
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Bar Height: <strong id="ann2-height-val" style="color:var(--primary);">44px</strong></label>
+                <input type="range" id="ann2-height" min="28" max="80" value="44" style="width:100%;accent-color:var(--primary);" oninput="document.getElementById('ann2-height-val').textContent=this.value+'px';ann2UpdatePreview();">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;"><span>Chhota (28px)</span><span>Bada (80px)</span></div>
+              </div>
+              <div style="flex:1;min-width:160px;">
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:4px;">Scroll Speed: <strong id="ann2-speed-val" style="color:var(--primary);">Normal</strong></label>
+                <input type="range" id="ann2-speed" min="1" max="10" value="4" style="width:100%;accent-color:var(--primary);" oninput="ann2SpeedLabel();ann2UpdatePreview();">
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px;"><span>Slow</span><span>Fast</span></div>
+              </div>
+            </div>
+            <hr class="settings-divider"/>
+            <!-- COLORS -->
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;">🎨 Colors</h3>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">Text Color</label>
+                <input type="color" id="ann2-text-color" value="#ffffff" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">BG Color 1</label>
+                <input type="color" id="ann2-bg1" value="#1a3c5e" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
+              </div>
+              <div>
+                <label style="font-size:12px;font-weight:600;color:var(--secondary);display:block;margin-bottom:5px;">BG Color 2</label>
+                <input type="color" id="ann2-bg2" value="#0f2940" style="width:48px;height:36px;border:none;border-radius:8px;cursor:pointer;" oninput="ann2UpdatePreview()">
+              </div>
+            </div>
+            <!-- Quick color presets -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+              <span style="font-size:12px;font-weight:600;color:var(--muted);align-self:center;">Quick:</span>
+              <button onclick="ann2Preset('#1a3c5e','#0f2940')" style="width:38px;height:26px;background:linear-gradient(90deg,#1a3c5e,#0f2940);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Navy"></button>
+              <button onclick="ann2Preset('#166534','#14532d')" style="width:38px;height:26px;background:linear-gradient(90deg,#166534,#14532d);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Green"></button>
+              <button onclick="ann2Preset('#7c3aed','#5b21b6')" style="width:38px;height:26px;background:linear-gradient(90deg,#7c3aed,#5b21b6);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Purple"></button>
+              <button onclick="ann2Preset('#dc2626','#991b1b')" style="width:38px;height:26px;background:linear-gradient(90deg,#dc2626,#991b1b);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Red"></button>
+              <button onclick="ann2Preset('#f97316','#ea580c')" style="width:38px;height:26px;background:linear-gradient(90deg,#f97316,#ea580c);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Orange"></button>
+              <button onclick="ann2Preset('#0891b2','#0e7490')" style="width:38px;height:26px;background:linear-gradient(90deg,#0891b2,#0e7490);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Cyan"></button>
+              <button onclick="ann2Preset('#111827','#374151')" style="width:38px;height:26px;background:linear-gradient(90deg,#111827,#374151);border-radius:6px;border:2px solid #cbd5e1;cursor:pointer;" title="Black"></button>
+            </div>
+            <hr class="settings-divider"/>
+            <!-- LIVE PREVIEW -->
+            <h3 style="font-size:14px;font-weight:700;margin-bottom:10px;">👀 Live Preview</h3>
+            <div id="ann2-preview" style="height:44px;display:flex;align-items:center;overflow:hidden;border-radius:10px;border:1.5px solid var(--border);margin-bottom:18px;background:linear-gradient(90deg,#1a3c5e,#0f2940,#1a3c5e);font-size:14px;color:#fff;white-space:nowrap;font-weight:500;position:relative;">
+              <div id="ann2-preview-badge" style="display:none;flex-shrink:0;height:100%;align-items:center;padding:0 14px;background:rgba(0,0,0,0.2);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;">
+                <i class="fas fa-bullhorn" style="margin-right:5px;font-size:11px;"></i><span>NOTICE</span>
+              </div>
+              <div style="flex:1;overflow:hidden;padding:0 14px;">
+                <span id="ann2-preview-text" style="font-weight:500;">🎉 Rent A Maid India — Ab 500+ Shehron Mein Available!</span>
+              </div>
+              <div style="flex-shrink:0;padding:0 12px;opacity:.6;font-size:15px;">✕</div>
+            </div>
+            <!-- SAVE BUTTON -->
+            <button onclick="ann2Save()" style="width:100%;padding:14px;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;letter-spacing:.02em;box-shadow:0 4px 16px rgba(249,115,22,.3);display:flex;align-items:center;justify-content:center;gap:10px;">
+              <i class="fas fa-rocket"></i> Save &amp; Live Update — Sabke Browser Mein Turant
+            </button>
+            <p id="ann2-save-status" style="text-align:center;font-size:13px;color:#22c55e;font-weight:700;margin-top:10px;min-height:20px;"></p>
           </div>
         </div>
       </div>
@@ -18966,7 +18956,10 @@ async function rcSubmitLogin() {
       </div>
       <div class="form-row">
         <div class="form-group"><label>Experience (Years)</label><input type="number" id="mm-exp" value="1" min="0" max="40"/></div>
-        <div class="form-group"><label>Rating (1-5)</label><input type="number" id="mm-rating" value="4.5" min="1" max="5" step="0.1"/></div>
+        <div class="form-group"><label>Rating (1-5)</label><input type="number" id="mm-rating" value="4.5" min="0" max="5" step="0.1"/></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Kitne Logo Ne Diya (Reviews)</label><input type="number" id="mm-reviewCount" value="0" min="0" step="1" placeholder="e.g. 12"/></div>
       </div>
       <div class="form-group"><label>Services (comma separated)</label><input type="text" id="mm-services" placeholder="Full-Time Maid, Cook / Bai"/></div>
       <div class="form-group"><label>Languages (comma separated)</label><input type="text" id="mm-langs" placeholder="Hindi, Marathi"/></div>
@@ -19658,6 +19651,13 @@ function initApp() {
   renderAdmins();
   loadWebsiteEditorForm();
   if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras();
+  // Firebase se site content load karo aur form refresh karo
+  if (typeof loadSiteContentFromFirebase === 'function') {
+    loadSiteContentFromFirebase().then(function(){
+      loadWebsiteEditorForm();
+      if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras();
+    }).catch(function(e){ console.warn('SiteContent load on init failed:', e); });
+  }
   // Firebase se latest maids sync karo (admin panel mein turant dikhe)
   _syncAdminMaidsFromFirebase();
 }
@@ -19837,7 +19837,7 @@ function gotoPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => {
     if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
   });
-  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',payments:'Payments',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification',help:'Help & Support',agencies:'Agencies','deleted-maids':'Deleted Maids','deleted-customers':'Deleted Customers'};
+  const titles = {dashboard:'Dashboard',customers:'Customers',maids:'Maids / Helpers',bookings:'Bookings',subscriptions:'Subscriptions',payments:'Payments',reviews:'Reviews',website:'Website Editor',services:'Services',cities:'Cities',testimonials:'Testimonials',annbar:'Announcement Bar',admins:'Admin Users',settings:'Settings',aadhar:'Aadhar Verification',help:'Help & Support',agencies:'Agencies','deleted-maids':'Deleted Maids','deleted-customers':'Deleted Customers'};
   document.getElementById('topbarTitle').textContent = titles[page] || page;
   currentPage = page;
   closeSidebar();
@@ -19864,6 +19864,17 @@ function gotoPage(page) {
   // Jab website editor khule, extras load karo
   if (page === 'website') {
     setTimeout(() => { if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras(); }, 100);
+    // Firebase se latest site content lo aur form refresh karo
+    if (typeof loadSiteContentFromFirebase === 'function') {
+      loadSiteContentFromFirebase().then(function(){
+        loadWebsiteEditorForm();
+        if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras();
+      }).catch(function(e){ console.warn('SiteContent website tab load failed:', e); });
+    }
+  }
+  // Announcement Bar page khulte hi init karo
+  if (page === 'annbar') {
+    setTimeout(() => { if (typeof ann2InitPanel === 'function') ann2InitPanel(); }, 100);
   }
   // Agency page khulte hi render karo
   if (page === 'agencies') {
@@ -19905,7 +19916,7 @@ function renderDashboard() {
     {label:'Total Bookings',val:books.length,icon:'fas fa-calendar-check',color:'#8b5cf6',bg:'#f5f3ff',change:books.filter(b=>b.status==='Pending').length+' pending',dir:'up'},
     {label:'Active Bookings',val:books.filter(b=>b.status==='Active').length,icon:'fas fa-spinner',color:'#f59e0b',bg:'#fffbeb',change:books.filter(b=>b.status==='Completed').length+' completed',dir:''},
     {label:'Cities Covered',val:getCities().length,icon:'fas fa-city',color:'#06b6d4',bg:'#ecfeff',change:'Across India',dir:''},
-    {label:'Avg Rating',val:'4.7★',icon:'fas fa-star',color:'#facc15',bg:'#fffbeb',change:'Based on '+maids.reduce((a,m)=>a+m.reviewCount,0)+' reviews',dir:'up'},
+    {label:'Avg Rating',val:'4.7★',icon:'fas fa-star',color:'#facc15',bg:'#fffbeb',change:'Based on '+(maids.reduce((a,m)=>a+(parseInt(m.reviewCount)||0),0)||0)+' reviews',dir:'up'},
   ];
   const statPages = {
     'Total Customers': 'customers',
@@ -19995,6 +20006,13 @@ function renderDashboard() {
       <div class="activity-time">${a.time}</div>
     </div>
   `).join('');
+  // Last updated timestamp
+  const dashLastUpdated = document.getElementById('dashLastUpdated');
+  if (dashLastUpdated) {
+    const now = new Date();
+    dashLastUpdated.textContent = 'Last updated: ' + now.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+
   // Pending Maid Registrations
   const pendingMaids = maids.filter(m => !m.verified);
   const resubmittedMaids = pendingMaids.filter(m => m.verificationStatus === 'resubmitted');
@@ -22750,6 +22768,7 @@ function openAddMaidModal() {
   document.getElementById('mm-state').value = '';
   document.getElementById('mm-exp').value = 1;
   document.getElementById('mm-rating').value = 4.5;
+  document.getElementById('mm-reviewCount').value = 0;
   document.getElementById('mm-available').checked = true;
   document.getElementById('mm-verified').checked = true;
   _resetAdminMaidPhotoUI('');
@@ -22766,6 +22785,7 @@ function openEditMaidModal(id) {
   document.getElementById('mm-state').value = m.state;
   document.getElementById('mm-exp').value = m.experience;
   document.getElementById('mm-rating').value = m.rating;
+  document.getElementById('mm-reviewCount').value = m.reviewCount || 0;
   document.getElementById('mm-services').value = m.services.join(', ');
   document.getElementById('mm-langs').value = m.languages?.join(', ')||'';
   document.getElementById('mm-photo').value = m.photo||'';
@@ -22781,7 +22801,8 @@ async function saveMaid() {
   const city = document.getElementById('mm-city').value.trim();
   const state = document.getElementById('mm-state').value;
   const exp = parseInt(document.getElementById('mm-exp').value)||0;
-  const rating = parseFloat(document.getElementById('mm-rating').value)||4.5;
+  const rating = parseFloat(document.getElementById('mm-rating').value)||0;
+  const reviewCount = parseInt(document.getElementById('mm-reviewCount').value)||0;
   const services = document.getElementById('mm-services').value.split(',').map(s=>s.trim()).filter(Boolean);
   const languages = document.getElementById('mm-langs').value.split(',').map(s=>s.trim()).filter(Boolean);
   const photoUrlField = document.getElementById('mm-photo').value.trim();
@@ -22803,11 +22824,11 @@ async function saveMaid() {
   }
 
   if (editingKey) {
-    maids = maids.map(m => m.id === editingKey ? {...m,name,phone,city,state,experience:exp,rating,services:services.length?services:m.services,languages:languages.length?languages:m.languages,photo,available,verified} : m);
+    maids = maids.map(m => m.id === editingKey ? {...m,name,phone,city,state,experience:exp,rating,reviewCount,services:services.length?services:m.services,languages:languages.length?languages:m.languages,photo,available,verified} : m);
     showToast('Maid updated!');
   } else {
     const newId = Math.max(0, ...maids.map(m=>m.id)) + 1;
-    maids.push({id:newId,name,phone,city,state,experience:exp,rating,reviewCount:0,services:services.length?services:['Full-Time Maid'],languages:languages.length?languages:['Hindi'],photo,available,verified});
+    maids.push({id:newId,name,phone,city,state,experience:exp,rating,reviewCount,services:services.length?services:['Full-Time Maid'],languages:languages.length?languages:['Hindi'],photo,available,verified});
     showToast('Maid added!');
   }
   setMaids(maids);
@@ -23898,6 +23919,9 @@ async function loadSiteContentFromFirebase() {
       const merged = Object.assign({}, local, fbData);
       setLS('ram_site_content', merged);
       applySiteContent();
+      // Admin panel ka editor form bhi refresh karo agar open hai
+      if (typeof loadWebsiteEditorForm === 'function') loadWebsiteEditorForm();
+      if (typeof loadWebsiteEditorExtras === 'function') loadWebsiteEditorExtras();
     }
   } catch(e) { console.warn('SiteContent Firebase load failed:', e); }
 }
@@ -24005,7 +24029,6 @@ function switchWebTab(tab){
   if(tab === 'icons') renderServiceIconsAdminTable();
   if(tab === 'sectioncolours') renderSectionColorControls();
   if(tab === 'welcomepopup') { updatePopupLogoPreview(); wcLoadPopupToggle(); }
-  if(tab === 'annbar') ann2InitPanel();
 }
 
 // ═══════════════════════════════════════════════
@@ -24046,23 +24069,24 @@ function ann2FillFields(s){
 }
 
 async function ann2InitPanel(){
-  // Safety: tab element visible hai ya nahi check karo
-  var tabEl = document.getElementById('wtab-annbar');
-  if(tabEl && !tabEl.classList.contains('active')){
-    tabEl.classList.add('active');
-  }
-
-  // Pehle localStorage se load karo (instant, no delay)
-  var s = null;
-  try { s = JSON.parse(localStorage.getItem('rentamaid_ann_v2')); } catch(e){}
-
   // Elements exist karte hain check karo
   if(!document.getElementById('ann2-text')){
     console.warn('ann2InitPanel: ann2-text element nahi mila — panel DOM mein nahi hai');
     return;
   }
 
-  ann2FillFields(s || {});
+  // Pehle localStorage se load karo (instant, no delay)
+  var s = null;
+  try { s = JSON.parse(localStorage.getItem('rentamaid_ann_v2')); } catch(e){}
+
+  if(s && typeof s === 'object' && s.text !== undefined){
+    // Saved data hai — fields fill karo
+    ann2FillFields(s);
+  } else {
+    // Koi saved data nahi — textarea ki existing HTML value ko
+    // .value mein sync karo aur preview update karo
+    ann2UpdatePreview();
+  }
 
   // Phir Firebase se fresh data fetch karo aur fields update karo
   try {
@@ -24071,9 +24095,15 @@ async function ann2InitPanel(){
       if(fbData && typeof fbData === 'object'){
         try { localStorage.setItem('rentamaid_ann_v2', JSON.stringify(fbData)); } catch(e){}
         ann2FillFields(fbData);
+      } else {
+        // Firebase mein kuch nahi — preview ko current field values se update karo
+        ann2UpdatePreview();
       }
     }
-  } catch(e){ console.warn('Ann panel Firebase fetch failed:', e); }
+  } catch(e){
+    console.warn('Ann panel Firebase fetch failed:', e);
+    ann2UpdatePreview();
+  }
 }
 function ann2SpeedLabel(){
   var v = parseInt(document.getElementById('ann2-speed').value);
@@ -25423,9 +25453,60 @@ window.addEventListener('storage', function(e) {
 // ══════════════════════════════════════
 // REFRESH
 // ══════════════════════════════════════
-function refreshAllData(){
+async function refreshAllData(){
+  // Refresh button spin animation
+  const dashRefreshIcon = document.getElementById('dashRefreshIcon');
+  if (dashRefreshIcon) {
+    dashRefreshIcon.style.transition = 'transform 0.8s ease';
+    dashRefreshIcon.style.transform = 'rotate(360deg)';
+    setTimeout(() => { dashRefreshIcon.style.transform = ''; }, 900);
+  }
+  const topbarRefreshBtns = document.querySelectorAll('.topbar-icon-btn[onclick="refreshAllData()"] i');
+  topbarRefreshBtns.forEach(i => { i.style.transition = 'transform 0.8s ease'; i.style.transform = 'rotate(360deg)'; setTimeout(()=>{ i.style.transform=''; },900); });
+
+  showToast('🔄 Firebase se data sync ho raha hai...');
+
+  // Fresh data Firebase se pull karo
+  if (typeof window._fbGet === 'function') {
+    try {
+      // Maids
+      const fbMaids = await window._fbGet('adminData', 'ram_admin_maids');
+      if (Array.isArray(fbMaids) && fbMaids.length > 0) {
+        localStorage.setItem('ram_admin_maids', JSON.stringify(fbMaids));
+      }
+      // Registered maids
+      const fbRegMaids = await window._fbGet('adminData', 'ram_registered_maids');
+      if (fbRegMaids && typeof fbRegMaids === 'object') {
+        localStorage.setItem('ram_registered_maids', JSON.stringify(fbRegMaids));
+      }
+      // Customers
+      const fbCusts = await window._fbGet('siteData', 'registeredCustomers');
+      if (fbCusts && typeof fbCusts === 'object' && Object.keys(fbCusts).length > 0) {
+        localStorage.setItem('registeredCustomers', JSON.stringify(fbCusts));
+      }
+      // Bookings
+      const fbBooks = await window._fbGet('adminData', 'ram_admin_bookings');
+      if (fbBooks) {
+        localStorage.setItem('ram_admin_bookings', JSON.stringify(fbBooks));
+      }
+      // Reviews
+      const fbReviews = await window._fbGet('adminData', 'ram_admin_reviews');
+      if (fbReviews) {
+        localStorage.setItem('ram_admin_reviews', JSON.stringify(fbReviews));
+      }
+      // Payments
+      const fbPayments = await window._fbGet('adminData', 'ram_admin_payments');
+      if (fbPayments) {
+        localStorage.setItem('ram_admin_payments', JSON.stringify(fbPayments));
+      }
+    } catch(e) {
+      console.warn('Firebase refresh failed, using local data:', e);
+    }
+  }
+
+  // Ab sab re-render karo
   initApp();
-  showToast('Data refreshed!');
+  showToast('✅ Dashboard live data se update ho gaya!');
 }
 
 function startLivePolling() {
