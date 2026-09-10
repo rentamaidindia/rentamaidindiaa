@@ -12093,9 +12093,9 @@ function maidCardHTML(m) {
   const verifiedBadge = m.verified ? `<span class="badge-verified" style="width:auto;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-badge-check" style="font-size:12px;"></i> Verified</span>` : `<span class="badge-busy" style="right:12px;left:auto;top:12px;background:#f59e0b;">Unverified</span>`;
   const services = Array.isArray(m.services) ? m.services : ['General Help'];
   const languages = Array.isArray(m.languages) ? m.languages : ['Hindi'];
-  const rating = typeof m.rating === 'number' ? m.rating : 0;
-  const reviewCount = typeof m.reviewCount === 'number' ? m.reviewCount : 0;
-  const experience = typeof m.experience === 'number' ? m.experience : 0;
+  const rating = (m.rating !== undefined && m.rating !== null && m.rating !== '') ? parseFloat(m.rating) || 0 : 0;
+  const reviewCount = (m.reviewCount !== undefined && m.reviewCount !== null && m.reviewCount !== '') ? parseInt(m.reviewCount) || 0 : 0;
+  const experience = (m.experience !== undefined && m.experience !== null && m.experience !== '') ? parseInt(m.experience) || 0 : 0;
   const tags = services.slice(0,2).map(s=>`<span class="tag">${s}</span>`).join('') + (services.length>2?`<span class="tag">+${services.length-2}</span>`:'');
   return `<div class="maid-card">
     <div class="maid-photo">${photoHTML}${availBadge}${verifiedBadge}</div>
@@ -12632,6 +12632,35 @@ window.addEventListener('DOMContentLoaded', () => {
   // (login, active subscription, etc.) — on a fresh load/refresh we want
   // that same validation to run again, not be bypassed.
   const gatedPages = ['book', 'dashboard'];
+
+  // ── Maid profile refresh fix ──
+  // Hash pattern: maid-profile-{id}  (e.g. #maid-profile-42)
+  // Refresh pe MAIDS array load hone ka wait karo phir showMaidProfile call karo.
+  const maidProfileMatch = hash.match(/^maid-profile-(\d+)$/);
+  if (maidProfileMatch) {
+    const maidId = parseInt(maidProfileMatch[1]);
+    showPage('maid-profile', { fromHistory: true });
+    // MAIDS async load hote hain — thoda wait karo
+    const tryShowProfile = (attempt) => {
+      if (typeof showMaidProfile === 'function' && typeof MAIDS !== 'undefined' && MAIDS.length > 0) {
+        showMaidProfile(maidId);
+      } else if (attempt < 20) {
+        setTimeout(() => tryShowProfile(attempt + 1), 300);
+      } else {
+        // MAIDS load nahi hua — localStorage se try karo
+        try {
+          var adminMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]');
+          if (adminMaids.length && typeof MAIDS !== 'undefined') {
+            MAIDS.push(...adminMaids.filter(x => !MAIDS.find(m => m.id === x.id)));
+          }
+        } catch(e) {}
+        if (typeof showMaidProfile === 'function') showMaidProfile(maidId);
+        else showPage('home', { fromHistory: true });
+      }
+    };
+    setTimeout(() => tryShowProfile(0), 200);
+    return;
+  }
 
   if (hash && document.getElementById('page-' + hash)) {
     if (gatedPages.includes(hash)) {
@@ -16775,8 +16804,8 @@ function showMaidProfile(id) {
   // Safe fallbacks for fields that may be missing on newly registered maids
   const services = Array.isArray(m.services) ? m.services : ['General Help'];
   const languages = Array.isArray(m.languages) ? m.languages : ['Hindi'];
-  const rating = (typeof m.rating === 'number' && !isNaN(m.rating)) ? m.rating : 0;
-  const reviewCount = typeof m.reviewCount === 'number' ? m.reviewCount : 0;
+  const rating = (m.rating !== undefined && m.rating !== null && m.rating !== '') ? parseFloat(m.rating) || 0 : 0;
+  const reviewCount = (m.reviewCount !== undefined && m.reviewCount !== null && m.reviewCount !== '') ? parseInt(m.reviewCount) || 0 : 0;
   const experience = typeof m.experience === 'number' ? m.experience : 0;
 
   const photoHTML = m.photo
@@ -16876,6 +16905,8 @@ function showMaidProfile(id) {
   selectedMaidForBooking = id;
   showPage('maid-profile');
   window._currentMaidProfileId = numId; // track for post-login re-render
+  // Hash mein maid ID bhi save karo — refresh pe profile restore ho sake
+  safeHistoryReplace({ page: 'maid-profile', maidId: numId }, 'maid-profile-' + numId);
 }
 
 // ── PATCH submitSignup & submitLogin to refresh UI ──
@@ -19975,7 +20006,7 @@ function renderDashboard() {
   ).join('');
 
   // Recent customers
-  const custArr = Object.entries(custs).slice(-5).reverse();
+  const custArr = Object.entries(custs).slice(-10).reverse();
   document.getElementById('recentCustomers').innerHTML = custArr.length ? custArr.map(([phone, c]) => `
     <div class="activity-item" style="cursor:pointer;" onclick="gotoPage('customers');setTimeout(()=>{const s=document.getElementById('custSearch');if(s){s.value='${c.name||phone}';renderCustomers();}},100);">
       <div class="activity-icon" style="background:var(--blue-bg);color:var(--blue);"><i class="fas fa-user"></i></div>
@@ -19985,7 +20016,7 @@ function renderDashboard() {
   `).join('') : '<div class="empty-state"><i class="fas fa-users"></i><p>No customers yet</p></div>';
 
   // Recent bookings on dashboard
-  const recentBooks = books.slice(-5).reverse();
+  const recentBooks = books.slice(-10).reverse();
   const statusColors2 = {Pending:'var(--yellow)',Confirmed:'var(--blue)',Active:'var(--green)',Completed:'#8b5cf6',Cancelled:'var(--red)'};
   const fallbackActivities = [
     {icon:'fas fa-user-plus',bg:'var(--blue-bg)',color:'var(--blue)',text:`<strong>${custCount}</strong> customers registered`,time:'Today',page:'customers'},
@@ -20025,7 +20056,7 @@ function renderDashboard() {
       pendingEl.innerHTML = '<div class="empty-state" style="padding:16px;"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>All maids are verified! ✓</p></div>';
     } else {
       // Re-submitted maids pehle dikhao (priority)
-      const resubHtml = resubmittedMaids.slice(0,3).map(m => `
+      const resubHtml = resubmittedMaids.slice(0,10).map(m => `
         <div class="activity-item" style="cursor:pointer;border-left:3px solid #f97316;background:#fff7ed;" onclick="viewMaid(${m.id})">
           <div class="activity-icon" style="background:#fff7ed;color:#c2410c;"><i class="fas fa-rotate"></i></div>
           <div class="activity-text">
@@ -20041,7 +20072,7 @@ function renderDashboard() {
         </div>
       `).join('');
       // Baaki normal pending maids
-      const normalHtml = normalPendingMaids.slice(0, 5 - Math.min(resubmittedMaids.length,3)).map(m => `
+      const normalHtml = normalPendingMaids.slice(0, 10 - Math.min(resubmittedMaids.length,10)).map(m => `
         <div class="activity-item" style="cursor:pointer;" onclick="gotoPage('maids');">
           <div class="activity-icon" style="background:var(--yellow-bg);color:#92400e;"><i class="fas fa-user-tie"></i></div>
           <div class="activity-text">
