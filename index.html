@@ -19512,12 +19512,30 @@ function setMaids(v) {
     window.MAIDS.length = 0;
     v.forEach(m => window.MAIDS.push(m));
   }
-  // Website ke maid cards re-render karo agar function available hai
+  // Website ke maid cards re-render karo — rating/reviewCount turant website pe dikhe
   if (typeof window.syncAndRenderMaids === 'function') {
     try { window.syncAndRenderMaids(); } catch(e) {}
   } else if (typeof window.renderMaidCards === 'function') {
     try { window.renderMaidCards(); } catch(e) {}
   }
+  // Direct DOM update bhi karo — extra guarantee taaki koi delay na ho
+  try {
+    var _maidArr = Array.isArray(v) ? v : [];
+    var homeGrid = document.getElementById('homeMaidsGrid');
+    if (homeGrid && typeof maidCardHTML === 'function') {
+      var featured = _maidArr.filter(function(m){ return m.verified && m.available; }).slice(0,4);
+      if (featured.length === 0) featured = _maidArr.slice(0,4);
+      homeGrid.innerHTML = featured.map(maidCardHTML).join('');
+    }
+    var maidsGrid = document.getElementById('maidsPageGrid');
+    if (maidsGrid && typeof maidCardHTML === 'function') {
+      if (typeof sortMaidsByCustomerLocation === 'function' && typeof getCustomerLocationProfile === 'function') {
+        maidsGrid.innerHTML = sortMaidsByCustomerLocation(_maidArr, getCustomerLocationProfile()).map(maidCardHTML).join('');
+      } else {
+        maidsGrid.innerHTML = _maidArr.map(maidCardHTML).join('');
+      }
+    }
+  } catch(e) {}
 }
 function getCities() { return getLS('ram_admin_cities', DEFAULT_CITIES); }
 function setCities(v) {
@@ -19538,7 +19556,7 @@ function setTestimonials(v) {
   try {
     if (typeof buildTestimonialSlider === 'function') {
       const list = v.length > 0 ? v : (typeof TESTIMONIALS !== 'undefined' ? TESTIMONIALS : []);
-      buildTestimonialSlider(list.slice(0,6));
+      buildTestimonialSlider(list.slice(0,8));
     }
   } catch(e) {}
 }
@@ -19809,34 +19827,92 @@ function populateStateDropdowns() {
   // Also call website helper if available
   if (typeof window._fillStateDropdowns === 'function') window._fillStateDropdowns();
 }
-function updateNavBadges() {
-  const custs = Object.keys(getCustomers()).length;
-  const maids = getMaids().length;
-  const pendingMaids = getMaids().filter(m => !m.verified).length;
-  const books = getBookings().filter(b => b.status === 'Pending').length;
-  const custBadge = document.getElementById('custNavBadge');
-  const maidBadge = document.getElementById('maidNavBadge');
-  const bookBadge = document.getElementById('bookNavBadge');
-  if(custBadge) custBadge.textContent = custs;
-  if(maidBadge) maidBadge.textContent = maids;
-  if(bookBadge) bookBadge.textContent = books;
-  // Payments — pending count badge (live Firebase-synced log)
-  const payBadge = document.getElementById('paymentsNavBadge');
-  if (payBadge && typeof getPaymentsLog === 'function') {
-    const pendingPays = getPaymentsLog().filter(p => p.status === 'pending').length;
-    payBadge.textContent = pendingPays;
-    payBadge.style.display = pendingPays > 0 ? 'inline-block' : 'none';
+// ── New-item badge helpers ──────────────────────────────────────────────────
+// Har page ka "last seen" timestamp localStorage mein save hota hai.
+// Badge sirf un items ki count dikhata hai jo last-seen ke BAAD aaye hain.
+// Jab admin page kholta hai → markPageSeen(page) call hoti hai → badge clear.
+
+function _getSeenTs(page) {
+  try { return parseInt(localStorage.getItem('_adminSeen_' + page) || '0'); } catch(e) { return 0; }
+}
+function markPageSeen(page) {
+  try { localStorage.setItem('_adminSeen_' + page, String(Date.now())); } catch(e) {}
+}
+function _setNavBadge(el, count, opts) {
+  if (!el) return;
+  opts = opts || {};
+  if (count > 0) {
+    el.textContent = count;
+    el.style.display = 'inline-block';
+    if (opts.bg) el.style.background = opts.bg;
+  } else {
+    el.style.display = 'none';
   }
-  // Pending approvals nav item
+}
+
+function updateNavBadges() {
+  const allMaids = getMaids();
+  const pendingMaids = allMaids.filter(m => !m.verified).length;
+
+  // ── Customers: naye log jo last visit ke baad aaye ──
+  const custSeen = _getSeenTs('customers');
+  const custNew = Object.values(getCustomers()).filter(c => {
+    const t = c.createdAt ? new Date(c.createdAt).getTime() : 0;
+    return t > custSeen;
+  }).length;
+  _setNavBadge(document.getElementById('custNavBadge'), custNew);
+
+  // ── Maids: naye log jo last visit ke baad aaye ──
+  const maidSeen = _getSeenTs('maids');
+  const maidNew = allMaids.filter(m => {
+    const t = m.registeredAt ? new Date(m.registeredAt).getTime() : 0;
+    return t > maidSeen;
+  }).length;
+  _setNavBadge(document.getElementById('maidNavBadge'), maidNew);
+
+  // ── Pending Approvals: unverified maids (ye hamesha show hona chahiye) ──
   const pendingNav = document.getElementById('pendingApprovalsNav');
   const pendingBadge = document.getElementById('pendingMaidNavBadge');
-  if(pendingNav && pendingBadge) {
-    pendingBadge.textContent = pendingMaids;
-    pendingNav.style.display = pendingMaids > 0 ? 'flex' : 'none';
+  if (pendingNav && pendingBadge) {
+    if (pendingMaids > 0) {
+      pendingBadge.textContent = pendingMaids;
+      pendingBadge.style.display = 'inline-block';
+      pendingNav.style.display = 'flex';
+    } else {
+      pendingNav.style.display = 'none';
+    }
   }
-  // Aadhar pending count
+
+  // ── Agencies: naye jo last visit ke baad aaye ──
+  const agSeen = _getSeenTs('agencies');
+  const agNew = getAgencies().filter(a => {
+    const t = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    return t > agSeen;
+  }).length;
+  _setNavBadge(document.getElementById('agencyNavBadge'), agNew);
+
+  // ── Bookings: naye jo last visit ke baad aaye ──
+  const bookSeen = _getSeenTs('bookings');
+  const bookNew = getBookings().filter(b => {
+    const t = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return t > bookSeen;
+  }).length;
+  _setNavBadge(document.getElementById('bookNavBadge'), bookNew, { bg: 'var(--green)' });
+
+  // ── Payments: naye jo last visit ke baad aaye ──
+  const payBadge = document.getElementById('paymentsNavBadge');
+  if (payBadge && typeof getPaymentsLog === 'function') {
+    const paySeen = _getSeenTs('payments');
+    const payNew = getPaymentsLog().filter(p => {
+      const t = p.createdAt ? new Date(p.createdAt).getTime() : 0;
+      return t > paySeen;
+    }).length;
+    _setNavBadge(payBadge, payNew, { bg: '#f59e0b' });
+  }
+
+  // ── Aadhar: pending count (ye hamesha show hona chahiye — action required) ──
   let pendingAadhar = 0;
-  getMaids().forEach(m => {
+  allMaids.forEach(m => {
     if (m.phone) {
       try {
         const ad = JSON.parse(localStorage.getItem('aadhar_' + m.phone) || 'null');
@@ -19845,16 +19921,19 @@ function updateNavBadges() {
     }
   });
   const aadharBadge = document.getElementById('aadharNavBadge');
-  if(aadharBadge) { aadharBadge.textContent = pendingAadhar; aadharBadge.style.display = pendingAadhar > 0 ? 'inline' : 'none'; }
-  // Help enquiries open count
+  if (aadharBadge) { aadharBadge.textContent = pendingAadhar; aadharBadge.style.display = pendingAadhar > 0 ? 'inline' : 'none'; }
+
+  // ── Help badge ──
   if (typeof updateHelpNavBadge === 'function') updateHelpNavBadge();
-  // Deleted badges
+
+  // ── Deleted badges (total count, for awareness) ──
   const delMaidBadge = document.getElementById('deletedMaidNavBadge');
   const delCustBadge = document.getElementById('deletedCustNavBadge');
   const delMaidCount = getDeletedMaids().length;
   const delCustCount = getDeletedCustomers().length;
   if (delMaidBadge) { delMaidBadge.textContent = delMaidCount; delMaidBadge.style.display = delMaidCount > 0 ? 'inline-block' : 'none'; }
   if (delCustBadge) { delCustBadge.textContent = delCustCount; delCustBadge.style.display = delCustCount > 0 ? 'inline-block' : 'none'; }
+
   renderNotifications();
 }
 
@@ -19872,6 +19951,14 @@ function gotoPage(page) {
   document.getElementById('topbarTitle').textContent = titles[page] || page;
   currentPage = page;
   closeSidebar();
+  // ── Jab admin page kholta hai → us page ka badge clear karo ──
+  const _seenPages = ['customers','maids','agencies','bookings','payments'];
+  if (_seenPages.indexOf(page) !== -1) {
+    markPageSeen(page);
+    // Maids page open karne se Pending Approvals bhi dekh liya
+    if (page === 'maids') markPageSeen('maids');
+    setTimeout(updateNavBadges, 50);
+  }
   // Payments page khulte hi latest Firebase-synced data render karo
   if (page === 'payments') {
     if (typeof renderPaymentsLog === 'function') renderPaymentsLog();
@@ -20445,7 +20532,13 @@ function saveAgencies(list) {
 }
 function updateAgencyNavBadge() {
   const el = document.getElementById('agencyNavBadge');
-  if (el) el.textContent = getAgencies().length;
+  if (!el) return;
+  const agSeen = _getSeenTs('agencies');
+  const agNew = getAgencies().filter(a => {
+    const t = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    return t > agSeen;
+  }).length;
+  _setNavBadge(el, agNew);
 }
 
 // ---- Current agency being viewed ----
@@ -22905,12 +22998,28 @@ async function saveMaid() {
       }
     } catch(e) {}
   }
-  // Website pe turant update
+  // Website pe turant update — rating/reviewCount/sab fields instantly dikhe
   if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
   else if (typeof window.renderMaidCards === 'function') window.renderMaidCards();
+  // Thoda delay ke baad bhi ek baar aur refresh — async setLS complete hone ke baad
+  setTimeout(function() {
+    if (typeof window.syncAndRenderMaids === 'function') try { window.syncAndRenderMaids(); } catch(e) {}
+    else if (typeof window.renderMaidCards === 'function') try { window.renderMaidCards(); } catch(e) {}
+  }, 300);
   renderMaids();
   renderDashboard();
   updateNavBadges();
+  // Firebase retry: agar pehli baar fail hua to 5 sec baad dobara save try karo
+  setTimeout(function() {
+    try {
+      var latestMaids = getMaids();
+      if (typeof window._fbSetWhenReady === 'function') {
+        window._fbSetWhenReady('adminData', 'ram_admin_maids', latestMaids).catch(function() {});
+      } else if (typeof window._fbSet === 'function') {
+        window._fbSet('adminData', 'ram_admin_maids', latestMaids).catch(function() {});
+      }
+    } catch(e) {}
+  }, 5000);
 }
 function toggleMaidVerified(id) {
   const maids = getMaids().map(m => m.id === id ? {...m, verified: !m.verified, verificationStatus: !m.verified ? 'verified' : 'pending'} : m);
@@ -23443,6 +23552,15 @@ function openEditTestimonialModal(idx) {
   document.getElementById('tm-review').value=t.review;
   openModal('testiModal');
 }
+function _liveUpdateTestimonialSlider(list) {
+  // Website pe turant dikhe — admin panel mein add/edit/delete karte hi
+  try {
+    if (typeof buildTestimonialSlider === 'function') {
+      const data = (Array.isArray(list) && list.length > 0) ? list : (typeof TESTIMONIALS !== 'undefined' ? TESTIMONIALS : []);
+      buildTestimonialSlider(data.slice(0, 8));
+    }
+  } catch(e) {}
+}
 function saveTestimonial() {
   const name=document.getElementById('tm-name').value.trim();
   const city=document.getElementById('tm-city').value.trim();
@@ -23454,14 +23572,18 @@ function saveTestimonial() {
   const obj={id:editingKey!==null?testis[editingKey]?.id||Date.now():Date.now(),name,city,service,rating,review};
   if(editingKey!==null&&editingKey!==undefined){testis[editingKey]=obj;}else{testis.push(obj);}
   setTestimonials(testis);
+  _liveUpdateTestimonialSlider(testis);
   closeModal('testiModal');
   renderTestimonials();
-  showToast(editingKey!==null?'Testimonial updated!':'Testimonial added!');
+  showToast(editingKey!==null?'Testimonial updated! Website pe live ho gaya.':'Testimonial added! Website pe live ho gaya.');
 }
 function deleteTestimonial(idx){
   confirmAction('Delete Testimonial','Remove this testimonial?',()=>{
     const t=getTestimonials().filter((_,i)=>i!==idx);
-    setTestimonials(t);renderTestimonials();showToast('Testimonial deleted');
+    setTestimonials(t);
+    _liveUpdateTestimonialSlider(t);
+    renderTestimonials();
+    showToast('Testimonial deleted. Website pe live update ho gaya.');
   });
 }
 
@@ -26604,18 +26726,43 @@ function setupRealtimeSync() {
       var _fbMaidsSnap = snap.data().data;
       if (Array.isArray(_fbMaidsSnap) && _fbMaidsSnap.length > 0) {
         localStorage.setItem('ram_admin_maids', JSON.stringify(_fbMaidsSnap));
+        // ── LIVE FIX: Firebase se aaya fresh data seedha MAIDS array mein daalo ──
+        // localStorage ke through jaane ka wait nahi — rating/reviewCount turant dikhe
+        if (typeof window.MAIDS !== 'undefined') {
+          window.MAIDS.length = 0;
+          _fbMaidsSnap.forEach(function(m){ window.MAIDS.push(m); });
+        }
       } else if (Array.isArray(_fbMaidsSnap) && _fbMaidsSnap.length === 0) {
         // Genuinely empty array — sirf tab overwrite karo jab local bhi empty ho
         var _existingMaidsSnap = [];
         try { _existingMaidsSnap = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(_em) {}
         if (!Array.isArray(_existingMaidsSnap) || _existingMaidsSnap.length === 0) {
           localStorage.setItem('ram_admin_maids', JSON.stringify(_fbMaidsSnap));
+          if (typeof window.MAIDS !== 'undefined') { window.MAIDS.length = 0; }
         }
         // else: Firebase empty bheja, local mein data hai — local rakho
       }
       // Array nahi aaya (null/object/undefined) — localStorage bilkul mat chhuona
+      // ── Re-render: rating/reviewCount website pe turant update ho ──
       if (typeof window.syncAndRenderMaids === 'function') window.syncAndRenderMaids();
       else if (typeof window.renderMaidCards === 'function') window.renderMaidCards();
+      // Home grid bhi directly update karo (extra guarantee)
+      try {
+        var _hg = document.getElementById('homeMaidsGrid');
+        if (_hg && typeof maidCardHTML === 'function' && typeof window.MAIDS !== 'undefined') {
+          var _feat = window.MAIDS.filter(function(m){ return m.verified && m.available; }).slice(0,4);
+          if (_feat.length === 0) _feat = window.MAIDS.slice(0,4);
+          _hg.innerHTML = _feat.map(maidCardHTML).join('');
+        }
+        var _mg = document.getElementById('maidsPageGrid');
+        if (_mg && typeof maidCardHTML === 'function' && typeof window.MAIDS !== 'undefined') {
+          if (typeof sortMaidsByCustomerLocation === 'function' && typeof getCustomerLocationProfile === 'function') {
+            _mg.innerHTML = sortMaidsByCustomerLocation(window.MAIDS, getCustomerLocationProfile()).map(maidCardHTML).join('');
+          } else {
+            _mg.innerHTML = window.MAIDS.map(maidCardHTML).join('');
+          }
+        }
+      } catch(_re) {}
       if (typeof window.renderMaids === 'function') { try { window.renderMaids(); } catch(e) {} }
       if (typeof window.renderDashboard === 'function') { try { window.renderDashboard(); } catch(e) {} }
       if (typeof window.updateNavBadges === 'function') { try { window.updateNavBadges(); } catch(e) {} }
@@ -26733,7 +26880,7 @@ function setupRealtimeSync() {
         const testimonials = snap.data().data;
         if (typeof buildTestimonialSlider === 'function') {
           const list = testimonials.length > 0 ? testimonials : (typeof TESTIMONIALS !== 'undefined' ? TESTIMONIALS : []);
-          buildTestimonialSlider(list.slice(0,6));
+          buildTestimonialSlider(list.slice(0,8));
         }
       } catch(e) {}
     }
@@ -27406,7 +27553,7 @@ loadFromFirebase().then(() => {
     const testGrid = document.getElementById('homeTestimonialsGrid');
     if (testGrid && typeof testimonialHTML === 'function') {
       const list = (testimonials && testimonials.length > 0) ? testimonials : (typeof TESTIMONIALS !== 'undefined' ? TESTIMONIALS : []);
-      buildTestimonialSlider(list.slice(0,6));
+      buildTestimonialSlider(list.slice(0,8));
     }
 
     // Services
