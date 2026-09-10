@@ -11748,46 +11748,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
         <div class="form-group-v" style="margin-bottom:0;"><label>State *</label>
-          <select id="signupState" class="js-state-select" onchange="updateDistrictDropdown('signupState','signupDistrict',null)"><option value="">Select State</option><option value="Andhra Pradesh">Andhra Pradesh</option>
-<option value="Arunachal Pradesh">Arunachal Pradesh</option>
-<option value="Assam">Assam</option>
-<option value="Bihar">Bihar</option>
-<option value="Chhattisgarh">Chhattisgarh</option>
-<option value="Goa">Goa</option>
-<option value="Gujarat">Gujarat</option>
-<option value="Haryana">Haryana</option>
-<option value="Himachal Pradesh">Himachal Pradesh</option>
-<option value="Jharkhand">Jharkhand</option>
-<option value="Karnataka">Karnataka</option>
-<option value="Kerala">Kerala</option>
-<option value="Madhya Pradesh">Madhya Pradesh</option>
-<option value="Maharashtra">Maharashtra</option>
-<option value="Manipur">Manipur</option>
-<option value="Meghalaya">Meghalaya</option>
-<option value="Mizoram">Mizoram</option>
-<option value="Nagaland">Nagaland</option>
-<option value="Odisha">Odisha</option>
-<option value="Punjab">Punjab</option>
-<option value="Rajasthan">Rajasthan</option>
-<option value="Sikkim">Sikkim</option>
-<option value="Tamil Nadu">Tamil Nadu</option>
-<option value="Telangana">Telangana</option>
-<option value="Tripura">Tripura</option>
-<option value="Uttar Pradesh">Uttar Pradesh</option>
-<option value="Uttarakhand">Uttarakhand</option>
-<option value="West Bengal">West Bengal</option>
-<option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-<option value="Chandigarh">Chandigarh</option>
-<option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli and Daman and Diu</option>
-<option value="Delhi">Delhi</option>
-<option value="Jammu and Kashmir">Jammu and Kashmir</option>
-<option value="Ladakh">Ladakh</option>
-<option value="Lakshadweep">Lakshadweep</option>
-<option value="Puducherry">Puducherry</option></select>
+          <select id="signupState" class="js-state-select" onchange="updateDistrictDropdown('signupState','signupDistrict','signupArea');updateAreaDropdown('signupState','signupDistrict','signupArea');setTimeout(function(){initSearchableSelect('signupState');},50);">
+            <option value="">Select State</option>
+          </select>
         </div>
         <div class="form-group-v" style="margin-bottom:0;"><label>District / City *</label>
-          <select id="signupDistrict"><option value="">Select District</option></select>
+          <select id="signupDistrict" onchange="updateAreaDropdown('signupState','signupDistrict','signupArea');setTimeout(function(){initSearchableSelect('signupDistrict');},50);"><option value="">Select District</option></select>
         </div>
+      </div>
+      <div class="form-group-v" style="margin-bottom:10px;"><label>Area / Locality</label>
+        <select id="signupArea"><option value="">Select Area / Locality</option></select>
       </div>
       <div class="form-group-v"><label>Complete Address *</label><textarea id="signupAddress" placeholder="House No., Street, Area, PIN Code..." style="min-height:60px;width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;background:#f9fafb;outline:none;resize:vertical;"></textarea></div>
 
@@ -11960,126 +11930,251 @@ const SERVICES = [
 const INDIA_STATES = ["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman and Nicobar Islands","Chandigarh","Dadra and Nagar Haveli and Daman and Diu","Delhi","Jammu and Kashmir","Ladakh","Lakshadweep","Puducherry"];
 
 const INDIA_DISTRICTS = {
-  "Andhra Pradesh": ["Anantapur","Chittoor","East Godavari","Guntur","Krishna","Kurnool","Nellore","Prakasam","Srikakulam","Visakhapatnam","Vizianagaram","West Godavari","YSR Kadapa","Tirupati","Kakinada","Eluru"],
-  "Arunachal Pradesh": ["Itanagar","Tawang","West Kameng","East Kameng","Papum Pare","Lower Subansiri","Upper Subansiri","West Siang","East Siang","Changlang","Tirap","Lohit"],
-  "Assam": ["Guwahati (Kamrup Metro)","Dibrugarh","Jorhat","Silchar (Cachar)","Tezpur (Sonitpur)","Nagaon","Tinsukia","Barpeta","Bongaigaon","Karimganj","Golaghat","Dhubri"],
-  "Bihar": ["Patna","Gaya","Bhagalpur","Muzaffarpur","Darbhanga","Purnia","Begusarai","Munger","Chhapra (Saran)","Arrah (Bhojpur)","Katihar","Nalanda"],
-  "Chhattisgarh": ["Raipur","Bilaspur","Durg","Korba","Jagdalpur (Bastar)","Rajnandgaon","Raigarh","Ambikapur","Dhamtari","Mahasamund"],
-  "Goa": ["North Goa","South Goa","Panaji","Margao","Mapusa","Vasco da Gama","Ponda"],
-  "Gujarat": ["Ahmedabad","Surat","Vadodara","Rajkot","Bhavnagar","Jamnagar","Junagadh","Gandhinagar","Anand","Mehsana","Nadiad","Navsari","Vapi","Bharuch"],
-  "Haryana": ["Gurugram","Faridabad","Hisar","Karnal","Rohtak","Panipat","Yamunanagar","Ambala","Sonipat","Panchkula","Kurukshetra","Bhiwani"],
-  "Himachal Pradesh": ["Shimla","Manali (Kullu)","Dharamshala (Kangra)","Solan","Mandi","Una","Hamirpur","Bilaspur","Chamba","Kinnaur"],
-  "Jharkhand": ["Ranchi","Jamshedpur (East Singhbhum)","Dhanbad","Bokaro","Hazaribagh","Deoghar","Giridih","Ramgarh","Dumka","Palamu"],
-  "Karnataka": ["Bangalore Urban","Mysore","Hubli-Dharwad","Mangalore (Dakshina Kannada)","Belgaum","Davanagere","Bellary","Shimoga","Tumkur","Gulbarga","Bidar","Udupi","Hassan","Bangalore Rural"],
-  "Kerala": ["Thiruvananthapuram","Kochi (Ernakulam)","Kozhikode","Thrissur","Kollam","Kannur","Alappuzha","Palakkad","Malappuram","Kottayam","Idukki","Wayanad"],
-  "Madhya Pradesh": ["Bhopal","Indore","Jabalpur","Gwalior","Ujjain","Sagar","Rewa","Satna","Ratlam","Dewas","Sehore","Chhindwara"],
-  "Maharashtra": ["Mumbai City","Mumbai Suburban","Pune","Nagpur","Nashik","Thane","Aurangabad (Chhatrapati Sambhajinagar)","Solapur","Kolhapur","Amravati","Nanded","Sangli","Akola","Latur","Jalgaon","Raigad"],
-  "Manipur": ["Imphal East","Imphal West","Thoubal","Bishnupur","Churachandpur","Senapati","Ukhrul"],
-  "Meghalaya": ["East Khasi Hills (Shillong)","West Khasi Hills","Jaintia Hills","Ri-Bhoi","West Garo Hills","East Garo Hills"],
-  "Mizoram": ["Aizawl","Lunglei","Champhai","Kolasib","Serchhip","Mamit","Lawngtlai"],
-  "Nagaland": ["Kohima","Dimapur","Mokokchung","Tuensang","Wokha","Zunheboto","Mon"],
-  "Odisha": ["Bhubaneswar (Khordha)","Cuttack","Rourkela (Sundargarh)","Puri","Sambalpur","Berhampur (Ganjam)","Balasore","Koraput","Mayurbhanj","Angul"],
-  "Punjab": ["Chandigarh (PB side)","Ludhiana","Amritsar","Jalandhar","Patiala","Bathinda","Mohali","Hoshiarpur","Moga","Ferozepur","Pathankot"],
-  "Rajasthan": ["Jaipur","Jodhpur","Udaipur","Kota","Ajmer","Bikaner","Bharatpur","Alwar","Sikar","Bhilwara","Pali","Sri Ganganagar"],
-  "Sikkim": ["East Sikkim (Gangtok)","West Sikkim","North Sikkim","South Sikkim"],
-  "Tamil Nadu": ["Chennai","Coimbatore","Madurai","Salem","Trichy (Tiruchirappalli)","Tirunelveli","Erode","Vellore","Thoothukudi","Thanjavur","Dindigul","Kanchipuram"],
-  "Telangana": ["Hyderabad","Warangal","Nizamabad","Karimnagar","Khammam","Ranga Reddy","Medchal-Malkajgiri","Nalgonda","Mahbubnagar","Adilabad"],
-  "Tripura": ["West Tripura (Agartala)","South Tripura","North Tripura","Dhalai","Gomati","Khowai"],
-  "Uttar Pradesh": ["Lucknow","Kanpur","Agra","Varanasi","Ghaziabad","Noida (Gautam Buddh Nagar)","Meerut","Allahabad (Prayagraj)","Bareilly","Aligarh","Moradabad","Gorakhpur","Saharanpur","Mathura"],
-  "Uttarakhand": ["Dehradun","Haridwar","Nainital","Udham Singh Nagar","Rudraprayag","Almora","Pithoragarh","Chamoli","Tehri Garhwal"],
-  "West Bengal": ["Kolkata","Howrah","Asansol (Paschim Bardhaman)","Siliguri (Darjeeling)","Durgapur (Paschim Bardhaman)","Malda","Nadia","Hooghly","Murshidabad","North 24 Parganas","South 24 Parganas"],
-  "Andaman and Nicobar Islands": ["Port Blair (South Andaman)","North and Middle Andaman","Nicobar"],
-  "Chandigarh": ["Chandigarh"],
-  "Dadra and Nagar Haveli and Daman and Diu": ["Silvassa (Dadra and Nagar Haveli)","Daman","Diu"],
-  "Delhi": ["New Delhi","East Delhi","West Delhi","North Delhi","South Delhi","North West Delhi","South West Delhi","Central Delhi","North East Delhi","South East Delhi","Shahdara"],
-  "Jammu and Kashmir": ["Srinagar","Jammu","Anantnag","Baramulla","Udhampur","Kathua","Pulwama","Budgam"],
-  "Ladakh": ["Leh","Kargil"],
-  "Lakshadweep": ["Kavaratti","Agatti","Minicoy"],
-  "Puducherry": ["Puducherry","Karaikal","Mahe","Yanam"],
+  "Andaman and Nicobar Islands": ["Nicobar","North and Middle Andaman","Port Blair","South Andaman"],
+  "Andhra Pradesh": ["Alluri Sitharama Raju","Anakapalli","Anantapur","Annamayya","Bapatla","Chittoor","East Godavari","Eluru","Guntur","Kadapa (YSR)","Kakinada","Konaseema","Krishna","Kurnool","Manyam (Parvathipuram)","NTR (Vijayawada)","Nandyal","Nellore","Palnadu","Prakasam","Srikakulam","Tirupati","Visakhapatnam","Vizianagaram","West Godavari"],
+  "Arunachal Pradesh": ["Anjaw","Changlang","Dibang Valley","East Kameng","East Siang","Itanagar Capital Complex","Kamle","Kra Daadi","Kurung Kumey","Leparada","Lohit","Longding","Lower Dibang Valley","Lower Siang","Lower Subansiri","Namsai","Pakke-Kessang","Papum Pare","Shi Yomi","Siang","Tawang","Tirap","Upper Siang","Upper Subansiri","West Kameng","West Siang"],
+  "Assam": ["Bajali","Barpeta","Biswanath","Bongaigaon","Cachar (Silchar)","Charaideo","Chirang","Darrang","Dhemaji","Dhubri","Dibrugarh","Dima Hasao","Goalpara","Golaghat","Hailakandi","Hojai","Jorhat","Kamrup Metropolitan (Guwahati)","Kamrup Rural","Karbi Anglong","Karimganj","Kokrajhar","Lakhimpur","Majuli","Morigaon","Nagaon","Nalbari","Sivasagar","Sonitpur (Tezpur)","South Salmara-Mankachar","Tamulpur","Tinsukia","Udalguri","West Karbi Anglong"],
+  "Bihar": ["Araria","Arwal","Aurangabad","Banka","Begusarai","Bhagalpur","Bhojpur (Arrah)","Buxar","Darbhanga","East Champaran","Gaya","Gopalganj","Jamui","Jehanabad","Kaimur","Katihar","Khagaria","Kishanganj","Lakhisarai","Madhepura","Madhubani","Munger","Muzaffarpur","Nalanda","Nawada","Patna","Purnia","Rohtas","Saharsa","Samastipur","Saran (Chhapra)","Sheikhpura","Sheohar","Sitamarhi","Siwan","Supaul","Vaishali","West Champaran"],
+  "Chandigarh": ["IT Park","Industrial Area","Manimajra","Sector 10","Sector 11","Sector 12","Sector 15","Sector 17","Sector 18","Sector 20","Sector 21","Sector 22","Sector 26","Sector 27","Sector 28","Sector 34","Sector 35","Sector 37","Sector 38","Sector 40","Sector 43","Sector 44","Sector 46","Sector 47","Sector 7","Sector 8","Sector 9","Sector 14","Sector 16","Sector 19","Sector 23","Sector 24","Sector 25","Sector 29","Sector 30","Sector 32","Sector 33","Sector 36","Sector 41","Sector 42","Sector 48","Sector 49"],
+  "Chhattisgarh": ["Balod","Baloda Bazar","Balrampur","Bastar (Jagdalpur)","Bemetara","Bijapur","Bilaspur","Dantewada","Dhamtari","Durg","Gariaband","Gaurela-Pendra-Marwahi","Janjgir-Champa","Jashpur","Kabirdham","Kanker","Khairagarh","Kondagaon","Korba","Korea","Mahasamund","Manendragarh","Mohla-Manpur","Mungeli","Narayanpur","Raigarh","Raipur","Rajnandgaon","Sakti","Sarangarh-Bilaigarh","Sukma","Surajpur","Surguja"],
+  "Dadra and Nagar Haveli and Daman and Diu": ["Dadra and Nagar Haveli (Silvassa)","Daman","Diu"],
+  "Delhi": ["Central Delhi","East Delhi","New Delhi","North Delhi","North East Delhi","North West Delhi","Shahdara","South Delhi","South East Delhi","South West Delhi","West Delhi"],
+  "Goa": ["Canacona","Margao (South Goa)","Mormugao","Panaji (North Goa)","Ponda","Quepem","Sanguem","Tiswadi","Valpoi","Vasco da Gama"],
+  "Gujarat": ["Ahmedabad","Amreli","Anand","Aravalli","Banaskantha","Bharuch","Bhavnagar","Botad","Chhota Udaipur","Dahod","Dang","Devbhoomi Dwarka","Gandhinagar","Gir Somnath","Jamnagar","Junagadh","Kheda","Kutch","Mahisagar","Mehsana","Morbi","Narmada","Navsari","Panchmahal","Patan","Porbandar","Rajkot","Sabarkantha","Surat","Surendranagar","Tapi","Vadodara","Valsad"],
+  "Haryana": ["Ambala","Bhiwani","Charkhi Dadri","Faridabad","Fatehabad","Gurugram","Hisar","Jhajjar","Jind","Kaithal","Karnal","Kurukshetra","Mahendragarh","Mewat (Nuh)","Palwal","Panchkula","Panipat","Rewari","Rohtak","Sirsa","Sonipat","Yamunanagar"],
+  "Himachal Pradesh": ["Bilaspur","Chamba","Hamirpur","Kangra (Dharamshala)","Kinnaur","Kullu (Manali)","Lahaul and Spiti","Mandi","Shimla","Sirmaur","Solan","Una"],
+  "Jammu and Kashmir": ["Anantnag","Baramulla","Budgam","Doda","Ganderbal","Jammu","Kathua","Kishtwar","Kulgam","Kupwara","Poonch","Pulwama","Rajouri","Ramban","Reasi","Samba","Shopian","Srinagar","Udhampur"],
+  "Jharkhand": ["Bokaro","Chatra","Deoghar","Dhanbad","Dumka","East Singhbhum (Jamshedpur)","Garhwa","Giridih","Godda","Gumla","Hazaribagh","Jamtara","Khunti","Koderma","Latehar","Lohardaga","Pakur","Palamu","Ramgarh","Ranchi","Sahebganj","Seraikela-Kharsawan","Simdega","West Singhbhum"],
+  "Karnataka": ["Bagalkot","Bangalore Rural","Bangalore Urban","Belagavi","Bellary","Bidar","Chamarajanagar","Chikballapur","Chikkamagaluru","Chitradurga","Dakshina Kannada (Mangalore)","Davanagere","Dharwad (Hubli)","Gadag","Hassan","Haveri","Kalaburagi (Gulbarga)","Kodagu","Kolar","Koppal","Mandya","Mysuru","Raichur","Ramanagara","Shivamogga (Shimoga)","Tumakuru","Udupi","Uttara Kannada","Vijayapura","Yadgir"],
+  "Kerala": ["Alappuzha","Ernakulam (Kochi)","Idukki","Kannur","Kasaragod","Kollam","Kottayam","Kozhikode","Malappuram","Palakkad","Pathanamthitta","Thiruvananthapuram","Thrissur","Wayanad"],
+  "Ladakh": ["Kargil","Leh"],
+  "Lakshadweep": ["Agatti","Amini","Andrott","Kavaratti","Minicoy"],
+  "Madhya Pradesh": ["Agar Malwa","Alirajpur","Anuppur","Ashoknagar","Balaghat","Barwani","Betul","Bhind","Bhopal","Burhanpur","Chhatarpur","Chhindwara","Damoh","Datia","Dewas","Dhar","Dindori","Guna","Gwalior","Harda","Indore","Jabalpur","Jhabua","Katni","Khandwa","Khargone","Maihar","Mandla","Mandsaur","Mauganj","Morena","Narsimhapur","Narsinghpur","Neemuch","Niwari","Panna","Raisen","Rajgarh","Ratlam","Rewa","Sagar","Satna","Sehore","Seoni","Shahdol","Shajapur","Sheopur","Shivpuri","Sidhi","Singrauli","Tikamgarh","Ujjain","Umaria","Vidisha"],
+  "Maharashtra": ["Ahmednagar","Akola","Amravati","Aurangabad (Chhatrapati Sambhajinagar)","Beed","Bhandara","Buldhana","Chandrapur","Dhule","Gadchiroli","Gondia","Hingoli","Jalgaon","Jalna","Kolhapur","Latur","Mumbai City","Mumbai Suburban","Nagpur","Nanded","Nandurbar","Nashik","Osmanabad (Dharashiv)","Palghar","Parbhani","Pune","Raigad","Ratnagiri","Sangli","Satara","Sindhudurg","Solapur","Thane","Wardha","Washim","Yavatmal"],
+  "Manipur": ["Bishnupur","Chandel","Churachandpur","Imphal East","Imphal West","Jiribam","Kakching","Kamjong","Kangpokpi","Noney","Pherzawl","Senapati","Tamenglong","Tengnoupal","Thoubal","Ukhrul"],
+  "Meghalaya": ["East Garo Hills","East Jaintia Hills","East Khasi Hills (Shillong)","Eastern West Khasi Hills","North Garo Hills","Ri Bhoi","South Garo Hills","South West Garo Hills","South West Khasi Hills","West Garo Hills","West Jaintia Hills","West Khasi Hills"],
+  "Mizoram": ["Aizawl","Champhai","Hnahthial","Khawzawl","Kolasib","Lawngtlai","Lunglei","Mamit","Saiha","Saitual","Serchhip"],
+  "Nagaland": ["Chumoukedima","Dimapur","Kiphire","Kohima","Longleng","Mokokchung","Mon","Noklak","Peren","Phek","Shamator","Tseminyu","Tuensang","Wokha","Zunheboto"],
+  "Odisha": ["Angul","Balangir","Balasore","Bargarh","Bhadrak","Boudh","Cuttack","Deogarh","Dhenkanal","Gajapati","Ganjam (Berhampur)","Jagatsinghpur","Jajpur","Jharsuguda","Kalahandi","Kandhamal","Kendrapara","Kendujhar","Khordha (Bhubaneswar)","Koraput","Malkangiri","Mayurbhanj","Nabarangpur","Nayagarh","Nuapada","Puri","Rayagada","Sambalpur","Subarnapur","Sundargarh (Rourkela)"],
+  "Puducherry": ["Karaikal","Mahe","Puducherry","Yanam"],
+  "Punjab": ["Amritsar","Barnala","Bathinda","Faridkot","Fatehgarh Sahib","Fazilka","Ferozepur","Gurdaspur","Hoshiarpur","Jalandhar","Kapurthala","Ludhiana","Malerkotla","Mansa","Moga","Mohali (SAS Nagar)","Muktsar","Nawanshahr","Pathankot","Patiala","Rupnagar","Sangrur","Shaheed Bhagat Singh Nagar","Tarn Taran"],
+  "Rajasthan": ["Ajmer","Alwar","Banswara","Baran","Barmer","Bharatpur","Bhilwara","Bikaner","Bundi","Chittorgarh","Churu","Dausa","Dholpur","Dungarpur","Hanumangarh","Jaipur","Jaisalmer","Jalore","Jhalawar","Jhunjhunu","Jodhpur","Karauli","Kota","Nagaur","Pali","Pratapgarh","Rajsamand","Sawai Madhopur","Sikar","Sirohi","Sri Ganganagar","Tonk","Udaipur"],
+  "Sikkim": ["East Sikkim (Gangtok)","North Sikkim","Pakyong","Soreng","South Sikkim","West Sikkim"],
+  "Tamil Nadu": ["Ariyalur","Chengalpattu","Chennai","Coimbatore","Cuddalore","Dharmapuri","Dindigul","Erode","Kallakurichi","Kanchipuram","Kanyakumari","Karur","Krishnagiri","Madurai","Mayiladuthurai","Nagapattinam","Namakkal","Nilgiris (Ooty)","Perambalur","Pudukkottai","Ramanathapuram","Ranipet","Salem","Sivaganga","Tenkasi","Thanjavur","Theni","Thoothukudi","Tiruchirappalli","Tirunelveli","Tirupathur","Tiruppur","Tiruvallur","Tiruvannamalai","Tiruvarur","Vellore","Viluppuram","Virudhunagar"],
+  "Telangana": ["Adilabad","Bhadradri Kothagudem","Hanumakonda","Hyderabad","Jagtial","Jangaon","Jayashankar Bhupalpally","Jogulamba Gadwal","Kamareddy","Karimnagar","Khammam","Kumuram Bheem","Mahabubabad","Mahbubnagar","Mancherial","Medak","Medchal-Malkajgiri","Mulugu","Nagarkurnool","Nalgonda","Narayanpet","Nirmal","Nizamabad","Peddapalli","Ranga Reddy","Sangareddy","Siddipet","Suryapet","Vikarabad","Wanaparthy","Warangal Rural","Warangal Urban","Yadadri Bhuvanagiri"],
+  "Tripura": ["Dhalai","Gomati","Khowai","North Tripura","Sepahijala","Sipahijala","South Tripura","Unokoti","West Tripura (Agartala)"],
+  "Uttar Pradesh": ["Agra","Aligarh","Ambedkar Nagar","Amethi","Amroha","Auraiya","Ayodhya (Faizabad)","Azamgarh","Baghpat","Bahraich","Ballia","Balrampur","Banda","Barabanki","Bareilly","Basti","Bhadohi","Bijnor","Budaun","Bulandshahr","Chandauli","Chitrakoot","Deoria","Etah","Etawah","Farrukhabad","Fatehpur","Firozabad","Gautam Buddh Nagar (Noida)","Ghaziabad","Ghazipur","Gonda","Gorakhpur","Hamirpur","Hapur","Hardoi","Hathras","Jalaun","Jaunpur","Jhansi","Kannauj","Kanpur Dehat","Kanpur Nagar","Kasganj","Kaushambi","Kushinagar","Lakhimpur Kheri","Lalitpur","Lucknow","Mahoba","Mahrajganj","Mainpuri","Mathura","Mau","Meerut","Mirzapur","Moradabad","Muzaffarnagar","Pilibhit","Pratapgarh","Prayagraj (Allahabad)","Raebareli","Rampur","Saharanpur","Sambhal","Sant Kabir Nagar","Shahjahanpur","Shamli","Shravasti","Siddharthnagar","Sitapur","Sonbhadra","Sultanpur","Unnao","Varanasi"],
+  "Uttarakhand": ["Almora","Bageshwar","Chamoli","Champawat","Dehradun","Haridwar","Nainital","Pauri Garhwal","Pithoragarh","Rudraprayag","Tehri Garhwal","Udham Singh Nagar","Uttarkashi"],
+  "West Bengal": ["Alipurduar","Bankura","Birbhum","Cooch Behar","Dakshin Dinajpur","Darjeeling (Siliguri)","Hooghly","Howrah","Jalpaiguri","Jhargram","Kalimpong","Kolkata","Malda","Murshidabad","Nadia","North 24 Parganas","Paschim Bardhaman (Asansol/Durgapur)","Paschim Medinipur","Purba Bardhaman","Purba Medinipur","Purulia","South 24 Parganas","Uttar Dinajpur"],
 };
 
 const INDIA_AREAS = {
-  "New Delhi": ["Connaught Place","Karol Bagh","Lajpat Nagar","Chanakyapuri","Paharganj","Rajinder Nagar"],
-  "East Delhi": ["Laxmi Nagar","Mayur Vihar","Preet Vihar","Vivek Vihar","Shahdara","Patparganj"],
-  "West Delhi": ["Janakpuri","Rajouri Garden","Dwarka","Tilak Nagar","Vikaspuri","Punjabi Bagh"],
-  "North Delhi": ["Civil Lines","Model Town","Kamla Nagar","Sadar Bazaar","Roop Nagar"],
-  "South Delhi": ["Saket","Greater Kailash","Hauz Khas","Vasant Kunj","Malviya Nagar","Defence Colony"],
-  "North West Delhi": ["Rohini","Pitampura","Shalimar Bagh","Paschim Vihar","Ashok Vihar"],
-  "South West Delhi": ["Dwarka","Najafgarh","Dabri","Palam","Vasant Vihar"],
-  "Central Delhi": ["Daryaganj","Karol Bagh","Paharganj","ITO","Rajender Nagar"],
-  "North East Delhi": ["Seelampur","Yamuna Vihar","Gokulpuri","Nand Nagri"],
-  "South East Delhi": ["Lajpat Nagar","Kalkaji","Govindpuri","Sarita Vihar"],
-  "Shahdara": ["Shahdara","Jhilmil","Dilshad Garden"],
-  "Mumbai City": ["Colaba","Marine Lines","Dadar","Mahim","Parel","Worli","Byculla"],
-  "Mumbai Suburban": ["Andheri","Bandra","Borivali","Goregaon","Malad","Kandivali","Powai","Juhu","Santacruz","Vile Parle","Chembur"],
-  "Pune": ["Kothrud","Hinjewadi","Wakad","Baner","Viman Nagar","Hadapsar","Aundh","Kharadi","Camp","Shivajinagar"],
-  "Nagpur": ["Dharampeth","Sadar","Civil Lines","Sitabuldi","Wardha Road","Manish Nagar"],
-  "Nashik": ["College Road","Gangapur Road","Indira Nagar","Panchavati","Cidco"],
-  "Thane": ["Ghodbunder Road","Vartak Nagar","Hiranandani Estate","Wagle Estate","Kalwa"],
-  "Aurangabad (Chhatrapati Sambhajinagar)": ["Cidco","Garkheda","Jalna Road","Osmanpura"],
-  "Bangalore Urban": ["Koramangala","Indiranagar","Whitefield","Jayanagar","JP Nagar","HSR Layout","Marathahalli","Electronic City","Malleshwaram","Rajajinagar","Yelahanka","BTM Layout"],
-  "Bangalore Rural": ["Devanahalli","Hoskote","Nelamangala","Doddaballapur"],
-  "Mysore": ["Vijayanagar","Saraswathipuram","Gokulam","Jayalakshmipuram"],
-  "Mangalore (Dakshina Kannada)": ["Hampankatta","Kadri","Bejai","Surathkal"],
-  "Chennai": ["T Nagar","Adyar","Velachery","Anna Nagar","Mylapore","Tambaram","Porur","OMR","Nungambakkam","Besant Nagar","Kodambakkam"],
-  "Coimbatore": ["RS Puram","Saibaba Colony","Gandhipuram","Peelamedu","Race Course"],
-  "Madurai": ["Anna Nagar","KK Nagar","Tallakulam","Goripalayam"],
-  "Trichy (Tiruchirappalli)": ["Srirangam","Thillai Nagar","Cantonment","K K Nagar"],
-  "Hyderabad": ["Banjara Hills","Jubilee Hills","Gachibowli","Madhapur","Kondapur","Begumpet","Secunderabad","Ameerpet","Hitech City","Kukatpally","Miyapur"],
-  "Ranga Reddy": ["LB Nagar","Shamshabad","Maheshwaram"],
-  "Medchal-Malkajgiri": ["Malkajgiri","Kompally","Uppal"],
-  "Kolkata": ["Salt Lake","Park Street","Ballygunge","Howrah Bridge Area","New Town","Gariahat","Behala","Tollygunge","Jadavpur","Dum Dum"],
-  "Howrah": ["Shibpur","Salkia","Bally","Liluah"],
-  "Siliguri (Darjeeling)": ["Hill Cart Road","Sevoke Road","Matigara"],
-  "Durgapur (Paschim Bardhaman)": ["City Centre","Bidhannagar","Benachity"],
-  "Asansol (Paschim Bardhaman)": ["Rail Pare","Kanyapur","Burnpur"],
-  "Ahmedabad": ["Navrangpura","Satellite","Vastrapur","Bodakdev","Maninagar","SG Highway","Paldi","Thaltej"],
-  "Surat": ["Adajan","Vesu","Citylight","Varachha","Athwa"],
-  "Vadodara": ["Alkapuri","Sayajigunj","Gotri","Manjalpur"],
-  "Rajkot": ["Kalawad Road","University Road","Race Course"],
-  "Gandhinagar": ["Sector 7","Sector 11","Infocity"],
-  "Jaipur": ["Malviya Nagar","Vaishali Nagar","C-Scheme","Mansarovar","Tonk Road","Jagatpura","Raja Park"],
-  "Jodhpur": ["Ratanada","Shastri Nagar","Paota","Sardarpura"],
-  "Udaipur": ["Fatehpura","Hiran Magri","Sukhadia Circle"],
-  "Kota": ["Talwandi","Vigyan Nagar","Mahaveer Nagar","Rangpur","Indra Vihar","Dadabari"],
-  "Ajmer": ["Vaishali Nagar","Christian Ganj","Adarsh Nagar"],
-  "Bikaner": ["Rani Bazar","Sadul Ganj","Jaipur Road"],
-  "Lucknow": ["Gomti Nagar","Hazratganj","Aliganj","Indira Nagar","Alambagh","Mahanagar"],
-  "Kanpur": ["Civil Lines","Swaroop Nagar","Kakadeo","Sarvodaya Nagar"],
-  "Agra": ["Sadar Bazaar","Tajganj","Sikandra","Dayalbagh"],
-  "Varanasi": ["Lanka","Sigra","Bhelupur","Cantonment"],
-  "Ghaziabad": ["Vaishali","Indirapuram","Kaushambi","Raj Nagar"],
-  "Noida (Gautam Buddh Nagar)": ["Sector 18","Sector 62","Sector 137","Greater Noida"],
-  "Meerut": ["Civil Lines","Shastri Nagar","Kankarkhera"],
-  "Allahabad (Prayagraj)": ["Civil Lines","Katra","Tagore Town"],
-  "Bhopal": ["Arera Colony","MP Nagar","New Market","Hoshangabad Road"],
-  "Indore": ["Vijay Nagar","Palasia","Rajwada","Bhawarkuan"],
-  "Jabalpur": ["Napier Town","Wright Town","Civil Lines"],
-  "Gwalior": ["Lashkar","Morar","City Centre"],
-  "Chandigarh": ["Sector 17","Sector 22","Sector 35","Manimajra"],
-  "Ludhiana": ["Model Town","Sarabha Nagar","Civil Lines"],
-  "Amritsar": ["Ranjit Avenue","Lawrence Road","Hall Bazaar"],
-  "Jalandhar": ["Model Town","Civil Lines","Urban Estate"],
-  "Patiala": ["Model Town","Urban Estate","Leela Bhawan"],
-  "Gurugram": ["DLF Phase 1","DLF Phase 2","Sohna Road","Sector 14","Golf Course Road","MG Road"],
-  "Faridabad": ["Sector 15","Sector 21","NIT Faridabad","Old Faridabad"],
-  "Karnal": ["Model Town","Sector 13","Civil Lines"],
-  "Rohtak": ["Model Town","Civil Lines","Sector 1"],
-  "Thiruvananthapuram": ["Pattom","Kowdiar","Vellayambalam","Technopark"],
-  "Kochi (Ernakulam)": ["Kakkanad","Edappally","Marine Drive","Fort Kochi","Vyttila"],
-  "Kozhikode": ["Mananchira","Vellimadukunnu","Westhill"],
-  "Thrissur": ["Round","Punkunnam","Ollur"],
-  "Bhubaneswar (Khordha)": ["Patia","Saheed Nagar","Old Town","Jaydev Vihar"],
-  "Cuttack": ["Buxi Bazaar","CDA","Bidanasi"],
-  "Patna": ["Boring Road","Kankarbagh","Rajendra Nagar","Patliputra Colony"],
-  "Gaya": ["Civil Lines","Rampur"],
-  "Ranchi": ["Lalpur","Harmu","Doranda"],
-  "Jamshedpur (East Singhbhum)": ["Bistupur","Sakchi","Sonari"],
-  "Guwahati (Kamrup Metro)": ["Dispur","Paltan Bazaar","Beltola","Zoo Road"],
-  "Raipur": ["Civil Lines","Shankar Nagar","Telibandha"],
+  "Agra": ["Agra Cantt","Awas Vikas","Balkeshwar","Bodla","Civil Lines","Dayal Bagh","Dayalbagh","Fatehabad Road","Kamla Nagar","Khandari","Lohamandi","MG Road","Mantola","Namner","Nunhai","Pratap Nagar","Raja Mandi","Sadar Bazaar","Shahganj","Shastripuram","Sikandra","Tajganj","Trans Yamuna Colony","Vijay Nagar","Wazirpura"],
+  "Ahmedabad": ["Ambawadi","Anandnagar","Ashram Road","Bodakdev","Bopal","CG Road","Chandkheda","Ghatlodia","Gheekanta","Iscon","Jodhpur","Kabra","Kankaria","Manikpur","Maninagar","Memnagar","Motera","Navrangpura","New CG Road","Paldi","Prahlad Nagar","Ranip","SG Highway","Sabarmati","Satellite","Science City Road","Shahibaug","Shela","Sola","Thaltej","Vastral","Vastrapur","Vejalpur","Gota","Nikol","Naroda","Odhav","Vatva","Lambha","Bapunagar","Juhapura","Sarkhej","Narol","Sanand Road"],
+  "Ahmednagar": ["Ahmednagar City","Bhingar","Kopargaon","Newasa","Rahata","Rahuri","Savedi","Sangamner","Shevgaon","Shrirampur","Pathardi"],
+  "Ajmer": ["Adarsh Nagar","Ana Sagar Lake Area","Anna Nagar","Brahampuri","Christian Ganj","Kishangarh","Madar","Nasirabad","Pushkar Road","Vaishali Nagar","Ajmer City","Beawar","Bhinai","Kekri","Masuda","Pisangan","Pushkar","Roopangarh","Srinagar","Todaraisingh"],
+  "Akola": ["Akola City","Camp","Cotton Market","Jatharpeth","MIDC Area","Murtizapur","Ramdaspeth","Telhara","Balapur","Patur","Borgaon Manju"],
+  "Aligarh": ["Arya Nagar","Baraula","Banna Devi","Centre Point","Civil Lines","Dodhpur","Gaushala Road","Ghantaghar","Jamalpur","Kwarsi","Marris Road","Quila","Ramghat Road","Sasni Gate","Shamshabad Road"],
+  "Almora": ["Almora City","Bageshwar Road","Chamba","Dwarahat","Hawalbagh","Kausani","Ranikhet","Someshwar","Binta","Chaukhutia","Sult"],
+  "Alwar": ["Alwar City","Behror","Biwai","Malakhera","Rajgarh","Ramgarh","Bansur","Govindgarh","Kathumar","Kishangarh Bas","Kotkasim","Laxmangarh","Mundawar","Narayanpur","Neemrana","Rajgarh","Tapukara","Tijara","Umren"],
+  "Ambala": ["Ambala Cantt","Ambala City","Barara","Mullana","Naraingarh","Panchkula Road","Saha","Shahzadpur","Shams"],
+  "Amravati": ["Amravati City","Badnera","Camp","Cotton Market","Daryapur","Gadburi Road","Jaistambh","Kapilnagar","Paratwada","SMBT Area","Warud","Achalpur","Nandgaon Khandeshwar"],
+  "Amritsar": ["Batala Road","Civil Lines","Court Road","Fatehgarh Churian","GT Road","Guru Nanak Nagar","Hall Bazaar","Islamabad","Lawrence Road","Majitha Road","Ranjit Avenue","Sultan Wind","Bhagtanwala","Chheharta","Green Avenue","Guru Nanak Pura","Islamabad Colony","Kennedy Avenue","Sultanwind Road"],
+  "Anand": ["Anand City","Borsad","Karamsad","Khambhat","Nadiad","Petlad","Sojitra","Tarapur","Umreth","Vallabh Vidyanagar","Vidyanagar"],
+  "Anantapur": ["Anantapur City","Dharmavaram","Guntakal","Hindupur","Kadiri","Pamidi","Puttaparthi","Rayadurg","Tadipatri","Gooty"],
+  "Asansol (Paschim Bardhaman)": ["Asansol City","Burnpur","Chittaranjan","Hirapur","Kulti","Raniganj","Salanpur","Barakar","Jamuria"],
+  "Aurangabad (Chhatrapati Sambhajinagar)": ["Beed Bypass","Cantonment","Cidco N1","Cidco N2","Cidco N3","Garkheda","Gut No 143","Jalna Road","Kranti Chowk","Osmanpura","Panchakki","Rauza Bagh","Soegaon Road","TV Centre","Waluj","Satara Road","Harsul","Mukundwadi"],
+  "Bangalore Rural": ["Devanahalli","Doddaballapur","Hosakote","Hoskote","Nelamangala","Ramanagara","Kanakapura","Channapatna"],
+  "Bangalore Urban": ["BTM Layout","Banashankari","Bannerghatta Road","Basavanagudi","Domlur","Electronic City","Frazer Town","HSR Layout","Hebbal","Indiranagar","JP Nagar","Jayanagar","Kammanahalli","Koramangala","Kudlu","MG Road","Madivala","Malleshwaram","Marathahalli","Old Airport Road","Rajajinagar","Richmond Town","Sadashivanagar","Sarjapur Road","Whitefield","Yelahanka","Bannerghatta","Bellandur","Brookefield","Devarabeesanahalli","Electronic City Phase 2","HAL Layout","Hoodi","Hulimavu","Kadugodi","Kadubeesanahalli","Kalyan Nagar","Kasturi Nagar","KR Puram","Mahadevapura","Marathahalli Bridge","Nagarbhavi","Nandini Layout","Panathur","RMV Extension","RT Nagar","Sanjayanagar","Thanisandra","Uttarahalli","Vijayanagar","Yeshwanthpur"],
+  "Banswara": ["Banswara City","Bagidora","Chhoti Sarvan","Ghatol","Kushalgarh","Partapur","Sajjangarh","Talwara","Anandpuri","Arthuna","Garhi"],
+  "Baran": ["Atru","Baran City","Chhipabarod","Kelwara","Kishanganj","Mangrol","Sheopur","Shahabad","Anta","Chhabra"],
+  "Bareilly": ["CB Ganj","Civil Lines","Faridpur","Izzat Nagar","Pilibhit Bypass","Rampur Road","Sector 1","Shyam Ganj","Subhash Nagar","Badaun Road","Barielly City","Bhuta","Deorania","Kutubkhana","Nawab Ganj","Rohilkhand Medical College Area","Shergarh"],
+  "Barmer": ["Balotra","Baytu","Chohtan","Pachpadra","Siwana","Barmer City","Gudamalani","Sindhari","Samdari","Sheo","Ramsar"],
+  "Bathinda": ["Birring","Civil Lines","Deep Nagar","Goniana Road","Power House Road","Sector 17","Bathinda City","Bhagta Bhai Ka","Goniana","Maur","Nathana","Rampura Phul","Sardulgarh"],
+  "Belgaum": ["Belgaum City","Camp","Gandhi Nagar","Hindwadi","Kakati","Khanapur","Malmaruti","Ramdurg","Saundatti","Shahapur","Tilakwadi","Gokak"],
+  "Bhagalpur": ["Adampur","Barari","Bhagalpur City","Champanagar","Kahalgaon","Nathnagar","Naugachia","Sabour","Sultanganj"],
+  "Bharatpur": ["Bayana","Deeg","Kaman","Kumher","Nagar","Old City","Bharatpur City","Dig","Halena","Jurhera","Nadbai","Pahari","Roopwas","Rupbas","Sewar","Sikandra","Weir"],
+  "Bharuch": ["Ankleshwar","Bharuch City","Dahej","Jhagadia","Vagra"],
+  "Bhavnagar": ["Bhavnagar City","Ghogha","Mahuva","Palitana","Talaja","Vallabhipur"],
+  "Bhilwara": ["Asind","Banera","Chittorgarh Road","Civil Lines","Gangapur","Hamirgarh","Mandalgarh","Panchsheel Nagar","Sahara","Bhilwara City","Bijolia","Gulabpura","Hurda","Jahazpur","Kotri","Mandal","Raipur","Shahpura","Suwana"],
+  "Bhiwani": ["Bhiwani City","Charkhi Dadri","Loharu","Siwani","Bahal","Tosham","Bawani Khera"],
+  "Bhopal": ["Aashima Mall Area","Arera Colony","Ayodhya Bypass Road","Bairagarh","Berasia Road","Bhadbhada Road","Danish Kunj","Govindpura","Habibganj","Hoshangabad Road","Katara Hills","Kolar Road","Lalghati","MP Nagar","Nehru Nagar","New Market","Old Bhopal","Piplani","Sehore Road","Shahpura","Shyamla Hills","TT Nagar"],
+  "Bhubaneswar (Khordha)": ["AG Square","Ashok Nagar","BBSR Old Town","CRP Square","Damana","Dumduma","HB Colony","Infocity","Jaydev Vihar","Khandagiri","Nayapalli","Niladri Vihar","Patia","Pokhariput","Saheed Nagar","Satya Nagar","Shastri Nagar","Vani Vihar"],
+  "Bikaner": ["Jai Narayan Vyas Colony","Jaipur Road","Karni Nagar","Lalgarh","Murlidhar Vyas Colony","Pawanpuri","Rani Bazar","Sadul Ganj","Shivbari","Bikaner City","Station Road","Ganga Shahar","Nokha","Deshnok","Khajuwala","Lunkaransar","Kolayat"],
+  "Bilaspur": ["Bilaspur City","Bypass Road","Civil Lines","Gole Bazar","Link Road","Masturi","Sadar Bazar","Takhatpur","Vyapar Vihar","Kota Road"],
+  "Bundi": ["Bundi City","Hindoli","Indergarh","Keshoraipatan","Nainwa","Talera","Bijoliya","Lakheri","Kapren"],
+  "Bokaro": ["Bokaro Steel City","CSEB Colony","Chas","City Centre Bokaro","Sector 1","Sector 12","Sector 4","Chandankiari","Gomia","Jhumri Telaiya","Petarbar","Tenughat"],
+  "Central Delhi": ["Daryaganj","ITO","Karol Bagh","Minto Road","Paharganj","Patel Nagar","Rajender Nagar","Ram Nagar","Connaught Place","Barakhamba Road","Bhagwan Das Road"],
+  "Chandigarh": ["IT Park","Industrial Area","Manimajra","Sector 10","Sector 11","Sector 12","Sector 15","Sector 17","Sector 18","Sector 20","Sector 21","Sector 22","Sector 26","Sector 27","Sector 28","Sector 34","Sector 35","Sector 37","Sector 38","Sector 40","Sector 43","Sector 44","Sector 46","Sector 47","Sector 7","Sector 8","Sector 9"],
+  "Chennai": ["Adambakkam","Adyar","Ambattur","Anna Nagar","Arumbakkam","Besant Nagar","Chromepet","ECR","Egmore","Kilpauk","Kodambakkam","Korattur","Mylapore","Nungambakkam","OMR","Perambur","Porur","Royapettah","Saidapet","T Nagar","Tambaram","Thiruvanmiyur","Tondiarpet","Velachery","Virugambakkam","Alandur","Avadi","Guindy","K K Nagar","Madipakkam","Meenambakkam","Mogappair","Nanganallur","Nerkundram","Pallavaram","Perungudi","Sholinganallur","Thirumangalam","Thoraipakkam","Valasaravakkam","Villivakkam"],
+  "Chittorgarh": ["Chittorgarh City","Begun","Bhadesar","Gangrar","Kapasan","Nimbahera","Rawatbhata","Rashmi","Bari Sadri","Pratapgarh Road"],
+  "Churu": ["Rajgarh","Ratangarh","Sadulpur","Sardarshahr","Sujangarh","Taranagar","Churu City","Bidasar","Salasar","Dundlod"],
+  "Coimbatore": ["Ganapathy","Gandhipuram","Kavundampalayam","Kuniyamuthur","Peelamedu","Podanur","RS Puram","Race Course","Saibaba Colony","Saravanampatti","Singanallur","Vadavalli","Avinashi Road","Hopes College","Kalpatty","Kovaipudur","Ondipudur","Perur","Pollachi","Sulur","Thudiyalur","Ukkadam"],
+  "Cuttack": ["Badambadi","Bidanasi","Bijipur","Buxi Bazaar","CDA","Chandini Chowk","Dolamundai","Jagatpur","Kantapada","Link Road","Mangalabag","Purighat","Athagarh","Banki","Choudwar","Kendrapara Road","Naraj","Salepur"],
+  "Dausa": ["Bandikui","Lalsot","Mahwa","Sikrai","Dausa City","Baswa","Geejgarh","Mahuwa","Mandawar","Nangal Rajawatan"],
+  "Davanagere": ["Davanagere City","Hadadi Road","Harihara","Honnali","MCC A Block","MCC B Block","Nyamati","Shamnur Road","Vinobanagar","Channagiri"],
+  "Dehradun": ["Ballupur","Banjarawala","Chakrata Road","Clement Town","Defence Colony","Dharampur","Doiwala","GMS Road","Jakhan","Majra","Mussoorie Road","Nathupur","Nehru Colony","Patel Nagar","Pithuwala","RIMT Area","Race Course","Raipur Road","Rajpur Road","Sahastradhara Road","Vasant Vihar","Aman Vihar","Arcadia Grant","Dalanwala","EC Road","Hathibarkala","Indira Nagar","Karanpur","Kanwali Road","Kishanpur","Majri Mafi","Niranjanpur","Premnagar","Rispana","Sewla Kalan","Turner Road"],
+  "Dhanbad": ["Bhaga","Dhanbad City","Hirapur","Jharia","Katras","Kumardhubi","Sindri","Baghmara","Baliapur","Chass","Govindpur","Nirsa","Topchanchi"],
+  "Dholpur": ["Dholpur City","Bari","Baseri","Rajakhera","Saipau","Sarmathura","Maniya"],
+  "Dibrugarh": ["Barbaruah Road","Chowkidinghee","Dibrugarh City","Graham Bazaar","Hospital Road","Lahoal","NS Road","Tingkhong","Moran","Naharkatia","Digboi Road"],
+  "Dungarpur": ["Dungarpur City","Aspur","Bichhiwara","Galiyakot","Sagwara","Simalwara","Sabla","Dovda"],
+  "Durg": ["Bhilai","Bhilai Nagar","Durg City","Kumhari","Risali","Supela","Charoda","Jamul","Utai","Zoneone"],
+  "Durgapur (Paschim Bardhaman)": ["Andal","Benachity","Bidhannagar","Burdwan Road","City Centre Durgapur","Durgapur Steel Plant","Nachan Road","Angadpur","Faridpur","Mejia","Pandabeswar"],
+  "East Delhi": ["Anand Vihar","Gandhinagar","Geeta Colony","IP Extension","Jhilmil","Kalyanpuri","Krishna Nagar","Laxmi Nagar","Mayur Vihar Phase 1","Mayur Vihar Phase 2","Mayur Vihar Phase 3","Patparganj","Preet Vihar","Shahdara","Vivek Vihar"],
+  "Erode": ["Bhavani","Erode City","Gobichettipalayam","Kodumudi","Nambiyur","Perundurai","Sathyamangalam","Sivagiri","Veerappanchatram"],
+  "Faridabad": ["Ajronda","BPTP Area","Ballabhgarh","DLF Faridabad","NIT Faridabad","Old Faridabad","Palwal","Sector 10","Sector 14","Sector 16","Sector 17","Sector 21","Sector 23","Sector 28","Sector 37","Sector 46","Sector 56","Tilpat","Badkhal","Dabua Colony","Fatehpur Beri","Greenfield","Mewla Maharajpur","Mohna","Palla","Sarai Khawaja","Surajkund"],
+  "Gandhinagar": ["Adalaj","Chandkheda","Infocity","Kudasan","Pethapur","Sargasan","Sector 11","Sector 13","Sector 16","Sector 21","Sector 28","Sector 7","Sector 1","Sector 2","Sector 3","Sector 4","Sector 5","Sector 6","Sector 9","Mansa","Dehgam","Kalol"],
+  "Gautam Buddh Nagar (Noida)": ["Amity Road","Block A","Block C","Dadri","Greater Noida","Greater Noida West","Jaypee Greens","Knowledge Park","Sector 100","Sector 110","Sector 12","Sector 137","Sector 15","Sector 150","Sector 18","Sector 22","Sector 45","Sector 50","Sector 62","Sector 76","Sector 78","Techzone 4","Alpha 1","Alpha 2","Beta 1","Beta 2","Chi 1","Chi 5","Delta 1","Gamma 1","Mu","Omicron","Pi","Sector 104","Sector 107","Sector 108","Sector 117","Sector 119","Sector 121","Sector 123","Sector 124","Sector 125","Sector 126","Sector 128","Sector 129","Sector 130","Sector 131","Sector 132","Sector 134","Sector 135","Sector 143","Sector 143B","Sector 144","Sector 168","Xi"],
+  "Gaya": ["Bodh Gaya","Civil Lines","Gaya City","Manpur","Rampur","Belaganj","Dobhi","Fatehpur","Sherghati","Tekari"],
+  "Ghaziabad": ["Crossings Republik","Indirapuram","Kaushambi","Raj Nagar Extension","Rajnagar","Sahibabad","Shalimar Garden","Vaishali","Vasundhara","Loni","Masuri","Modinagar","Muradnagar","Pilkhuwa","Tronica City"],
+  "Gorakhpur": ["Civil Lines","Golghar","Gorakhpur Cantt","Islampur","Mohaddipur","Padri Bazar","Rapti Nagar","Taramandal","Bargadwa","Campierganj","Chargawan","Deoria Road","Jungle Dhoosad","Sahjanwa"],
+  "Gulbarga (Kalaburagi)": ["Aland Road","Ashok Nagar","Balaji Nagar","Gulbarga City","Jewargi","Kalagi Road","Sedam","Super Market","Yadgir"],
+  "Guntur": ["Arundelpet","Brodipet","Brundavanam","Guntur City","Kothapet","Nagarampalem","Narasaraopet","Old Town","Pattabhipuram","Tenali","Mangalagiri"],
+  "Gurdaspur": ["Batala","Dhariwal","Dinanagar","Gurdaspur City","Pathankot Road","Qadian","Dera Baba Nanak","Fatehgarh Churian"],
+  "Gurugram": ["Badshahpur","Bajghera","Bhondsi","DLF City Phase 1","DLF City Phase 2","DLF City Phase 3","DLF City Phase 4","DLF City Phase 5","Golf Course Extension Road","Golf Course Road","Jacobpura","MG Road","Palam Vihar","Sector 14","Sector 15","Sector 21","Sector 29","Sector 31","Sector 45","Sector 56","Sector 57","Sheetla Mata Road","Sohna Road","Sushant Lok","Udyog Vihar","Sector 4","Sector 5","Sector 9","Sector 10","Sector 18","Sector 23","Sector 37D","Sector 42","Sector 43","Sector 47","Sector 48","Sector 49","Sector 50","Sector 51","Sector 52","Sector 53","Sector 54","Sector 55","Sector 58","Sector 59","Sector 65","Sector 67","Sector 69","Sector 70","Sector 72","Sector 82","Sector 83","Sector 84","Sector 85","Sector 86","Sector 90","Sector 91","Sector 92","Sector 95","Nirvana Country","Palam Vihar Extension","South City"],
+  "Guwahati (Kamrup Metro)": ["Ambari","Arya Nagar","Beltola","Bhangagarh","Bharalumukh","Birubari","Christian Basti","Dispur","Fatasil","GNB Road","Juripar","Kahilipara","Lachit Nagar","Lokhra","Maligaon","Noonmati","Paltan Bazaar","Panjabari","Six Mile","Ulubari","Uzanbazar","Zoo Road","Ganeshguri","Hatigaon","Jalukbari","Khanapara","Narangi","Rukminigaon","Satgaon","Soneswar"],
+  "Gwalior": ["City Centre","Civil Lines","Company Bagh","Dabra","Gwalior Fort Area","Lashkar","Morar","Murar","Phool Bagh","Rly Station Area","Sector 4","Shivpuri Link Road","Thatipur","University Area","Vinay Nagar"],
+  "Haridwar": ["Bahadrabad","Bhel Township","Jwalapur","Kankhal","Laksar","Motichur","Rawli","Roshnabad","Roorke Road","Shivalik Nagar","Sidcul","Haridwar City","Rishikesh Road"],
+  "Hassan": ["Arakalagudu","Arsikere","Belur","Channarayapatna","Hassan City","Holenarasipur","Sakleshpur","Alur","Arkalgud"],
+  "Hisar": ["Hisar City","Adampur","Aggarwal Colony","Barwala","Bass","Fatehabad","Green Town","Hansi","Model Town","New Grain Market Area","Sector 13","Sector 14","Sector 15","Urban Estate"],
+  "Hooghly": ["Baidyabati","Chandannagar","Chinsurah","Dankuni","Rishra","Serampore","Singur","Uttarpara","Arambagh","Goghat"],
+  "Hoshiarpur": ["Dasuya","Garhshankar","Hoshiarpur City","Mukerian","Tanda","Urmar","Bhunga","Hajipur","Mahilpur"],
+  "Hanumangarh": ["Hanumangarh City","Hanumangarh Junction","Bhadra","Nohar","Pilibanga","Rawatsar","Sangaria","Tibi","Goluwala"],
+  "Howrah": ["Andul","Bally","Bethuadahari","Bhurkunta","Domjur","Jagacha","Liluah","Munshirhat","Santragachi","Shibpur","Uluberia","Bagnan","Amta","Jagatballavpur"],
+  "Hubli-Dharwad": ["Deshpande Nagar","Gokul Road","Hubli City","Keshwapur","Narayanpur","Sadashivanagar","Vidyanagar","Dharwad City","Alnavar","Kundgol","Navalgund"],
+  "Hyderabad": ["AS Rao Nagar","Ameerpet","Banjara Hills","Begumpet","Chandanagar","Dilsukhnagar","GHMC Area","Gachibowli","Hitech City","Jubilee Hills","Kondapur","Kukatpally","LB Nagar","Madhapur","Mehdipatnam","Miyapur","Moosapet","Nallagandla","Nampally","Old City","SR Nagar","Secunderabad","Uppal","Attapur","Balanagar","Bandlaguda Jagir","Chanda Nagar","Dundigal","Erragadda","Ferozguda","Film Nagar","Hafeezpet","KPHB","Kompally","Lingampally","Manikonda","Maredpally","Padmarao Nagar","Patancheru","Pragathi Nagar","Ramanthapur","Safilguda","Sainikpuri","Saroornagar","Shamirpet","Toli Chowki","Trimulgherry","Vanasthalipuram"],
+  "Indore": ["Bhanwarkuan","Dewas Naka","Dhar Road","Geeta Bhawan","Geeta Nagar","Khajrana","Khajuri Bazaar","LIG Colony","MG Road","Mahalaxmi Nagar","Musakhedi","Nanda Nagar","Palasia","Pardeshipura","Raj Mohalla","Rajwada","Scheme 54","Scheme 78","Scheme 97","Silicon City","Sukhliya","Tejaji Nagar","Tilak Nagar","Vijay Nagar","Vijayanagar","Vishnupuri","AB Road","Aerodrome Road","Bengali Square","Bhawarkua","Bicholi Hapsi","Census Square","Dwarka Nagar","Gandhi Nagar","Juni Indore","Khandwa Road","Lasudia","Malharganj","Old Palasia","Rau","Regal Chowraha","Sanwer Road","Tejaji Nagar"],
+  "Jabalpur": ["Adhartal","Bargi","Civil Lines","Damoh Naka","Garha","Gwarighat","Katanga","Mandla Road","Model Town","Napier Town","Pachpedi Naka","Ranjhi","Tilwara Ghat","Wright Town","Gorakhpur","Kachpura","Kamla Nagar","Lalpur","Madan Mahal","New Life Line Hospital Area","Rani Durgavati University Area","Shahpura","Vijay Nagar"],
+  "Jaipur": ["Adarsh Nagar","Ajmer Road","Ambabari","Bani Park","Bapu Nagar","C-Scheme","Chitrakoot","Civil Lines","Gandhi Nagar","Govind Marg","Hanuman Nagar","Jagatpura","Jhotwara","Johri Bazaar","Kalwar Road","Kartarpura","MI Road","Malviya Nagar","Mansarovar","Muhana","New Sanganer Road","Nirman Nagar","Pratap Nagar","Raja Park","Ramesh Marg","Sanganer","Shastri Nagar","Sikar Road","Sodala","Tonk Road","Vaishali Nagar","Vidyadhar Nagar","Amer","Bagru","Bassi","Chomu","Chaksu","Dudu","Govindpura","Jamuwa Ramgarh","Kotputli","Phulera","Sambhar","Shahpura","Virat Nagar"],
+  "Jaisalmer": ["Barmer Road","Jaisalmer Fort Area","Jodhpur Road","Pokaran","Jaisalmer City","Sam Road","Nachna","Fatehgarh","Ramgarh"],
+  "Jalandhar": ["Basti Nau","Civil Lines","Garha Road","Jalandhar Cantt","Lajpat Nagar","Model Town","Nakodar Road","Phagwara Gate","Sodal","Urban Estate","Bholath","Kartarpur","Phillaur","Adampur","Apna Nagar","Guru Nanak Mission Chowk","Kapurthala Road"],
+  "Jalgaon": ["Bhavsinghpura","Chincholi","GIDC Area","Jalgaon City","Jamner","Muktainagar","Nehru Chowk","Pachora","Raver","Subhash Nagar","Yawal"],
+  "Jalore": ["Jalore City","Ahore","Bhinmal","Jaswantpura","Raniwara","Sanchore","Siwana Road","Bagora"],
+  "Jammu": ["BC Road","Bakshi Nagar","Gandhi Nagar","Gangyal","Jammu Cantt","Jammu City","Karan Nagar","Nai Basti","New Plot","Rajinder Nagar","Rehari","Sector 7","Sector 8","Talab Tillo","Amphalla","Channi Himmat","Digiana","Durga Nagar","Exhibition Road","Janipur","Muthi","Paloura","Shakti Nagar","Shiv Nagar","Sidhra","Trikuta Nagar"],
+  "Jamnagar": ["Bedi Port","Digvijay Plot","Jamnagar City","Lalpari Lake Area","Patel Colony","Dwarka","Jam Khambhalia","Jodia","Kalyanpur","Lalpur","Okha"],
+  "Jamshedpur (East Singhbhum)": ["Adityapur","Bistupur","Burmamines","Dhalbhum","Gamharia","Golmuri","Jugsalai","Kadma","Mango","Sakchi","Sonari","Telco Colony","Azadnagar","Baridih","Chhota Govindpur","Dimna","Ghorabandha","Jhinkpani","Parsudih","Sidhgora"],
+  "Jhalawar": ["Jhalawar City","Aklera","Bakani","Bhawanimandi","Dag","Gangdhar","Khanpur","Manohar Thana","Pirawa","Sunel"],
+  "Jhunjhunu": ["Chirawa","Khetri","Mandawa","Mukundgarh","Nawalgarh","Pilani","Jhunjhunu City","Bagar","Bissau","Gudha Gorji","Malsisar","Singhana","Surajgarh"],
+  "Jodhpur": ["Bhagat Ki Kothi","Chopasni Road","Kaur Colony","Mandore","Paota","Police Line","Pratap Nagar","Ratanada","Sardarpura","Shastri Nagar","Shiv Road","Shyam Nagar","Jodhpur City","Banar","Baori","Bilara","Boranada","Digari","Masuria","Pal","Pali Road","Sojat Road","Soorsagar"],
+  "Jorhat": ["AT Road","Cinnamara","Jorhat City","Lahdoigarh","Thowra","Golaghat","Mariani","Titabar","Teok"],
+  "Junagadh": ["Gandhinagar Junagadh","Junagadh City","Keshod","Manavadar","Veraval","Dhari","Mangrol","Mendarda","Vanthali","Visavadar"],
+  "Kakinada": ["Bhanugudi","Chakravarthy Nagar","Godavarikhani","Jawaharlal Nehru Road","Kakinada City","Pithapuram","Rajanagaram","Samalkot","Suryaraopet","Tuni"],
+  "Kanchipuram": ["Chengalpattu","Kanchipuram City","Maraimalai Nagar","Sriperumbudur","Tambaram","Uthiramerur","Walajabad"],
+  "Kangra (Dharamshala)": ["Baijnath","Dharamshala City","Kangra City","McLeod Ganj","Naddi","Palampur","Dalhousie","Jawali","Nurpur","Shahpur","Thural"],
+  "Kanpur Nagar": ["Armapur","Civil Lines","Gwaltoli","Kakadeo","Kalyanpur","Kidwai Nagar","Lal Bangla","Panki","Sarvodaya Nagar","Shyam Nagar","Swaroop Nagar","Tilak Nagar","Arya Nagar","Benajhabar","Dabauli","Juhi","Kakadev","Naubasta","Rawatpur","Yashoda Nagar"],
+  "Karauli": ["Hindaun","Karauli City","Sapotra","Masalpur","Nadoti","Shri Mahaveerji","Todabhim"],
+  "Karimnagar": ["Choppadandi","Dharmaram","Ganesh Colony","Huzurabad","Jammikunta","Karimnagar City","Korutla","Manthani","Metpalli","Peddapalli"],
+  "Karnal": ["Civil Lines","Karna Lake Area","Karnal City","Model Town","Nilokheri","Sector 13","Taraori","Gharaunda","Indri","Nissing","Assandh"],
+  "Kochi (Ernakulam)": ["Aluva","Angamaly","Chellanam","Cochin Port","Edappally","Edavanakkad","Fort Kochi","Irinjalakuda","Kakkanad","Kalamassery","Kaloor","Kodanad","Kottayam Road","Kovalam","Lissie Junction","MG Road","Marine Drive","Panampilly Nagar","Perumbavoor","Thevara","Thrippunithura","Tripunithura","Varapuzha","Vytilla","Cheranallur","Kolenchery","Kunnathunad","Mulavukad","North Paravur","Palluruthy","Piravom","Vadakkekara","Vyttila Hub"],
+  "Kolhapur": ["Kasba Bawada","Kolhapur City","Laxmipuri","New Shahupuri","Rajaram Road","Rajarampuri","Shahupuri","Shivaji Park","Tarabai Park","Gadhinglaj","Hupari","Ichalkaranji","Kagal","Karvir","Panhala"],
+  "Kolkata": ["Alipore","Ballygunge","Baranagar","Behala","Belghoria","Bhowanipore","Dum Dum","Garden Reach","Gariahat","Golpark","Howrah Bridge Area","Jadavpur","Jodhpur Park","Kankurgachi","Lake Town","New Town","Park Street","Prince Anwar Shah Road","Salt Lake","Sodepur","Tollygunge","Topsia","Ultadanga","Baghajatin","Bagmari","Belgachia","Chetla","Dhakuria","Entally","Garia","Hridaypur","Kasba","Kestopur","Khidderpore","Manicktala","Maniktala","Nager Bazar","Netaji Nagar","Noapara","Phool Bagan","Rajarhat","Santoshpur","Shyambazar","Shyamnagar","Sreebhumi","Tala","Teghoria","Thakurpukur"],
+  "Korba": ["Balco Colony","Banka Bazar","Gevra","Korba City","Kusmunda","NTPC Colony","Urga"],
+  "Kota": ["Aerodrome Area","Anantpura","Bajrang Nagar","Balitarsara","Barkheda","Bodla","Borkheda","Chambal Industrial Area","Chaturbhuj Nagar","Chawni Bazar","Civil Lines","DCM","Dadabari","Dushyant Marg","Garadakheda","Govind Nagar","Gumanpura","Indra Vihar","Industrial Area","Jawahar Nagar","Jhalawar Road","Kota City","Kota Junction","Kota North","Kota South","Kota West","Kotri","Kulhadi","Kunhari","Ladpura","Laxmipura","Mahaveer Nagar 1","Mahaveer Nagar 2","Mahaveer Nagar 3","Mango Road","MBS Hospital Area","Nayapura","New Market Area","New Subhash Nagar","Pratap Nagar","Rajiv Gandhi Nagar","Rangpur","Rawatbhata Road","Sector A","Sector B","Shastri Nagar","Subhash Nagar","Sudama Nagar","Swami Vivekanand Nagar","Talwandi","Umed Ganj","Vigyan Nagar","Vinayak Nagar","Jaganpura","Khemabad","Ramganj Mandi","Sangod","Itawa","Kanwas","Chechat","Sultanpur","Pipalda"],
+  "Kozhikode": ["Beach Road","Feroke","Kallai","Koduvally","Kunnamangalam","Mananchira","Mavoor Road","Nadakkave","Palayam","Ulliyeri","Vellimadukunnu","Westhill","Beypore","Chemancheri","Kadalundi","Kayanna","Koyilandy","Mukkam","Perambra","Ramanattukara","Thondayad","Vatakara"],
+  "Kullu (Manali)": ["Banjar","Bhuntar","Kasol","Kullu City","Manali Town","Naggar","Parvati Valley","Manikaran","Nagar","Aut"],
+  "Kurnool": ["Bhagyanagar","Budhwarpet","Fort Area","Kothapeta","Kurnool City","Nandyal","Santha Bazaar","Adoni","Dhone","Gudur"],
+  "Kurukshetra": ["Kurukshetra City","Ladwa","Pehowa","Pipli","Shahabad","Thanesar","Ismailabad","Kaithal Road","Shahabad Markanda"],
+  "Kutch": ["Anjar","Bachau","Bhachau","Bhuj","Gandhidham","Mandvi","Mundra","Nakhatrana","Rapar","Abdasa"],
+  "Latur": ["Ausa Road","Gandhi Nagar","Latur City","Navi Peth","Nilanga","Udgir","Udgir Road","Ausa","Chakur"],
+  "Lucknow": ["Aashiyana","Alambagh","Aminabad","Arjunganj","Ashiyana","Aliganj","Chinhat","Gomti Nagar","Gomti Nagar Extension","Hazratganj","Indira Nagar","Jankipuram","Kalyanpur","Kanpur Road","Kursi Road","Lucknow Cantt","Mahanagar","Maligaon","Nishatganj","Rajajipuram","Raibareli Road","Sadar","Sushant Golf City","Telibagh","Thakurganj","Vibhuti Khand","Vikas Nagar","Vrindavan Yojna"],
+  "Ludhiana": ["Bhai Randhir Singh Nagar","BRS Nagar","Civil Lines","Focal Point","Ferozepur Road","Gill Road","Giaspura","Gurdev Nagar","Haibowal","Hambran Road","Jawahar Nagar","Kitchlu Nagar","Ludhiana City","Miller Ganj","Model Town","Pakhowal Road","Rajguru Nagar","Sahnewal","Samrala Chowk","Sundar Nagar","Vishwakarma Nagar"],
+  "Madurai": ["Anna Nagar","Arapalayam","Avaniyapuram","Goripalayam","Iyer Bungalow","KK Nagar","Mattuthavani","Meenakshi Amman Nagar","Palanganatham","Paravai","Periyar","Simmakkal","Singarayar Colony","Sivaganga Road","Tallakulam","Tirunagar","Usilampatti","Vandiyur","Vilachery"],
+  "Malappuram": ["Areekode","Kottakkal","Malappuram City","Manjeri","Nilambur","Perinthalmanna","Ponnani","Tirur","Tirurrangadi","Valanchery"],
+  "Mandi": ["Jogindernagar","Mandi City","Rewalsar","Sundernagar","Aut","Balh","Chail Chowk","Karsog","Sarkaghat"],
+  "Mangalore (Dakshina Kannada)": ["Attavar","Balmatta","Bejai","Derebail","Falnir","Hampankatta","KS Rao Road","Kadri","Kankanady","Kodialbail","Lalbagh","Mahaveer Circle","Mangalore City","Pandeshwar","Pumpwell","Surathkal","Ullal","Bondel","Bunts Hostel","Goldfinch Area","Kulshekar","Kurinji Nagar","Maroli","Morgan's Gate","Urwa Market"],
+  "Mathura": ["Brindavan","Govardhan","Krishna Nagar","Mathura City","Mathura Vrindavan","Nandgaon","Naya Bazar","Old Mathura","Raya","Vrindavan"],
+  "Medchal-Malkajgiri": ["Almasguda","Badangpet","Balapur","Boduppal","Cherlapally","Dullapally","Dundigal","Ghatkesar","Hayathnagar","Kapra","Keesara","Kompally","Kushaiguda","Malkajgiri","Medchal","Nagaram","Peerzadiguda","Quthbullapur","Yapral"],
+  "Meerut": ["Baghpat Road","Begum Bridge","Bulandshahar Road","Civil Lines","Garh Road","Ganga Nagar","Hapur Road","Meerut Cantt","Meerut City","Modipuram","Pallavpuram","Partapur","Shastri Nagar","Shyam Nagar","Surajkund"],
+  "Mehsana": ["Kadi","Mehsana City","Patan","Unjha","Visnagar","Bechraji","Jotana","Linch","Satlasana"],
+  "Mohali (SAS Nagar)": ["Aerocity","Kharar","Kurali","Landran","Mohali City","Phase 1","Phase 10","Phase 11","Phase 3A","Phase 3B","Phase 4","Phase 5","Phase 6","Phase 7","Phase 8","Phase 9","Zirakpur","Dera Bassi","Baltana","Banur"],
+  "Moradabad": ["Budh Bazar","Civil Lines","Katghar","Majhola","Moradabad City","Pakwara","Rampur Road","Sushil Kumar Nagar","Chhajlet","Sambhal"],
+  "Mumbai City": ["Byculla","Colaba","Dadar","Dharavi","Fort","Girgaon","Kalbadevi","Kurla","Lalbaug","Lower Parel","Mahalaxmi","Mahim","Masjid Bunder","Mazgaon","Mohammed Ali Road","Parel","Prabhadevi","Sion","Wadala","Worli","Bhendi Bazaar","Byculla East","Chinchpokli","Delisle Road","Dongri","Grant Road","Jacob Circle","Lalbaug","Mandvi","Marine Lines","Nagpada","Null Bazaar","Opera House","Pydhonie","Reb Bazar","Sandhurst Road","Tardeo"],
+  "Mumbai Suburban": ["Andheri East","Andheri West","Bandra East","Bandra West","Borivali East","Borivali West","Chembur","Dahisar","Ghatkopar East","Ghatkopar West","Goregaon East","Goregaon West","Jogeshwari East","Jogeshwari West","Kandivali East","Kandivali West","Khar","Kurla West","Malad East","Malad West","Mulund East","Mulund West","Powai","Santacruz East","Santacruz West","Thane Road","Vikhroli East","Vikhroli West","Vileparle East","Vileparle West","Worli Sea Face","Aarey Colony","Bangur Nagar","Chakala","CSMT Area","Dindoshi","Hiranandani Gardens","Jogeshwari Vikhroli Link Road","Kanjurmarg","Kharghar","Koparkhairane","Link Road","Marol","Millat Nagar","Nerul","Oshiwara","Sanpada","Sher E Punjab Colony","Versova","Vile Parle"],
+  "Murshidabad": ["Berhampore","Domkal","Farakka","Jangipur","Jiaganj","Kandi","Lalbagh","Murshidabad City","Raghunathganj","Suti"],
+  "Muzaffarpur": ["Brahmpura","Civil Lines","Maripur","Mithanpura","Muzaffarpur City","Ramna","Saraiyaganj","Shivnathpur","Sitamarhi Road","Urdu Bazar"],
+  "Mysuru": ["Chamundipuram","Hebbal","Hunsur Road","Jay Lakshmipuram","JP Nagar Mysuru","Jayalakshmipuram","Kuvempunagar","Lakshmipuram","Maharajas College Area","Manasagangotri","Metagalli","Mysuru Palace Area","N R Mohalla","Nazarbad","Rajendra Nagar","RPC Layout","Saraswathipuram","Siddhartha Layout","T K Layout","Udayagiri","VV Mohalla","Vivekananda Road","Yadavagiri"],
+  "Nadia": ["Birnagar","Chakdaha","Haringhata","Kalyani","Krishnagar","Nabadwip","Ranaghat","Santipur","Tehatta"],
+  "Nagaur": ["Degana","Didwana","Jayal","Kuchaman","Ladnun","Merta City","Nawa","Nagaur City","Khimsar","Makrana","Mundwa","Parbatsar","Riyan Bari"],
+  "Nagpur": ["Ajni","Amravati Road","Ambazari","Bajaj Nagar","Beltarodi","Civil Lines","Dharampeth","Gandhibagh","Gokulpeth","Hanuman Nagar","Hingna Road","Hudkeshwar","Imambada","Jaripatka","Kamptee","Katol Road","Khamla","Koradi Road","Lakadganj","Laxmi Nagar","Manish Nagar","Mankapur","Mahal","Mhalgi Nagar","Nandanvan","Pardi","Pratap Nagar","Ramdaspeth","Sadar","Saoner","Shankar Nagar","Shivaji Nagar","Shriram Nagar","Sitabuldi","Trimurti Nagar","Umred Road","Wardhaman Nagar","Wathoda","Yashodhara Nagar"],
+  "Nainital": ["Bhimtal","Bhowali","Haldwani","Kathgodam","Mukteshwar","Nainital City","Ramnagar","Ramgarh","Sattal"],
+  "Nanded": ["Ardhapur","Biloli","Deglur","Kinwat","Nanded City","Nanded Waghala","Naigaon","Mukhed"],
+  "Nashik": ["Ambad","Anandvalli","Deolali Camp","Gangapur Road","Govardhan","Indira Nagar","Malegaon","Mhasrul","Nashik City","Nashik Road","Nashik West","Panchavati","Peth Road","Satpur","Sharanpur Road","Sinhagad Road","Tidke Colony","Trimbakeshwar Road"],
+  "Navsari": ["Bilimora","Gandevi","Navsari City","Vansda","Chikhli"],
+  "Nellore": ["Atmakur","Bogole","Gudur","Kavali","Nellore City","Sullurpeta","Sriharikota","Venkatagiri","Vidyanagar"],
+  "New Delhi": ["Connaught Place","Chanakyapuri","Civil Lines","ITO","India Gate Area","Janpath","Khan Market","Lajpat Nagar","Lodhi Colony","Lutyens Delhi","Moti Bagh","Paschim Vihar","Pusa Road","R K Puram","Vasant Vihar"],
+  "North 24 Parganas": ["Ashoknagar","Barasat","Basirhat","Birati","Dum Dum","Kamarhati","Madhyamgram","New Barrackpur","North Barrackpur","Rajarhat New Town","Titagarh","Barrackpur","Habra","Naihati","Titagarh"],
+  "North Delhi": ["Ashok Vihar","Azadpur","Bawana","Civil Lines","GTB Nagar","Jahangirpuri","Kingsway Camp","Model Town","Mukherjee Nagar","Narela","Rohini","Shalimar Bagh","Wazirabad"],
+  "North East Delhi": ["Brahmpuri","Dayalpur","Gokalpuri","Jaffrabad","Karawal Nagar","Maujpur","Mustafabad","Nand Nagri","Seelampur","Shastri Park","Usmanpur","Yamuna Vihar"],
+  "North Goa (Panaji)": ["Arambol","Baga","Calangute","Candolim","Mapusa","Morjim","Panaji City","Panjim","Porvorim","Anjuna","Chapora","Nerul Goa","Sinquerim"],
+  "North West Delhi": ["Badli","Bawana","Begumpur","Budh Vihar","Kirari Suleman Nagar","Mangol Puri","Nangloi","Paschim Vihar","Peera Garhi","Punjabi Bagh","Rohini Sector 3","Rohini Sector 6","Rohini Sector 7","Rohini Sector 8","Rohini Sector 9","Rohini Sector 11","Rohini Sector 13","Rohini Sector 14","Rohini Sector 15","Rohini Sector 16","Rohini Sector 17","Rohini Sector 22","Sultanpuri"],
+  "Palakkad": ["Chittur","Kanjikode","Mannarkkad","Ottapalam","Palakkad City","Shoranur","Alathur","Malampuzha","Nemmara","Pattambi","Thrithala"],
+  "Pali": ["Bali","Jaitaran","Marwar Junction","Rani","Rohat","Sumerpur","Pali City","Desuri","Kharchi","Khimwas","Mandar","Raipur","Sojat City","Takhatgarh"],
+  "Pratapgarh": ["Pratapgarh City","Arnod","Chhoti Sadri","Dhariyawad","Manpur","Peepalkhunt","Saleemabad"],
+  "Panchkula": ["Panchkula City","Sector 1","Sector 2","Sector 4","Sector 5","Sector 6","Sector 7","Sector 8","Sector 9","Sector 10","Sector 11","Sector 12","Sector 14","Sector 15","Sector 17","Sector 18","Sector 19","Sector 20","Sector 21","Sector 22","Sector 23","Sector 24","Sector 25","Kalka","Pinjore","Raipur Rani"],
+  "Panipat": ["Civil Lines","Panipat City","Samalkha","Sector 1","Sector 12","Sector 18","Sector 19","Sector 25","Israna","Madlauda","Sanoli"],
+  "Pathankot": ["Chakki Bank","Dhar Kalan","Pathankot City","Sujanpur Tira","Bamial","Dalhousie Road","Gurdaspur Road","Shahpur Kandi"],
+  "Patiala": ["Civil Lines","Model Town","Patiala City","Rajpura","Sector 1","Sector 2","Sector 4","Sector 5","Shastri Nagar","Urban Estate","Ghanaur","Nabha","Patran","Samana"],
+  "Patna": ["Ashiyana","Bailey Road","Boring Canal Road","Boring Road","Danapur","Exhibition Road","Frazer Road","Gandhi Maidan","Gardanibagh","Jagannathpur","Kankarbagh","Kumhrar","Kurji","Mahendru","Mithapur","Patna City","Phulwari Sharif","Raja Bazar","Rajendra Nagar","Rupaspur","Saguna More","Sheikhpura"],
+  "Prayagraj (Allahabad)": ["Alopibagh","Allahpur","Ashok Nagar","Attarsuiya","Bairahna","Balson","Bank Road","Civil Lines","George Town","Johnstonganj","Katra","Kaushambi","Kidwai Nagar","Luker Road","Muthiganj","Naini","Phaphamau","Rajapur","Tagore Town","Teliarganj","Varun Vihar"],
+  "Pune": ["Aundh","Baner","Bavdhan","Bibwewadi","Camp","Chinchwad","Deccan","Dhankawadi","Dhanori","DMART Road","Erandwane","Fatima Nagar","Fursungi","Hadapsar","Hinjewadi","Kalyani Nagar","Karve Road","Katraj","Khadki","Kharadi","Khed Shivapur","Kondhwa","Kothrud","Lohegaon","Magarpatta","Manjari","Mundhwa","Narhe","Navi Peth","Nigdi","Pashan","Pimple Gurav","Pimple Nilakh","Pimple Saudagar","Pimpri","Ravet","Sadashiv Peth","Shivajinagar","Sinhagad Road","Talegaon","Undri","Vishrantwadi","Viman Nagar","Vishrantwadi","Wanawadi","Warje","Wagholi","Yerwada"],
+  "Raigad": ["Alibag","Khopoli","Mahad","Mangaon","Panvel","Pen","Roha","Uran","Belapur","Kharghar","New Panvel"],
+  "Raipur": ["Amapara","Avanti Vihar","Civil Lines","Devendra Nagar","Geeta Colony","GE Road","Indravati Nagar","Kalibadi","Katora Talab","Mowa","New Rajendra Nagar","Ram Nagar","Ring Road","Santoshi Nagar","Sector 29","Shankar Nagar","Tatibandh","Telibandha","Vidhan Sabha Road","Amanaka","Bhatagaon","Dhamtari Road","Fafadih","Hirapur","Kabir Nagar","Khamardih","Labhandih","Laheru","Magneto Mall Area","Newai","Saddu","Tikrapara","Urla"],
+  "Rajkot": ["Aji Industrial Area","Bhaktinagar","Jagnath Plot","Kalawad Road","Kalavad Road","Kothariya Road","Madhapar","Mota Mava","Nana Mava","Pedak Road","Raiya Road","Rajkot City","University Road","Gondal","Jetpur","Morbi","Wankaner","150 Feet Ring Road","Airport Road","Gada Nagar","Mavdi","Raiyadhar"],
+  "Rajsamand": ["Amet","Khamnor","Kumbhalgarh","Nathdwara","Railmagra","Rajsamand City","Deogarh","Devgarh","Kelwa","Khempur","Relmagra","Roopaheli","Sanwad"],
+  "Ranchi": ["Argoda","Bariatu","Booty More","Doranda","HEC Colony","Harmu","Hinoo","Kadru","Kanke","Lalpur","Mohrabadi","Namkum","Sukhdeonagar","Ashok Nagar","Bahu Bazar","Chutia","Hesal","Kokar","Morabadi","Ormanjhi","Pangi","Ratu Road","Saidna Nagar","Sirmi","Tupudana"],
+  "Ranga Reddy": ["Bandlaguda","Gandipet","KPHB Colony","LB Nagar","Maheshwaram","Mansanpally","Neopolis","Shamshabad","Subhash Nagar","Attapur","Budvel","Chevella","Cyberabad","Golconda","Hafizpet","Himayatnagar","HITEC City","Hydershakote","Ibrahimpatnam","Kondapur Ranga Reddy","Maheswaram","Nanakramguda","Narsingi","Patancheru","Rajendra Nagar","Serilingampally","Shaikpet","Tolichowki"],
+  "Rewa": ["Brahmpuri","Civil Lines","Govindgarh","Hanumna Road","Mauganj","Rewa City","Satna Road","Sirmour","Teonthar"],
+  "Rohtak": ["Civil Lines","Delhi Road","Lalit Colony","Model Town","Rohtak City","Sector 1","Sector 14","Sector 2","Sunaria","Asthal Bohar","Bahadurgarh","Bohar","Kharkhari","Meham","Sanghi"],
+  "Rourkela (Sundargarh)": ["Bondamunda","Chhend","Civil Township","Plant Site","Rourkela City","Sector 2","Sector 6","Steel Township","Uditnagar","Birmitrapur","Brajarajnagar","Jhirpani","Kuarmunda","Panposh"],
+  "Sagar": ["Bamora","Banda","Budhwari Bazaar","Chhatarpur Road","Civil Lines","Makan Chowk","Makronia","Rahatgarh","Sagar City","Bina","Khurai","Rehli"],
+  "Saharanpur": ["Behat Road","Chilkana Road","Civil Lines","Court Road","Feroz Nagar","Gangoh","Haridwar Road","Muzaffarnagar Road","Saharanpur City","Deoband","Nagal","Nakur","Rampur Maniharan"],
+  "Salem": ["Ammapet","Attur","Fairlands","Gugai","Hasthampatti","Kondalampatti","Mettur","Omalur","Salem City","Sankari","Shevapet","Suramangalam","Yercaud"],
+  "Sangli": ["Kupwad","Miraj","Palus","Sangli Camp","Sangli City","Tasgaon","Vishrambag","Walwa"],
+  "Satna": ["Birsinghpur","Chitrakoot Road","Civil Lines","Maihar","Maihar Road","Nagod","Rewa Road","Satna City","Uchehara"],
+  "Sawai Madhopur": ["Bonli","Gangapur City","Khandar","Ranthambore Gate Area","Sawai Madhopur City","Bamanwas","Chauth Ka Barwara","Malarna Dungar","Mitrapura","Wazirpur"],
+  "Shahdara": ["Bhajanpura","Dilshad Garden","Gandhi Nagar Shahdara","Jagatpuri","Jhilmil","Karkardooma","Mandawali","Shahdara","Welcome Colony","Anand Vihar","IP Extension"],
+  "Shimla": ["Boileauganj","Chhota Shimla","Kasumpti","Khalini","Lakkar Bazaar","Malyana","New Shimla","Rampur Road","Sanjauli","Shimla City","Shoghi","Tara Devi","Tutikandi","Vikas Nagar","Chotta Shimla","Dhali","Fagli","Jakhu","Kaithu","Longwood","Mashobra","Panthaghati"],
+  "Shimoga (Shivamogga)": ["Bhadravathi","Gandhi Bazaar","Kuvempu Nagar","Metagalli","Sagara","Shivamogga City","Soraba","Vinobha Nagar","Channagiri","Hosanagara","Sagar Town","Thirthahalli"],
+  "Sikar": ["Danta Ramgarh","Fatehpur","Lachhmangarh","Neem Ka Thana","Piprali Road","Shrimadhopur","Sikar City","Ajeetgarh","Khandela","Laxmangarh","Losal","Palsana","Ramgarh Shekhawati","Reengus","Sri Madhopur"],
+  "Siliguri (Darjeeling)": ["Hill Cart Road","Matigara","Naxalbari","Pradhan Nagar","Sevoke Road","Siliguri City","Bagdogra","Dabgram","Fulbari","Ghoshpukur","Jalpaiguri Road","Noapara","Panitanki","Sukna"],
+  "Sirohi": ["Sirohi City","Abu Road","Pindwara","Reodar","Sheoganj","Mount Abu","Bali Road","Revdar"],
+  "Solan": ["Baddi","Kasauli","Nalagarh","Parwanoo","Solan City","Arki","Dharampur","Kandaghat","Kumarhatti","Subathu"],
+  "Solapur": ["Budhwar Peth","Datta Nagar","Kegaon","Kumthe Road","Market Yard","Murarji Peth","Pimpri Deshmukh","Railway Lines","Solapur City","Solapur North","Solapur South","Vijapur Road","Akkalkot","Barshi","Mangalwedha","Mohol","Pandharpur"],
+  "Sonipat": ["Civil Lines","GT Road","Murthal","Rai","Sector 12","Sonipat City","Ganaur","Gohana","Kharkhoda","Mundlana","Rai Industrial Area"],
+  "South 24 Parganas": ["Alipore","Baruipur","Bishnupur","Budge Budge","Diamond Harbour","Kakdwip","Magrahat","Mathurapur","Namkhana","Sonarpur","Sagar Island"],
+  "South Delhi": ["Alaknanda","Chhattarpur","Defence Colony","East of Kailash","Fateh Nagar","Greater Kailash 1","Greater Kailash 2","Hauz Khas","Kalkaji","Malviya Nagar","Mehrauli","Munirka","Nehru Place","Okhla","Saket","Sangam Vihar","Vasant Kunj","Vasant Vihar"],
+  "South East Delhi": ["Badarpur","Govindpuri","Jasola","Kalkaji","Lajpat Nagar","New Friends Colony","Okhla Phase 1","Okhla Phase 2","Sarita Vihar","Taimoor Nagar","Tughlakabad"],
+  "South Goa (Margao)": ["Benaulim","Colva","Cuncolim","Margao City","Navelim","Ponda","Quepem","Sanvordem","Vasco da Gama","Verna"],
+  "South West Delhi": ["Bijwasan","Dabri","Dwarka Sector 10","Dwarka Sector 12","Dwarka Sector 14","Dwarka Sector 19","Dwarka Sector 22","Dwarka Sector 23","Dwarka Sector 6","Kapashera","Najafgarh","Palam","Palam Vihar","Sagarpur","Uttam Nagar","Vasant Vihar"],
+  "Sri Ganganagar": ["Gharsana","Hanumangarh","Karanpur","Padampur","Raisinghnagar","Sadulshahar","Suratgarh","Vijaynagar","Sri Ganganagar City","Anupgarh","Kesrisinghpur","Rawla","Ridmalsar","Srikaranpur"],
+  "Srinagar": ["Bakshi Nagar","Batmaloo","Bemina","Chandpora","Dal Lake Area","Gogji Bagh","Hazratbal","Humhama","Jawahar Nagar","Lal Chowk","Natipora","Nowshera","Panthachowk","Peerbagh","Rajbagh","Rangreth","Sanat Nagar","Soura","Anchar","Baghat","Batamaloo","Chattabal","Hyderpora","Indira Nagar Srinagar","Ishber","Nowhatta","Old City Srinagar","Parimpora","Rawalpora","Shivpora"],
+  "Surat": ["Adajan","Amroli","Athwa","Bhatar","Bhestan","Citylight","Dindoli","Katargam","Limbayat","Magdalla","Mini Bazar","Palanpur","Parvat Patia","Rander","Ring Road","Sachin","Udhna","Utran","Varachha","Vesu","Althan","Dumas","Hazira","Kamrej","Kosad","Pal","Punagam","Saroli","Umarwada","VIP Road"],
+  "Thane": ["Balkum","Brahmand","Chitalsar","Ghodbunder Road","Hiranandani Estate","Kalwa","Khopat","Kopri","Manpada","Naupada","Owale","Teen Hath Naka","Uthalsar","Vasant Vihar","Wagle Estate","Ambernath","Badlapur","Bhiwandi","Diva","Dombivli East","Dombivli West","Kalyan East","Kalyan West","Kharghar","Koper Khairane","Mira Road","Murbad","Nalasopara","Navi Mumbai","Shil Phata","Ulhasnagar","Vasai","Virar"],
+  "Thanjavur": ["Kumbakonam","Orathanadu","Papanasam","Pattukottai","Peravurani","Thanjavur City","Thiruvaiyaru","Papanasam"],
+  "Thiruvananthapuram": ["Balaramapuram","Enchakkal","Kazhakkoottam","Kowdiar","Kudappanakunnu","Medical College Area","Nalanchira","Nemom","Pappanamcode","Pattom","Pirappancode","Pothencode","Technopark Area","Thycaud","Ulloor","Vazhayila","Vellayambalam","Attingal","Kazhakoottam","Kilimanoor","Neyyattinkara","Parassala","Thirupuram","Varkala"],
+  "Thrissur": ["Chalakudy","Chembukkavu","East Fort","Guruvayur","Irinjalakuda","Kodungallur","Kunnamkulam","MG Road","Ollur","Peechi","Punkunnam","Round","Shoranur","Thrissur City","Wadakkanchery"],
+  "Tirunelveli": ["Courtallam","Melapalayam","Nanguneri","Palayamkottai","Pettai","Radhapuram","Sankarankovil","Tirunelveli City","Tenkasi","Valliyur"],
+  "Tirupati": ["Alipiri","Balaji Nagar","Brindavanam","Chandragiri","Chittoor Road","Korlagunta","Lakshmipuram","Model House","Renigunta","SVRR Hospital Area","Tiruchanur","Tirupati City"],
+  "Tonk": ["Deoli","Malpura","Niwai","Peeplu","Tonk City","Aligarh","Banasthali","Toda Raisingh","Uniara"],
+  "Trichy (Tiruchirappalli)": ["Ariyamangalam","Cantonment","Chatram Bus Stand","Golden Rock","K K Nagar","Lalgudi","Manachanallur","Musiri","Puthur","Srirangam","Thillai Nagar","Trichy City","Uppiliapuram","Woraiyur"],
+  "Tumkur": ["B H Road","Gubbi","Koratagere","Kunigal","Madhugiri","Pavagada","Sira","Tiptur","Tumkur City"],
+  "Udaipur": ["Bedla","Bhuwana","Debari","Fatehpura","Govardhan Vilas","Hiran Magri","Madhuban","Mewar Hospital Area","Pratap Nagar","Savina","Sukhadia Circle","Udaipur City","Ambamata","Bapu Bazaar","Chetak Circle","Delwara","Eklingji","Fateh Sagar","Girwa","Kherwara","Kurabad","Mavli","Nathdwara Road","Rajnagar","Rishabhdeo","Salumber","Sarada","Shobhagpura","Vallabhnagar"],
+  "Udham Singh Nagar": ["Bajpur","Dineshpur","Gadarpur","Haldwani Road","Jaspur","Kashipur","Khatima","Kichha","Rudrapur","Sitarganj","Pantnagar"],
+  "Udupi": ["Brahmavar","Car Street","Indrali","Karkala","Kapu","Kundapura","Manipal","Udyavar","Udupi City","Byndoor","Hebri","Kollur"],
+  "Ujjain": ["Dewas Road","Freeganj","Indore Road","Mahakal Area","Makdon Chowk","Nai Sadak","Nanakheda","Saukheda","Tower Chowk","Ujjain City","Barnagar","Ghatia","Ghattia","Mahidpur","Nagda","Tarana"],
+  "Una": ["Amb","Bangana","Gagret","Haroli","Mehatpur","Tahliwal","Una City"],
+  "Vadodara": ["Akota","Alkapuri","Atladara","Bhayali","GIDC","Gorwa","Gotri","Harni","Karelibaug","Laxmipura","Manjalpur","New Sama","Old Padra Road","Racecourse","Sayajigunj","Subhanpura","Tarsali","Waghodia Road","Ajwa Road","Bhayli","Bil","Bodeli","Chhani","Fathegunj","Fertilizer Nagar","GEB Colony","Navapura","Nizampura","Panigate","Pratapnagar","Raopura","Sama","Sevasi","Vasna Road","Vishwamitri"],
+  "Vapi": ["Daman Road","Pardi","Sarigam","Silvassa Road","Vapi City","Vapi GIDC","Bhilad","Dungri","Chanod"],
+  "Varanasi": ["Assi","BHU Campus","Bhelupur","Cantt","Cantonment","Kabir Chaura","Lanka","Maldahiya","Mehmoorganj","Nadesar","Pandeypur","Parao","Shivpur","Sigra","Sonarpura","Varanasi City","Ardhkashi","Babatpur","Bhikharipur","Cholapur","Harahua","Kashi Vidyapith","Mugalasarai","Pindra","Ramnagar","Sarnath","Sunderpur","Varanasi Cantt"],
+  "Vellore": ["Ambur","Ammoor","Gandhinagar","Gudiyatham","Jolarpet","Katpadi","Sathuvachari","Vellore City","Vaniyambadi","Tirupattur"],
+  "Vijayawada (NTR)": ["Auto Nagar","Benz Circle","Enikepadu","Gandhi Nagar","Gunadala","Kondapalli","Mogalrajapuram","Nandamuri Nagar","Patamata","Penamaluru","Rama Rao Peta","Suryaraopet","Vijayawada City","Ajit Singh Nagar","Airport Area","Bundela","Gollapudi","Ibrahimpatnam","Kanuru","Kothapet Vijayawada","NT R Nagar","Rajiv Gandhi Nagar"],
+  "Visakhapatnam": ["Akkayyapalem","Daba Gardens","Gajuwaka","Gopalapatnam","Kommadi","MVP Colony","Madhurawada","Old Town","Rushikonda","Seethammadhara","Steel Plant","Ukkunagaram","Waltair","Bheemunipatnam","Bhimili","BHPV Colony","Chinagantyada","Duvvada","Hanumanthawaka","Marripalem","Pendurthi","Prasanth Nagar","Pedagantyada","Sangam Jagannadhapuram","Sheela Nagar","Sriharipuram","Tatichetlapalem","Yendada"],
+  "Warangal Urban": ["Hanamkonda","Jagannadhapuri","Kazipet","Narsampet Road","Subedari","Warangal City","Bheemaram","Hasanparthy","Khammam Road","Mamnoor","Naimnagar","Shayampet"],
+  "West Delhi": ["Hari Nagar","Janakpuri","Moti Nagar","Panchsheel Park","Punjabi Bagh","Rajouri Garden","Tilak Nagar","Uttam Nagar","Vikaspuri","Vishnu Garden","Bindapur","Dwarka","Khyala","Mahavir Enclave","Najafgarh","Nilothi","Palam Extension","Palam Village","Subhash Nagar","Tagore Garden"],
+  "Yamunanagar": ["Bilaspur","Chhachhrauli","Jagadhri","Radaur","Yamunanagar City","Buriya","Mustafabad","Sadhaura","Saraswati Nagar"],
 };
 
-const GENERIC_AREAS = ["City Centre","Main Market","Civil Lines","Railway Station Road","Bus Stand Area","Gandhi Nagar","Model Town","New Colony"];
+const GENERIC_AREAS = ["Bus Stand Area","Civil Lines","Gandhi Nagar","Housing Board Colony","Main Bazar","Main Market","Model Town","New Colony","Old City","Railway Colony","Railway Station Road","Rajendra Nagar","Sector A","Sector B","Vikas Nagar"];
 
 // ── RENDER FUNCTIONS ──
 function maidCardHTML(m) {
@@ -12528,6 +12623,16 @@ document.addEventListener('DOMContentLoaded', () => {
   fillStateDropdowns();
   // Also expose globally so admin populateStateDropdowns can call it
   window._fillStateDropdowns = fillStateDropdowns;
+  // Init searchable selects for all large dropdowns
+  setTimeout(function() {
+    if (typeof window.initAllSearchableSelects === 'function') {
+      window.initAllSearchableSelects();
+      // Also init signup state which is populated via js-state-select
+      if (typeof window.initSearchableSelect === 'function') {
+        ['signupState','signupDistrict','signupArea'].forEach(function(id){ window.initSearchableSelect(id); });
+      }
+    }
+  }, 300);
 
   updateMaidsCount();
   // NOTE: page restore-on-refresh (reading window.location.hash) happens in a
@@ -12692,6 +12797,14 @@ function showModal(id) {
   m.classList.add('open-modal');
   // Push a history entry so device Back button closes the popup instead of navigating away
   try { history.pushState({ page: (history.state && history.state.page) || 'home', modalOpen: id }, '', window.location.href); } catch(e){}
+  // Init searchable selects inside modal after it's visible
+  if (id === 'loginModal') {
+    setTimeout(function() {
+      if (typeof window.initSearchableSelect === 'function') {
+        ['signupState','signupDistrict','signupArea'].forEach(function(sid){ window.initSearchableSelect(sid); });
+      }
+    }, 150);
+  }
 }
 function closeModal(id) {
   const m = document.getElementById(id);
@@ -12764,26 +12877,197 @@ function updateDistrictDropdown(stateId, districtId, areaId, isFilter) {
   if (!d) return;
   const placeholder = isFilter ? 'All Cities' : 'Select District';
   d.innerHTML = `<option value="">${placeholder}</option>`;
-  (INDIA_DISTRICTS[state] || []).forEach(v => {
+  (INDIA_DISTRICTS[state] || []).sort().forEach(v => {
     const o = document.createElement('option'); o.value = v; o.textContent = v; d.appendChild(o);
   });
   // Clear dependent area dropdown
   if (areaId) {
     const a = document.getElementById(areaId);
-    if (a) a.innerHTML = `<option value="">${isFilter ? 'All Areas' : 'Select Area / Locality'}</option>`;
+    if (a) { a.innerHTML = `<option value="">${isFilter ? 'All Areas' : 'Select Area / Locality'}</option>`; }
   }
+  // Re-init searchable if already initialized
+  initSearchableSelect(districtId);
+  if (areaId) initSearchableSelect(areaId);
 }
 function updateAreaDropdown(stateId, districtId, areaId, isFilter) {
-  const district = document.getElementById(districtId).value;
+  if (!areaId) return;
+  const district = document.getElementById(districtId) ? document.getElementById(districtId).value : '';
   const a = document.getElementById(areaId);
   if (!a) return;
   const placeholder = isFilter ? 'All Areas' : 'Select Area / Locality';
   a.innerHTML = `<option value="">${placeholder}</option>`;
-  const list = INDIA_AREAS[district] || GENERIC_AREAS;
+  const list = (INDIA_AREAS[district] || GENERIC_AREAS).slice().sort();
   list.forEach(v => {
     const o = document.createElement('option'); o.value = v; o.textContent = v; a.appendChild(o);
   });
+  initSearchableSelect(areaId);
 }
+
+// ── SEARCHABLE SELECT COMPONENT ──
+(function() {
+  const CSS = `
+.ss-wrap { position:relative; display:block; }
+.ss-display { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:42px; padding:8px 12px; border:1.5px solid var(--border,#e5e7eb); border-radius:8px; background:var(--surface,#fff); color:var(--text,#111); font-size:14px; cursor:pointer; box-sizing:border-box; gap:6px; user-select:none; }
+.ss-display:hover { border-color:#f97316; }
+.ss-display.ss-open { border-color:#f97316; border-bottom-left-radius:0; border-bottom-right-radius:0; }
+.ss-display .ss-label { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ss-display .ss-label.ss-placeholder { color:var(--muted,#9ca3af); }
+.ss-display .ss-arrow { font-size:11px; color:var(--muted,#9ca3af); flex-shrink:0; transition:transform .2s; }
+.ss-display.ss-open .ss-arrow { transform:rotate(180deg); }
+.ss-dropdown { position:absolute; top:100%; left:0; right:0; background:var(--surface,#fff); border:1.5px solid #f97316; border-top:none; border-bottom-left-radius:8px; border-bottom-right-radius:8px; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.12); }
+.ss-search-box { display:flex; align-items:center; gap:6px; padding:8px 10px; border-bottom:1px solid var(--border,#e5e7eb); }
+.ss-search-box i { color:var(--muted,#9ca3af); font-size:13px; }
+.ss-search-input { flex:1; border:none; outline:none; font-size:13px; background:transparent; color:var(--text,#111); }
+.ss-list { max-height:220px; overflow-y:auto; }
+.ss-opt { padding:9px 12px; font-size:14px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ss-opt:hover, .ss-opt.ss-focused { background:rgba(249,115,22,.08); color:#f97316; }
+.ss-opt.ss-selected { font-weight:700; color:#f97316; }
+.ss-opt.ss-hidden { display:none; }
+.ss-empty { padding:10px 12px; font-size:13px; color:var(--muted,#9ca3af); text-align:center; }
+`;
+  if (!document.getElementById('ss-style')) {
+    const st = document.createElement('style');
+    st.id = 'ss-style';
+    st.textContent = CSS;
+    document.head.appendChild(st);
+  }
+
+  let activeDropdown = null;
+
+  document.addEventListener('click', function(e) {
+    if (activeDropdown && !activeDropdown.contains(e.target)) {
+      closeDropdown(activeDropdown);
+    }
+  });
+
+  function closeDropdown(wrap) {
+    const dd = wrap.querySelector('.ss-dropdown');
+    const disp = wrap.querySelector('.ss-display');
+    if (dd) dd.remove();
+    if (disp) disp.classList.remove('ss-open');
+    activeDropdown = null;
+  }
+
+  function openDropdown(wrap, sel) {
+    if (activeDropdown && activeDropdown !== wrap) closeDropdown(activeDropdown);
+    const disp = wrap.querySelector('.ss-display');
+    disp.classList.add('ss-open');
+    activeDropdown = wrap;
+
+    const dd = document.createElement('div');
+    dd.className = 'ss-dropdown';
+
+    const sb = document.createElement('div');
+    sb.className = 'ss-search-box';
+    sb.innerHTML = '<i class="fas fa-search"></i>';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'ss-search-input';
+    inp.placeholder = 'Search...';
+    sb.appendChild(inp);
+    dd.appendChild(sb);
+
+    const list = document.createElement('div');
+    list.className = 'ss-list';
+
+    const opts = Array.from(sel.options);
+    opts.forEach(opt => {
+      if (!opt.value) return; // skip placeholder
+      const item = document.createElement('div');
+      item.className = 'ss-opt';
+      if (opt.value === sel.value) item.classList.add('ss-selected');
+      item.textContent = opt.textContent;
+      item.dataset.value = opt.value;
+      item.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        sel.value = opt.value;
+        sel.dispatchEvent(new Event('change', {bubbles:true}));
+        updateDisplay(wrap, sel);
+        closeDropdown(wrap);
+      });
+      list.appendChild(item);
+    });
+
+    if (!list.children.length) {
+      const em = document.createElement('div');
+      em.className = 'ss-empty';
+      em.textContent = 'No options';
+      list.appendChild(em);
+    }
+
+    dd.appendChild(list);
+    wrap.appendChild(dd);
+
+    inp.addEventListener('input', function() {
+      const q = inp.value.toLowerCase().trim();
+      let visible = 0;
+      list.querySelectorAll('.ss-opt').forEach(item => {
+        const match = !q || item.textContent.toLowerCase().includes(q);
+        item.classList.toggle('ss-hidden', !match);
+        if (match) visible++;
+      });
+      let em = list.querySelector('.ss-empty');
+      if (!em) { em = document.createElement('div'); em.className = 'ss-empty'; em.textContent = 'No results found'; list.appendChild(em); }
+      em.style.display = visible === 0 ? 'block' : 'none';
+    });
+
+    // Focus only when user taps the search box (not auto-focus on open)
+    inp.addEventListener('click', function() { inp.focus(); });
+  }
+
+  function updateDisplay(wrap, sel) {
+    const lbl = wrap.querySelector('.ss-label');
+    if (!lbl) return;
+    if (sel.value) {
+      lbl.textContent = sel.options[sel.selectedIndex].textContent;
+      lbl.classList.remove('ss-placeholder');
+    } else {
+      lbl.textContent = sel.options[0] ? sel.options[0].textContent : '';
+      lbl.classList.add('ss-placeholder');
+    }
+  }
+
+  window.initSearchableSelect = function(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel || sel.options.length <= 5) return; // only for big lists
+    let wrap = sel.closest('.ss-wrap');
+    if (wrap) {
+      // already wrapped — just refresh display & options
+      updateDisplay(wrap, sel);
+      return;
+    }
+    // Wrap
+    wrap = document.createElement('div');
+    wrap.className = 'ss-wrap';
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    sel.style.display = 'none';
+
+    const disp = document.createElement('div');
+    disp.className = 'ss-display';
+    disp.innerHTML = '<span class="ss-label ss-placeholder"></span><span class="ss-arrow">▼</span>';
+    wrap.appendChild(disp);
+    updateDisplay(wrap, sel);
+
+    disp.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (activeDropdown === wrap) { closeDropdown(wrap); }
+      else { openDropdown(wrap, sel); }
+    });
+
+    // Keep display in sync if sel.value changes programmatically
+    const obs = new MutationObserver(() => updateDisplay(wrap, sel));
+    obs.observe(sel, {childList:true, attributes:true, attributeFilter:['value']});
+    // Watch for value changes via dispatchEvent
+    sel.addEventListener('change', () => updateDisplay(wrap, sel));
+  };
+
+  window.initAllSearchableSelects = function() {
+    document.querySelectorAll('select').forEach(sel => {
+      if (sel.id) initSearchableSelect(sel.id);
+    });
+  };
+})();
 
 // ── HOME SEARCH ──
 function runHomeSearch() {
@@ -13192,6 +13476,13 @@ function showAuthView(view) {
   document.getElementById('authSignupView').style.display = view === 'signup' ? 'block' : 'none';
   document.getElementById('authMaidView').style.display = 'none';
   clearAuthErrors();
+  if (view === 'signup') {
+    setTimeout(function() {
+      if (typeof window.initSearchableSelect === 'function') {
+        ['signupState','signupDistrict','signupArea'].forEach(function(id){ window.initSearchableSelect(id); });
+      }
+    }, 100);
+  }
 }
 
 function clearAuthErrors() {
@@ -13490,6 +13781,7 @@ async function submitSignup() {
   const phone = document.getElementById('signupPhone').value.replace(/\D/g, '');
   const state = document.getElementById('signupState').value;
   const district = document.getElementById('signupDistrict').value;
+  const area = document.getElementById('signupArea') ? document.getElementById('signupArea').value : '';
   const address = document.getElementById('signupAddress').value.trim();
   const phoneErr = document.getElementById('signupPhoneError');
   phoneErr.style.display = 'none';
@@ -13563,7 +13855,7 @@ async function submitSignup() {
 
   // Save customer data with password hash
   const passHash = simpleHash(pass);
-  customers[phone] = { name, email, state, district, address, photo: signupPhotoData, passwordHash: passHash, createdAt: new Date().toISOString() };
+  customers[phone] = { name, email, state, district, area, address, photo: signupPhotoData, passwordHash: passHash, createdAt: new Date().toISOString() };
   // Firebase pe await karo taaki login ke time fresh data mile
   try { await writeCustomers(customers); } catch(e) { writeCustomers(customers); }
 
@@ -13589,6 +13881,7 @@ async function submitSignup() {
   ['signupName','signupEmail','signupPhone','signupPassword','signupConfirmPassword','signupAddress'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('signupState').value = '';
   document.getElementById('signupDistrict').innerHTML = '<option value="">Select District</option>';
+  if (document.getElementById('signupArea')) document.getElementById('signupArea').innerHTML = '<option value="">Select Area / Locality</option>';
   document.getElementById('signupPhotoPreview').innerHTML = '<i class="fas fa-user" style="font-size:26px;color:var(--muted);"></i>';
 
   // If on maid profile page, re-render to unlock phone section
@@ -18347,6 +18640,16 @@ async function rcSubmitLogin() {
                       <option value="Baloo 2">Baloo 2 (Hindi Friendly)</option>
                       <option value="Hind">Hind (Hindi Friendly)</option>
                       <option value="Tiro Devanagari Hindi">Tiro Devanagari Hindi</option>
+                      <option value="Cinzel">Cinzel (Elegant)</option>
+                      <option value="Cormorant Garamond">Cormorant Garamond (Luxury)</option>
+                      <option value="Josefin Sans">Josefin Sans (Modern)</option>
+                      <option value="Libre Baskerville">Libre Baskerville (Classic)</option>
+                      <option value="Abril Fatface">Abril Fatface (Bold Display)</option>
+                      <option value="Bebas Neue">Bebas Neue (Strong)</option>
+                      <option value="Cardo">Cardo (Refined)</option>
+                      <option value="Spectral">Spectral (Editorial)</option>
+                      <option value="Yeseva One">Yeseva One (Stylish)</option>
+                      <option value="Syne">Syne (Contemporary)</option>
                     </select>
                     <div id="font-heading-preview" style="margin-top:10px;padding:12px;background:#f8fafc;border-radius:10px;font-size:22px;font-weight:700;color:#064e3b;">
                       Trusted Help for Your Happy Home
@@ -18366,6 +18669,15 @@ async function rcSubmitLogin() {
                       <option value="Mukta">Mukta (Hindi Friendly)</option>
                       <option value="Noto Sans">Noto Sans</option>
                       <option value="Poppins">Poppins</option>
+                      <option value="Figtree">Figtree (Clean)</option>
+                      <option value="Plus Jakarta Sans">Plus Jakarta Sans (Modern)</option>
+                      <option value="Outfit">Outfit (Friendly)</option>
+                      <option value="Manrope">Manrope (Sharp)</option>
+                      <option value="Work Sans">Work Sans (Professional)</option>
+                      <option value="Quicksand">Quicksand (Soft)</option>
+                      <option value="Mulish">Mulish (Elegant)</option>
+                      <option value="Barlow">Barlow (Condensed)</option>
+                      <option value="Karla">Karla (Quirky Clean)</option>
                     </select>
                     <div id="font-body-preview" style="margin-top:10px;padding:12px;background:#f8fafc;border-radius:10px;font-size:15px;color:#374151;line-height:1.7;">
                       Verified maids, cooks, babysitters, nurses & more — across all cities of India. Background checked and thoroughly verified for your safety.
@@ -18422,6 +18734,34 @@ async function rcSubmitLogin() {
                     <div style="margin-left:12px;">
                       <span class="toggle-label" style="font-weight:700;display:block;">Available Badge Pulse</span>
                       <span style="font-size:12px;color:var(--text2);">Maid card pe green "Available" dot pulse karta hai</span>
+                    </div>
+                  </div>
+                  <div class="toggle-wrap" style="background:#f8fafc;padding:14px;border-radius:10px;">
+                    <label class="toggle"><input type="checkbox" id="wc-anim-typewriter"/><span class="toggle-slider"></span></label>
+                    <div style="margin-left:12px;">
+                      <span class="toggle-label" style="font-weight:700;display:block;">Typewriter Effect</span>
+                      <span style="font-size:12px;color:var(--text2);">Hero title typing effect ke saath appear hoga</span>
+                    </div>
+                  </div>
+                  <div class="toggle-wrap" style="background:#f8fafc;padding:14px;border-radius:10px;">
+                    <label class="toggle"><input type="checkbox" id="wc-anim-parallax"/><span class="toggle-slider"></span></label>
+                    <div style="margin-left:12px;">
+                      <span class="toggle-label" style="font-weight:700;display:block;">Parallax Scroll Effect</span>
+                      <span style="font-size:12px;color:var(--text2);">Hero background scroll pe slowly move karta hai</span>
+                    </div>
+                  </div>
+                  <div class="toggle-wrap" style="background:#f8fafc;padding:14px;border-radius:10px;">
+                    <label class="toggle"><input type="checkbox" id="wc-anim-ripple" checked/><span class="toggle-slider"></span></label>
+                    <div style="margin-left:12px;">
+                      <span class="toggle-label" style="font-weight:700;display:block;">Button Ripple Effect</span>
+                      <span style="font-size:12px;color:var(--text2);">Buttons click pe ripple/wave effect dikhata hai</span>
+                    </div>
+                  </div>
+                  <div class="toggle-wrap" style="background:#f8fafc;padding:14px;border-radius:10px;">
+                    <label class="toggle"><input type="checkbox" id="wc-anim-pagetransition"/><span class="toggle-slider"></span></label>
+                    <div style="margin-left:12px;">
+                      <span class="toggle-label" style="font-weight:700;display:block;">Page Transition</span>
+                      <span style="font-size:12px;color:var(--text2);">Pages/sections switch hone pe smooth fade transition</span>
                     </div>
                   </div>
                   <div class="form-group" style="margin-top:4px;">
@@ -19466,7 +19806,7 @@ function getLS(key, def) {
 }
 function setLS(key, val) {
   localStorage.setItem(key, JSON.stringify(val));
-  var coll = (key.startsWith("ram_admin_") || key === "registeredCustomers" || key === "ram_registered_maids") ? "adminData" : "siteData";
+  var coll = (key.startsWith("ram_admin_") || key === "registeredCustomers" || key === "ram_registered_maids" || key === "ram_deleted_maids" || key === "ram_deleted_customers") ? "adminData" : "siteData";
   // _fbSetWhenReady: agar Firebase module abhi load nahi hua (page just opened /
   // slow network) to bhi queue mein daal deta hai aur module ready hote hi
   // automatically save kar deta hai — isliye "Logo update permanent nahi ho raha"
@@ -19728,9 +20068,9 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
       try {
         var regObj = await window._fbGet("adminData", "ram_registered_maids");
         if (regObj && typeof regObj === "object" && !Array.isArray(regObj)) {
-          fbMaids = Object.values(regObj).filter(function(m){ return m && m.name; });
+          fbMaids = Object.values(regObj).filter(function(m){ return m && m.name && !m._adminDeleted; });
         } else if (Array.isArray(regObj) && regObj.length > 0) {
-          fbMaids = regObj;
+          fbMaids = regObj.filter(function(m){ return !m._adminDeleted; });
         }
       } catch(e2) {}
     }
@@ -19748,13 +20088,14 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
           }
         });
         if (maidDocs.length > 0) {
-          // Merge maidDocs into fbMaids (add missing ones)
+          // Merge maidDocs into fbMaids (add missing ones), skip _adminDeleted docs
           fbMaids = fbMaids && Array.isArray(fbMaids) ? [...fbMaids] : [];
           maidDocs.forEach(function(md) {
+            if (md._adminDeleted) return; // Admin ne delete kiya hai — skip karo
             if (!fbMaids.find(function(fm){ return fm.phone === md.phone; })) {
               fbMaids.push(md);
             } else {
-              // Individual doc se latest data se update karo
+              // Individual doc se latest data se update karo (agar deleted nahi hai to)
               var idx = fbMaids.findIndex(function(fm){ return fm.phone === md.phone; });
               if (idx !== -1) fbMaids[idx] = Object.assign({}, fbMaids[idx], md);
             }
@@ -19780,11 +20121,24 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
         });
       });
 
-      // localStorage ke saath merge (local mein naye maids bhi rakhho)
+      // ── DELETED MAIDS FILTER: Firebase se aane wali deleted maids ko filter karo ──
+      // Pehle deleted maids ki list Firebase se bhi load karo (fresh)
+      var _fbDeleted = null;
+      try { _fbDeleted = await window._fbGet("adminData", "ram_deleted_maids").catch(function(){ return null; }); } catch(_de) {}
+      if (Array.isArray(_fbDeleted) && _fbDeleted.length > 0) {
+        // Firebase deleted list ko localStorage mein save karo (fresh state)
+        localStorage.setItem("ram_deleted_maids", JSON.stringify(_fbDeleted));
+      }
+      var _curDeleted = getDeletedMaids ? getDeletedMaids() : [];
+      var _delIds = new Set(_curDeleted.map(function(dm){ return dm.id; }).filter(Boolean));
+      var _delPhones = new Set(_curDeleted.map(function(dm){ return dm.phone; }).filter(Boolean));
+      fbMaids = fbMaids.filter(function(m){ return !_delIds.has(m.id) && !_delPhones.has(m.phone); });
+
+      // localStorage ke saath merge (local mein naye maids bhi rakhho, deleted filter ke saath)
       var localMaids = getMaids();
       var merged = [...fbMaids];
       localMaids.forEach(function(lm) {
-        if (lm.phone && !merged.find(function(fm){ return fm.phone === lm.phone; })) merged.push(lm);
+        if (lm.phone && !_delPhones.has(lm.phone) && !merged.find(function(fm){ return fm.phone === lm.phone; })) merged.push(lm);
       });
 
       // Firebase pe bhi updated merged list save karo (future syncs ke liye)
@@ -20006,7 +20360,25 @@ function gotoPage(page) {
     }, 50);
   }
   // Deleted pages
-  if (page === 'deleted-maids') renderDeletedMaids();
+  if (page === 'deleted-maids') {
+    // Firebase se latest deleted maids fetch karo pehle, phir render karo
+    if (typeof window._fbGet === 'function') {
+      window._fbGet('adminData', 'ram_deleted_maids').then(function(fbDel) {
+        if (Array.isArray(fbDel) && fbDel.length > 0) {
+          // Local se merge karo — dono ke saath unique IDs rakho
+          var localDel = getDeletedMaids();
+          var localIds = new Set(localDel.map(function(m){ return m.id || m.phone; }));
+          fbDel.forEach(function(m) {
+            if (!(localIds.has(m.id) || localIds.has(m.phone))) { localDel.push(m); }
+          });
+          localStorage.setItem('ram_deleted_maids', JSON.stringify(localDel));
+        }
+        renderDeletedMaids();
+      }).catch(function(){ renderDeletedMaids(); });
+    } else {
+      renderDeletedMaids();
+    }
+  }
   if (page === 'deleted-customers') renderDeletedCustomers();
 }
 function toggleSidebar() {
@@ -20223,8 +20595,29 @@ function deleteMaidById(id) {
       const deleted = getDeletedMaids();
       deleted.unshift({ ...maid, deletedAt: new Date().toISOString() });
       setDeletedMaids(deleted);
+      // Firebase mein bhi deleted list save karo
+      const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+      if (_fbFn) _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
+      // ── Individual maid doc mein bhi deleted flag set karo ──
+      if (maid.phone && _fbFn) {
+        _fbFn('adminData', 'maid_' + maid.phone, { ...maid, _adminDeleted: true, deletedAt: new Date().toISOString() }).catch(function(){});
+      }
+      // ── ram_registered_maids se bhi mark karo ──
+      try {
+        var _regM = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+        if (maid.phone && _regM[maid.phone]) {
+          _regM[maid.phone]._adminDeleted = true;
+          _regM[maid.phone].deletedAt = new Date().toISOString();
+          localStorage.setItem('ram_registered_maids', JSON.stringify(_regM));
+          if (_fbFn) _fbFn('adminData', 'ram_registered_maids', _regM).catch(function(){});
+        }
+      } catch(_re) {}
     }
-    setMaids(all.filter(m => m.id !== id));
+    const remaining = all.filter(m => m.id !== id);
+    setMaids(remaining);
+    // Firebase mein bhi updated maids save karo
+    const _fbFn2 = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn2) _fbFn2('adminData', 'ram_admin_maids', remaining).catch(function(){});
     renderDashboard();
     renderMaids();
     updateNavBadges();
@@ -23059,8 +23452,29 @@ function deleteMaid(id) {
       const deleted = getDeletedMaids();
       deleted.unshift({ ...maid, deletedAt: new Date().toISOString() });
       setDeletedMaids(deleted);
+      // Firebase mein bhi deleted list save karo (adminData collection mein)
+      const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+      if (_fbFn) _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
+      // ── Individual maid doc mein bhi deleted flag set karo (taaki sync mein wapas na aaye) ──
+      if (maid.phone && _fbFn) {
+        _fbFn('adminData', 'maid_' + maid.phone, { ...maid, _adminDeleted: true, deletedAt: new Date().toISOString() }).catch(function(){});
+      }
+      // ── ram_registered_maids se bhi hata do ──
+      try {
+        var _regM = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+        if (maid.phone && _regM[maid.phone]) {
+          _regM[maid.phone]._adminDeleted = true;
+          _regM[maid.phone].deletedAt = new Date().toISOString();
+          localStorage.setItem('ram_registered_maids', JSON.stringify(_regM));
+          if (_fbFn) _fbFn('adminData', 'ram_registered_maids', _regM).catch(function(){});
+        }
+      } catch(_re) {}
     }
-    setMaids(all.filter(m => m.id !== id));
+    const remaining = all.filter(m => m.id !== id);
+    setMaids(remaining);
+    // Firebase mein bhi updated (deleted-filtered) maids save karo
+    const _fbFn2 = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn2) _fbFn2('adminData', 'ram_admin_maids', remaining).catch(function(){});
     renderMaids();
     renderDashboard();
     updateNavBadges();
@@ -23090,7 +23504,14 @@ function bulkDeleteMaids() {
       }
     });
     setDeletedMaids(deleted);
-    setMaids(all.filter(m => !selectedMaids.has(m.id)));
+    const remaining = all.filter(m => !selectedMaids.has(m.id));
+    setMaids(remaining);
+    // Firebase mein bhi sync karo
+    const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn) {
+      _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
+      _fbFn('adminData', 'ram_admin_maids', remaining).catch(function(){});
+    }
     selectedMaids.clear();
     renderMaids();
     renderDashboard();
@@ -23349,8 +23770,8 @@ function restoreDeletedMaid(idx) {
     const deleted = getDeletedMaids();
     const maid = deleted[idx];
     if (!maid) return;
-    // deletedAt remove karo
-    const { deletedAt, ...maidData } = maid;
+    // deletedAt aur _adminDeleted flag remove karo
+    const { deletedAt, _adminDeleted, ...maidData } = maid;
     // Maids list mein wapas add karo
     const maids = getMaids();
     // Duplicate check — same id already hai toh skip
@@ -23361,6 +23782,25 @@ function restoreDeletedMaid(idx) {
     // Deleted list se hata do
     deleted.splice(idx, 1);
     setDeletedMaids(deleted);
+    // Firebase mein bhi _adminDeleted flag hatao — taaki sync mein wapas aaye
+    const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn) {
+      _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
+      if (maidData.phone) {
+        _fbFn('adminData', 'maid_' + maidData.phone, { ...maidData, _adminDeleted: false }).catch(function(){});
+      }
+      _fbFn('adminData', 'ram_admin_maids', maids).catch(function(){});
+    }
+    // ram_registered_maids mein bhi _adminDeleted flag hatao
+    try {
+      var _regM = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+      if (maidData.phone && _regM[maidData.phone]) {
+        delete _regM[maidData.phone]._adminDeleted;
+        delete _regM[maidData.phone].deletedAt;
+        localStorage.setItem('ram_registered_maids', JSON.stringify(_regM));
+        if (_fbFn) _fbFn('adminData', 'ram_registered_maids', _regM).catch(function(){});
+      }
+    } catch(_re) {}
     renderDeletedMaids();
     updateNavBadges();
     showToast('✅ Maid restore ho gayi!');
@@ -23370,8 +23810,14 @@ function restoreDeletedMaid(idx) {
 function permanentDeleteMaid(idx) {
   confirmAction('Permanently Delete', 'Ye maid hamesha ke liye delete ho jayegi. Confirm karo?', () => {
     const deleted = getDeletedMaids();
+    const maid = deleted[idx];
     deleted.splice(idx, 1);
     setDeletedMaids(deleted);
+    // Firebase mein bhi deleted list update karo
+    const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn) _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
+    // Note: maid_{phone} doc mein _adminDeleted: true already hai — woh wahan rehne do
+    // taaki sync mein yeh permanently deleted maid wapas na aaye
     renderDeletedMaids();
     updateNavBadges();
     showToast('Maid permanently deleted');
@@ -24130,6 +24576,23 @@ function applySiteContent(){
   }
   if (typeof applySectionColors === 'function') applySectionColors();
   if (typeof applyPopupContent === 'function') applyPopupContent();
+  // Font fix: Firebase se update hone par fonts bhi live apply hon
+  if (typeof applySiteFonts === 'function') {
+    const fh = siteVal('font-heading') || 'Playfair Display';
+    const fb = siteVal('font-body') || 'Inter';
+    const fs = siteVal('font-scale') || 'md';
+    try { applySiteFonts(fh, fb, fs); } catch(e) {}
+  }
+  // Animation fix: Firebase se update hone par animations bhi live apply hon
+  if (typeof applySiteAnimations === 'function') {
+    try {
+      const animRaw = siteVal('animations');
+      if (animRaw) {
+        const animSettings = typeof animRaw === 'string' ? JSON.parse(animRaw) : animRaw;
+        applySiteAnimations(animSettings);
+      }
+    } catch(e) {}
+  }
 }
 // Loads saved values into the ADMIN EDITOR form fields
 function loadWebsiteEditorForm(){
@@ -24584,6 +25047,10 @@ async function saveSiteContent(section){
       scroll: document.getElementById('wc-anim-scroll')?.checked ?? true,
       counter: document.getElementById('wc-anim-counter')?.checked ?? true,
       pulse: document.getElementById('wc-anim-pulse')?.checked ?? true,
+      typewriter: document.getElementById('wc-anim-typewriter')?.checked ?? false,
+      parallax: document.getElementById('wc-anim-parallax')?.checked ?? false,
+      ripple: document.getElementById('wc-anim-ripple')?.checked ?? true,
+      pagetransition: document.getElementById('wc-anim-pagetransition')?.checked ?? false,
       speed: document.getElementById('wc-anim-speed')?.value || 'normal',
     };
     setSiteContentKey('animations', JSON.stringify(animSettings));
@@ -24879,7 +25346,57 @@ function applySiteAnimations(settings) {
   if (!settings.cards) css += `.maid-card:hover { box-shadow: none !important; transform: none !important; }`;
   if (!settings.scroll) css += `.stat-item { opacity: 1 !important; transform: none !important; }`;
   if (!settings.pulse) css += `.badge-available::before { animation: none !important; }`;
+  // Button ripple effect
+  if (settings.ripple) {
+    css += `
+      .btn { position: relative; overflow: hidden; }
+      .btn::after { content:''; position:absolute; width:0; height:0; top:50%; left:50%; transform:translate(-50%,-50%); background:rgba(255,255,255,0.35); border-radius:50%; opacity:0; transition: width 0.5s, height 0.5s, opacity 0.5s !important; }
+      .btn:active::after { width:250px; height:250px; opacity:0; }
+    `;
+  }
+  // Page transition fade
+  if (settings.pagetransition) {
+    css += `
+      .settings-section, .page-section, section { animation: ramPageFadeIn ${speed} ease both; }
+      @keyframes ramPageFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+    `;
+  }
   style.textContent = css;
+
+  // Parallax effect
+  const heroEl = document.querySelector('.hero');
+  if (settings.parallax && heroEl) {
+    if (!window._ramParallaxAttached) {
+      window._ramParallaxAttached = true;
+      window.addEventListener('scroll', function() {
+        if (!document.getElementById('admin-site-anim-override') || !JSON.parse(siteVal('animations') || '{}').parallax) {
+          window._ramParallaxAttached = false; return;
+        }
+        const scrollY = window.pageYOffset;
+        const hero = document.querySelector('.hero');
+        if (hero) hero.style.backgroundPositionY = (scrollY * 0.4) + 'px';
+      }, { passive: true });
+    }
+  } else if (!settings.parallax && heroEl) {
+    heroEl.style.backgroundPositionY = '';
+  }
+
+  // Typewriter effect on hero title
+  const titleEl = document.getElementById('site-hero-title');
+  if (settings.typewriter && titleEl && !titleEl.dataset.twDone) {
+    titleEl.dataset.twDone = '1';
+    const originalText = titleEl.textContent;
+    titleEl.textContent = '';
+    let i = 0;
+    const twSpeed = { fast: 30, normal: 60, slow: 100 }[settings.speed] || 60;
+    const twInterval = setInterval(() => {
+      titleEl.textContent += originalText[i] || '';
+      i++;
+      if (i >= originalText.length) clearInterval(twInterval);
+    }, twSpeed);
+  } else if (!settings.typewriter && titleEl) {
+    titleEl.dataset.twDone = '';
+  }
 }
 // Gallery photo handling
 function handleGalleryUpload(event) {
@@ -24960,9 +25477,15 @@ function loadWebsiteEditorExtras() {
   // Animations
   let animSettings = {};
   try { animSettings = JSON.parse(siteVal('animations') || '{}'); } catch(e) {}
-  ['hero','cards','scroll','counter','pulse'].forEach(k => {
+  // Old toggles: default ON (true unless explicitly false)
+  ['hero','cards','scroll','counter','pulse','ripple'].forEach(k => {
     const el = document.getElementById('wc-anim-' + k);
     if(el) el.checked = animSettings[k] !== false;
+  });
+  // New toggles: default OFF (false unless explicitly true)
+  ['typewriter','parallax','pagetransition'].forEach(k => {
+    const el = document.getElementById('wc-anim-' + k);
+    if(el) el.checked = animSettings[k] === true;
   });
   const spEl = document.getElementById('wc-anim-speed'); if(spEl && animSettings.speed) spEl.value = animSettings.speed;
   // Gallery
@@ -25590,11 +26113,31 @@ window.addEventListener('storage', function(e) {
     renderNotifications();
     showToast('🔔 Naya booking aa gaya website se!');
   } else if (e.key === 'ram_admin_maids') {
+    // Deleted maids ko filter karo pehle (Firebase se aane wali stale entries)
+    try {
+      var _newMaidsVal = e.newValue ? JSON.parse(e.newValue) : [];
+      if (Array.isArray(_newMaidsVal)) {
+        var _curDeleted = getDeletedMaids ? getDeletedMaids() : [];
+        var _curDelIds = new Set(_curDeleted.map(function(dm){ return dm.id; }).filter(Boolean));
+        var _curDelPhones = new Set(_curDeleted.map(function(dm){ return dm.phone; }).filter(Boolean));
+        var _filteredNew = _newMaidsVal.filter(function(m){ return !_curDelIds.has(m.id) && !_curDelPhones.has(m.phone); });
+        if (_filteredNew.length !== _newMaidsVal.length) {
+          localStorage.setItem('ram_admin_maids', JSON.stringify(_filteredNew));
+        }
+      }
+    } catch(_se) {}
     renderMaids();
     renderDashboard();
     updateNavBadges();
     renderNotifications();
-    showToast('🔔 Naya maid registration aa gaya!');
+    // Sirf tab toast dikhao jab genuinely naya maid aaya ho (count badha ho)
+    // Background Firebase sync pe toast nahi chahiye
+    var _prevMaidCount = window._storageSyncMaidCount || 0;
+    var _newMaidCount = getMaids ? getMaids().length : 0;
+    if (_prevMaidCount > 0 && _newMaidCount > _prevMaidCount) {
+      showToast('🔔 Naya maid registration aa gaya!');
+    }
+    window._storageSyncMaidCount = _newMaidCount;
   } else if (e.key === 'registeredCustomers') {
     renderCustomers();
     renderDashboard();
@@ -25622,10 +26165,18 @@ async function refreshAllData(){
   // Fresh data Firebase se pull karo
   if (typeof window._fbGet === 'function') {
     try {
-      // Maids
+      // Deleted Maids — pehle load karo taaki filter mein use ho sake
+      const fbDeletedMaids = await window._fbGet('adminData', 'ram_deleted_maids').catch(() => null);
+      if (Array.isArray(fbDeletedMaids) && fbDeletedMaids.length > 0) {
+        localStorage.setItem('ram_deleted_maids', JSON.stringify(fbDeletedMaids));
+      }
+      // Maids — deleted maids ko filter karke save karo
       const fbMaids = await window._fbGet('adminData', 'ram_admin_maids');
       if (Array.isArray(fbMaids) && fbMaids.length > 0) {
-        localStorage.setItem('ram_admin_maids', JSON.stringify(fbMaids));
+        const _deletedIds = new Set((getDeletedMaids() || []).map(function(dm){ return dm.id || dm.phone; }).filter(Boolean));
+        const _deletedPhones = new Set((getDeletedMaids() || []).map(function(dm){ return dm.phone; }).filter(Boolean));
+        const _filteredFbMaids = fbMaids.filter(function(m){ return !_deletedIds.has(m.id) && !_deletedPhones.has(m.phone); });
+        localStorage.setItem('ram_admin_maids', JSON.stringify(_filteredFbMaids));
       }
       // Registered maids
       const fbRegMaids = await window._fbGet('adminData', 'ram_registered_maids');
@@ -26673,6 +27224,29 @@ async function loadFromFirebase() {
         }
       }
     });
+
+    // ── Deleted Maids: adminData se load karo (siteData nahi) ──
+    // aur active maids mein se deleted wale filter karo (refresh pe wapas na aayein)
+    try {
+      var _delMaidsRaw = localStorage.getItem('ram_deleted_maids');
+      var _delMaids = _delMaidsRaw ? JSON.parse(_delMaidsRaw) : [];
+      if (Array.isArray(_delMaids) && _delMaids.length > 0) {
+        var _delIds = new Set(_delMaids.map(function(dm){ return dm.id; }).filter(Boolean));
+        var _delPhones = new Set(_delMaids.map(function(dm){ return dm.phone; }).filter(Boolean));
+        var _activeMaidsRaw = localStorage.getItem('ram_admin_maids');
+        if (_activeMaidsRaw) {
+          var _activeMaids = JSON.parse(_activeMaidsRaw);
+          if (Array.isArray(_activeMaids)) {
+            var _filteredActive = _activeMaids.filter(function(m){
+              return !_delIds.has(m.id) && !_delPhones.has(m.phone);
+            });
+            if (_filteredActive.length !== _activeMaids.length) {
+              localStorage.setItem('ram_admin_maids', JSON.stringify(_filteredActive));
+            }
+          }
+        }
+      }
+    } catch(_fe) {}
 
     window._fbDataReady = true;
     console.log('\u2705 Firebase data loaded!');
