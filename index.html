@@ -86,7 +86,14 @@
           "telephone": "+91 9530112346",
           "contactType": "customer service",
           "areaServed": "IN",
-          "availableLanguage": ["English", "Hindi", "Marathi", "Tamil", "Telugu", "Bengali"]
+          "availableLanguage": [
+            "English",
+            "Hindi",
+            "Marathi",
+            "Tamil",
+            "Telugu",
+            "Bengali"
+          ]
         }
       ],
       "sameAs": [
@@ -102,7 +109,9 @@
       "url": "https://www.rentamaidindia.com/",
       "name": "Rent a Maid India",
       "description": "Hire trusted maids and domestic helpers across India",
-      "publisher": {"@id": "https://www.rentamaidindia.com/#organization"},
+      "publisher": {
+        "@id": "https://www.rentamaidindia.com/#organization"
+      },
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
@@ -126,42 +135,226 @@
       "openingHours": "Mo-Su 08:00-20:00",
       "areaServed": [
         "India",
-        "Delhi", "New Delhi", "Noida", "Gurgaon", "Gurugram", "Faridabad", "Ghaziabad", "Greater Noida",
-        "Mumbai", "Navi Mumbai", "Thane", "Pune", "Nashik", "Nagpur", "Aurangabad", "Solapur", "Kolhapur", "Amravati", "Akola",
-        "Bangalore", "Bengaluru", "Mysore", "Mysuru", "Hubli", "Dharwad", "Mangalore", "Belgaum", "Bellary", "Shimoga", "Tumkur",
-        "Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Tiruppur", "Salem", "Erode", "Vellore", "Thoothukudi", "Tirunelveli",
-        "Hyderabad", "Secunderabad", "Visakhapatnam", "Vijayawada", "Warangal", "Guntur", "Nellore", "Kurnool", "Rajahmundry", "Tirupati",
-        "Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Bardhaman", "Malda", "Baharampur",
-        "Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Gandhinagar", "Anand", "Morbi",
-        "Jaipur", "Jodhpur", "Udaipur", "Kota", "Ajmer", "Bikaner", "Alwar", "Bharatpur", "Sikar",
-        "Lucknow", "Kanpur", "Agra", "Varanasi", "Prayagraj", "Allahabad", "Meerut", "Ghaziabad", "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Gorakhpur", "Firozabad", "Mathura", "Muzaffarnagar", "Hapur",
-        "Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Darbhanga", "Purnia",
-        "Bhopal", "Indore", "Jabalpur", "Gwalior", "Ujjain", "Sagar", "Satna", "Rewa",
-        "Bhubaneswar", "Cuttack", "Rourkela", "Berhampur", "Sambalpur",
-        "Chandigarh", "Amritsar", "Ludhiana", "Jalandhar", "Patiala", "Bathinda", "Mohali",
-        "Dehradun", "Haridwar", "Roorkee", "Haldwani", "Rishikesh",
-        "Ranchi", "Jamshedpur", "Dhanbad", "Bokaro",
-        "Raipur", "Bhilai", "Durg", "Bilaspur", "Korba",
-        "Guwahati", "Silchar", "Dibrugarh",
-        "Thiruvananthapuram", "Kochi", "Kozhikode", "Thrissur", "Kollam", "Kannur",
-        "Srinagar", "Jammu",
-        "Shimla", "Solan", "Mandi",
-        "Agartala", "Aizawl", "Imphal", "Shillong", "Kohima", "Itanagar", "Gangtok",
-        "Panaji", "Goa", "Margao",
-        "Puducherry", "Pondicherry"
+        "Delhi",
+        "New Delhi",
+        "Noida",
+        "Gurgaon",
+        "Gurugram",
+        "Faridabad",
+        "Ghaziabad",
+        "Greater Noida",
+        "Mumbai",
+        "Navi Mumbai",
+        "Thane",
+        "Pune",
+        "Nashik",
+        "Nagpur",
+        "Aurangabad",
+        "Solapur",
+        "Kolhapur",
+        "Amravati",
+        "Akola",
+        "Bangalore",
+        "Bengaluru",
+        "Mysore",
+        "Mysuru",
+        "Hubli",
+        "Dharwad",
+        "Mangalore",
+        "Belgaum",
+        "Bellary",
+        "Shimoga",
+        "Tumkur",
+        "Chennai",
+        "Coimbatore",
+        "Madurai",
+        "Tiruchirappalli",
+        "Tiruppur",
+        "Salem",
+        "Erode",
+        "Vellore",
+        "Thoothukudi",
+        "Tirunelveli",
+        "Hyderabad",
+        "Secunderabad",
+        "Visakhapatnam",
+        "Vijayawada",
+        "Warangal",
+        "Guntur",
+        "Nellore",
+        "Kurnool",
+        "Rajahmundry",
+        "Tirupati",
+        "Kolkata",
+        "Howrah",
+        "Durgapur",
+        "Asansol",
+        "Siliguri",
+        "Bardhaman",
+        "Malda",
+        "Baharampur",
+        "Ahmedabad",
+        "Surat",
+        "Vadodara",
+        "Rajkot",
+        "Bhavnagar",
+        "Jamnagar",
+        "Gandhinagar",
+        "Anand",
+        "Morbi",
+        "Jaipur",
+        "Jodhpur",
+        "Udaipur",
+        "Kota",
+        "Ajmer",
+        "Bikaner",
+        "Alwar",
+        "Bharatpur",
+        "Sikar",
+        "Lucknow",
+        "Kanpur",
+        "Agra",
+        "Varanasi",
+        "Prayagraj",
+        "Allahabad",
+        "Meerut",
+        "Ghaziabad",
+        "Bareilly",
+        "Aligarh",
+        "Moradabad",
+        "Saharanpur",
+        "Gorakhpur",
+        "Firozabad",
+        "Mathura",
+        "Muzaffarnagar",
+        "Hapur",
+        "Patna",
+        "Gaya",
+        "Bhagalpur",
+        "Muzaffarpur",
+        "Darbhanga",
+        "Purnia",
+        "Bhopal",
+        "Indore",
+        "Jabalpur",
+        "Gwalior",
+        "Ujjain",
+        "Sagar",
+        "Satna",
+        "Rewa",
+        "Bhubaneswar",
+        "Cuttack",
+        "Rourkela",
+        "Berhampur",
+        "Sambalpur",
+        "Chandigarh",
+        "Amritsar",
+        "Ludhiana",
+        "Jalandhar",
+        "Patiala",
+        "Bathinda",
+        "Mohali",
+        "Dehradun",
+        "Haridwar",
+        "Roorkee",
+        "Haldwani",
+        "Rishikesh",
+        "Ranchi",
+        "Jamshedpur",
+        "Dhanbad",
+        "Bokaro",
+        "Raipur",
+        "Bhilai",
+        "Durg",
+        "Bilaspur",
+        "Korba",
+        "Guwahati",
+        "Silchar",
+        "Dibrugarh",
+        "Thiruvananthapuram",
+        "Kochi",
+        "Kozhikode",
+        "Thrissur",
+        "Kollam",
+        "Kannur",
+        "Srinagar",
+        "Jammu",
+        "Shimla",
+        "Solan",
+        "Mandi",
+        "Agartala",
+        "Aizawl",
+        "Imphal",
+        "Shillong",
+        "Kohima",
+        "Itanagar",
+        "Gangtok",
+        "Panaji",
+        "Goa",
+        "Margao",
+        "Puducherry",
+        "Pondicherry"
       ],
       "hasOfferCatalog": {
         "@type": "OfferCatalog",
         "name": "Maid & Domestic Help Services",
         "itemListElement": [
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Part-Time Maid Service"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Full-Time Maid Service"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Live-In Maid"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Cook / Cooking Maid"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Babysitter / Child Care"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Elderly Care / Patient Care"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Driver Service"}},
-          {"@type": "Offer", "itemOffered": {"@type": "Service", "name": "Housekeeping Staff"}}
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Part-Time Maid Service"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Full-Time Maid Service"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Live-In Maid"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Cook / Cooking Maid"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Babysitter / Child Care"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Elderly Care / Patient Care"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Driver Service"
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Housekeeping Staff"
+            }
+          }
         ]
       },
       "aggregateRating": {
@@ -171,91 +364,6 @@
         "bestRating": "5",
         "worstRating": "1"
       }
-    },
-    {
-      "@type": "FAQPage",
-      "mainEntity": [
-        {
-          "@type": "Question",
-          "name": "How do I rent a maid in India?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "You can rent a maid in India through Rent a Maid India by searching for available verified helpers in your city, choosing the type of service (part-time, full-time, or live-in), and booking online in minutes. Our maids are background-checked and verified."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How much does it cost to hire a maid in India?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The cost to hire a maid in India varies by city and service type. Part-time maid services typically start from ₹3,000–₹6,000 per month, full-time maids range from ₹8,000–₹15,000, and live-in maids may cost ₹10,000–₹20,000 per month depending on the city and duties."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is Rent a Maid India service available in my city?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Rent a Maid India is available in 50+ cities including Delhi, Mumbai, Bangalore, Chennai, Hyderabad, Pune, Kolkata, Ahmedabad, Jaipur, Kota, Noida, Gurgaon, Indore, Nagpur, Bhopal, and many more cities across India."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Are the maids on Rent a Maid India verified?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, all maids and domestic helpers on Rent a Maid India are thoroughly background-checked, ID verified, and reference-verified before being listed on the platform. We ensure safety and trust for every household."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I find a maid near me using Rent a Maid India?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes! Use our location-based search to find verified maids near you. Just enter your city or area and browse available domestic helpers, cooks, babysitters and housekeeping staff in your neighbourhood."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What is the difference between part-time and full-time maid?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "A part-time maid visits your home for a few hours daily (usually 2-4 hours) to do cleaning, cooking, or other household tasks. A full-time maid works 8+ hours per day at your home. A live-in maid stays at your home permanently. Rent a Maid India offers all three types across India."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Can I hire a maid for cooking only?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes, Rent a Maid India has dedicated cook maids who specialize in cooking. You can hire a cook maid for breakfast, lunch, dinner or all meals. Available in Delhi, Mumbai, Bangalore, Chennai, Hyderabad, Pune, Kota, Jaipur and all major cities across India."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How do I book a maid online in India?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Booking a maid online on Rent a Maid India is easy: 1) Enter your city and requirements, 2) Browse verified maid profiles, 3) Select the maid that fits your needs, 4) Book and confirm. Our team will arrange the maid visit at your preferred time."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is maid service available in small cities and towns in India?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes! Rent a Maid India provides maid and domestic help services across 500+ cities and towns in India — not just metros but also tier 2 and tier 3 cities like Kota, Ajmer, Bikaner, Jodhpur, Nashik, Aurangabad, Hubli, Mysore, Tiruppur, Siliguri, Durgapur, Raipur, Ranchi, Bhubaneswar, Dehradun and hundreds more."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What documents are checked for maids on Rent a Maid India?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "All maids on Rent a Maid India undergo thorough verification including Aadhaar card check, address verification, police verification, previous employer reference check and in-person interview. We ensure every domestic helper is safe, trustworthy and reliable."
-          }
-        }
-      ]
     }
   ]
 }
@@ -420,11 +528,93 @@
 }
 </script>
 
+<!-- ══ MERGED FAQPage SCHEMA — All 76 Questions (General + Near Me + City-wise + Extended) ══ -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "FAQPage",
+  "name": "Rent a Maid India — Frequently Asked Questions",
   "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How do I rent a maid in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can rent a maid in India through Rent a Maid India by searching for available verified helpers in your city, choosing the type of service (part-time, full-time, or live-in), and booking online in minutes. Our maids are background-checked and verified."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does it cost to hire a maid in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The cost to hire a maid in India varies by city and service type. Part-time maid services typically start from ₹3,000–₹6,000 per month, full-time maids range from ₹8,000–₹15,000, and live-in maids may cost ₹10,000–₹20,000 per month depending on the city and duties."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Rent a Maid India service available in my city?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rent a Maid India is available in 50+ cities including Delhi, Mumbai, Bangalore, Chennai, Hyderabad, Pune, Kolkata, Ahmedabad, Jaipur, Kota, Noida, Gurgaon, Indore, Nagpur, Bhopal, and many more cities across India."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Are the maids on Rent a Maid India verified?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, all maids and domestic helpers on Rent a Maid India are thoroughly background-checked, ID verified, and reference-verified before being listed on the platform. We ensure safety and trust for every household."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I find a maid near me using Rent a Maid India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes! Use our location-based search to find verified maids near you. Just enter your city or area and browse available domestic helpers, cooks, babysitters and housekeeping staff in your neighbourhood."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the difference between part-time and full-time maid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A part-time maid visits your home for a few hours daily (usually 2-4 hours) to do cleaning, cooking, or other household tasks. A full-time maid works 8+ hours per day at your home. A live-in maid stays at your home permanently. Rent a Maid India offers all three types across India."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I hire a maid for cooking only?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Rent a Maid India has dedicated cook maids who specialize in cooking. You can hire a cook maid for breakfast, lunch, dinner or all meals. Available in Delhi, Mumbai, Bangalore, Chennai, Hyderabad, Pune, Kota, Jaipur and all major cities across India."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I book a maid online in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Booking a maid online on Rent a Maid India is easy: 1) Enter your city and requirements, 2) Browse verified maid profiles, 3) Select the maid that fits your needs, 4) Book and confirm. Our team will arrange the maid visit at your preferred time."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is maid service available in small cities and towns in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes! Rent a Maid India provides maid and domestic help services across 500+ cities and towns in India — not just metros but also tier 2 and tier 3 cities like Kota, Ajmer, Bikaner, Jodhpur, Nashik, Aurangabad, Hubli, Mysore, Tiruppur, Siliguri, Durgapur, Raipur, Ranchi, Bhubaneswar, Dehradun and hundreds more."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What documents are checked for maids on Rent a Maid India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "All maids on Rent a Maid India undergo thorough verification including Aadhaar card check, address verification, police verification, previous employer reference check and in-person interview. We ensure every domestic helper is safe, trustworthy and reliable."
+      }
+    },
     {
       "@type": "Question",
       "name": "How can I rent a maid near me?",
@@ -503,6 +693,454 @@
       "acceptedAnswer": {
         "@type": "Answer",
         "text": "Rent a Maid India provides qualified home nurses near you for home nursing care, wound care, injection, vitals monitoring and post-surgery care. Home nurse services are available near you in Delhi, Mumbai, Bangalore, Kota, Jaipur, Hyderabad and all major cities of India."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which is the best maid service in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rent a Maid India is India's #1 best maid service platform. It provides background-checked, Aadhaar-verified, police-verified maids, cooks, babysitters, japa maids, elderly care attendants and domestic helpers across 500+ cities. With 12000+ happy families and 4.8 star rating, it is the most trusted maid service in India."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which is the best app to hire maid in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rent a Maid India at rentamaidindia.com is the best platform to hire a maid in India. It offers verified maids, instant online booking, replacement guarantee and services in 500+ cities across India starting from ₹3000/month."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to find a verified maid near me in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To find a verified maid near you in India, visit rentamaidindia.com, enter your city, choose the type of maid you need and book online instantly. All maids are background-checked, Aadhaar-verified and police-verified. Available in 500+ cities."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the cost of hiring a maid in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The cost of hiring a maid in India through Rent a Maid India starts from ₹3000/month for part-time maid (2-4 hours). Full-time maid costs ₹8000-₹15000/month. Live-in maid costs ₹10000-₹20000/month. Cook costs ₹5000-₹12000/month. Babysitter costs ₹8000-₹15000/month."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which is the top maid agency in Kota Rajasthan?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rent a Maid India is the top maid agency in Kota, Rajasthan. It provides verified maids, cooks, babysitters, japa maids, cleaning staff and domestic helpers in Kota. All maids in Kota are background-checked and ID-verified. Book online at rentamaidindia.com."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is Rent a Maid India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rent a Maid India (rentamaidindia.com) is India's number one platform for hiring verified domestic helpers. It connects families with background-verified maids, cooks, babysitters, japa maids, elderly care attendants, patient care helpers, home nurses, cleaning staff and drivers across 500+ cities of India. Founded in 2020, it has served 12000+ families with 1500+ verified helpers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is Rent a Maid India safe and reliable?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Rent a Maid India is completely safe and reliable. All maids and domestic helpers are 100% background-checked, Aadhaar-verified and police-verified before being listed on the platform. The platform has a 4.8 star rating with 4200+ verified reviews from satisfied customers."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a cook near me in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a cook near you in India, visit rentamaidindia.com and select Cook service. Rent a Maid India provides verified personal cooks for breakfast, lunch and dinner in 500+ cities including Kota, Jaipur, Delhi, Mumbai, Bangalore, Hyderabad and Chennai. Starting ₹5000/month."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Where can I find a babysitter near me in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You can find a trusted babysitter near you at rentamaidindia.com. Rent a Maid India provides verified babysitters and nannies for infant to 12-year-old child care in 500+ cities across India. All babysitters are background-checked and ID-verified. Starting ₹8000/month."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is a japa maid and where to find one in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A japa maid is a trained helper for post-delivery care of mother and newborn baby. Japa maid services include baby massage, bathing, feeding support, mother diet care and newborn hygiene. Rent a Maid India provides experienced japa maids in 500+ cities across India starting ₹10000/month at rentamaidindia.com."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which website is best for hiring domestic help in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Rentamaidindia.com is the best website for hiring domestic help in India. It is India's #1 platform for verified maids, cooks, babysitters, japa maids, elderly care and all domestic help services across 500+ cities. Features include online booking, background verification, replacement guarantee and 24/7 support."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to get elderly care at home in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To get elderly care at home in India, visit rentamaidindia.com and select Elderly Care service. Rent a Maid India provides trained elderly care attendants for senior citizen care, old age care, medication reminder, mobility assistance and companionship in 500+ cities starting ₹10000/month."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there any maid service available in Rajasthan?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Rent a Maid India provides verified maid services across all major cities of Rajasthan including Kota, Jaipur, Jodhpur, Udaipur, Ajmer, Bikaner, Alwar, Bharatpur, Sikar and 20+ more cities. Book verified maid in Rajasthan at rentamaidindia.com."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does a live-in maid cost in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A live-in maid in India costs between ₹10000 to ₹20000 per month through Rent a Maid India. Live-in maids work 24 hours and handle all household tasks including cooking, cleaning, childcare and elderly care. Book at rentamaidindia.com."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I get a home nurse near me in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, Rent a Maid India provides qualified home nurses near you for home nursing care, wound care, injection, IV drip, vitals monitoring and post-surgery care in 500+ cities across India starting ₹15000/month. Book at rentamaidindia.com."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Rent a maid in Lucknow — kaise milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Lucknow me maid hire karne ke liye Rent a Maid India use karein. Hum Lucknow me verified part-time maid, full-time maid, live-in maid, cook maid, babysitter, cleaning maid aur japa maid provide karte hain. Sabhi maids background-checked aur ID verified hain. Lucknow me maid book karna bahut aasaan hai — sirf apna area enter karein aur profile choose karein."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Lucknow me — kahan se milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Lucknow me bai ya kaam wali chahiye toh Rent a Maid India visit karein. Hazaratganj, Gomti Nagar, Aliganj, Indira Nagar, Mahanagar aur poore Lucknow me verified ghar ki bai, safai wali, jhadu pocha wali aur kaam wali bai available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to rent a maid in Surat?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To rent a maid in Surat, visit Rent a Maid India and search for maids in Surat. We provide verified part-time maids, full-time maids, live-in maids, cook maids, babysitters, cleaning maids and japa maids across Surat — including Adajan, Vesu, Athwa, Citylight, Pal and all areas of Surat. All maids are background-checked and trusted."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Surat me — kahan se milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Surat me bai ya kaam wali chahiye toh Rent a Maid India se contact karein. Surat ke Adajan, Vesu, Pal, Citylight, Athwa, Katargam, Varachha aur poore Surat me verified ghar ki bai, safai wali aur kaam wali bai available hain. Abhi book karein."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Nagpur?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Nagpur, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters, japa maids and cleaning maids across Nagpur — including Civil Lines, Dharampeth, Sitabuldi, Sadar, Wardha Road and all areas. All maids in Nagpur are background-checked and ID verified."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Maid chahiye Nagpur me — kahan se milegi kaam wali bai?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nagpur me maid ya kaam wali bai chahiye toh Rent a Maid India visit karein. Civil Lines, Dharampeth, Sitabuldi, Sadar, Hingna aur poore Nagpur me verified kaam wali bai, safai wali, cook aur babysitter available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to rent a maid in Bhopal?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To rent a maid in Bhopal, visit Rent a Maid India and search for maids in Bhopal. We provide verified part-time maids, full-time maids, live-in maids, cook maids, babysitters, japa maids and cleaning maids across Bhopal — including Arera Colony, MP Nagar, Shahpura, Kolar Road, Hoshangabad Road and all areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Bhopal me — kaam wali bai kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Bhopal me bai chahiye toh Rent a Maid India se milein. Arera Colony, MP Nagar, Shahpura, Kolar Road, Ayodhya Bypass aur poore Bhopal me verified kaam wali bai, safai wali, cook aur ghar ki sahayika available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Maid chahiye Indore me — kahan se hire karein?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Indore me maid hire karne ke liye Rent a Maid India use karein. Vijay Nagar, Palasia, Scheme 54, Nipania, AB Road aur poore Indore me verified part-time maid, full-time maid, cook maid, cleaning maid aur babysitter available hain. Sabhi verified aur background-checked hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Kolkata?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Kolkata, use Rent a Maid India. We provide verified maids, cooks, babysitters, japa maids, elderly care and cleaning staff across Kolkata — including Salt Lake, New Town, Park Street, Ballygunge, Alipore, Howrah and all areas. Kolkata me ayah, cook maid, cleaning maid aur domestic help available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Searching for maid in Kolkata — kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Kolkata me maid dhundh rahe hain? Rent a Maid India par Salt Lake, New Town, Rajarhat, Tollygunge, Gariahat, Jadavpur aur poore Kolkata me verified ghar ki bai, ayah, cook aur cleaning maid available hain. Abhi online book karein."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to rent a maid in Chandigarh?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To rent a maid in Chandigarh, visit Rent a Maid India. We provide verified part-time maids, full-time maids, live-in maids, cook maids, babysitters, japa maids and cleaning maids in Chandigarh — including Sector 17, Sector 35, Sector 9, Mohali, Panchkula and surrounding areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Chandigarh me — kaam wali bai kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Chandigarh me bai chahiye toh Rent a Maid India se contact karein. Sector 17, Sector 22, Sector 35, Mohali aur Panchkula me verified kaam wali bai, safai wali, cook maid aur babysitter available hain. Sabhi background-checked hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Dehradun?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Dehradun, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids across Dehradun — including Rajpur Road, Clement Town, Patel Nagar, Raipur and all areas of Dehradun. All maids are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Searching for maid in Dehradun — kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Dehradun me maid dhundh rahe hain? Rent a Maid India par Rajpur Road, Clement Town, Patel Nagar, GMS Road, Balliwala aur poore Dehradun me verified kaam wali bai, safai wali, cook aur babysitter available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Visakhapatnam (Vizag)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Visakhapatnam (Vizag), use Rent a Maid India. We provide verified maids, cook maids, babysitters, cleaning staff and elderly care across Vizag — including MVP Colony, Madhurawada, Gajuwaka, Seethammadhara and all areas. All maids in Vizag are background-checked and trusted."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Searching for maid in Vizag — kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Visakhapatnam me maid dhundh rahe hain? Rent a Maid India par MVP Colony, Madhurawada, Seethammadhara, Dwaraka Nagar aur poore Vizag me verified domestic helpers, cook maids aur cleaning staff available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to rent a maid in Patna?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To rent a maid in Patna, visit Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids across Patna — including Boring Road, Kankarbagh, Rajendra Nagar, Patliputra Colony and all areas. All maids are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Patna me — kaam wali bai kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Patna me bai chahiye toh Rent a Maid India visit karein. Boring Road, Kankarbagh, Rajendra Nagar, Ashiana Nagar aur poore Patna me verified kaam wali bai, safai wali, cook aur babysitter available hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Ranchi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Ranchi, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids across Ranchi — including Harmu, Bariatu, Lalpur, Morabadi, Kanke Road and all areas. All maids in Ranchi are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Searching for maid in Ranchi — kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Ranchi me maid chahiye? Rent a Maid India par Harmu, Bariatu, Lalpur, Morabadi, Hehal aur poore Ranchi me verified kaam wali bai, safai wali, cook aur babysitter available hain. Sabhi maids background-checked hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Coimbatore?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Coimbatore, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids across Coimbatore — including RS Puram, Peelamedu, Ganapathy, Saibaba Colony, Singanallur and all areas. All maids in Coimbatore are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Bhubaneswar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Bhubaneswar, use Rent a Maid India. We provide verified part-time maids, cook maids, babysitters and cleaning maids across Bhubaneswar — including Saheed Nagar, Khandagiri, Patia, Nayapalli, Chandrasekharpur and all areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to rent a maid in Raipur?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To rent a maid in Raipur, visit Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids in Raipur — including Shankar Nagar, Telibandha, Devendra Nagar, Pandri, Tatibandh and all areas. All maids in Raipur are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Raipur me — kaam wali bai kahan milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Raipur me bai chahiye toh Rent a Maid India visit karein. Shankar Nagar, Telibandha, Devendra Nagar, Pandri aur poore Raipur me verified kaam wali bai, safai wali, cook aur babysitter available hain. Abhi book karein."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Vadodara?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Vadodara (Baroda), use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids across Vadodara — including Alkapuri, Akota, Gotri, Manjalpur and all areas. All maids in Vadodara are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Mysore?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Mysore (Mysuru), use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids across Mysore — including Vijayanagar, Kuvempunagar, Hebbal, Ramakrishnanagar and all areas. All maids in Mysore are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Rent a maid in Goa — how to find a verified maid?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To rent a maid in Goa, visit Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning staff in Goa — including Panaji, Margao, Mapusa, Vasco, Panjim and all areas of North and South Goa. All maids are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Amritsar?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Amritsar, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids in Amritsar — including Ranjit Avenue, Lawrence Road, Model Town, Green Avenue and all areas. All maids are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Ludhiana?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Ludhiana, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids in Ludhiana — including Model Town, Sarabha Nagar, BRS Nagar, Civil Lines and all areas. All maids are background-checked."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Maid chahiye Gurgaon me — part time ya full time?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Gurgaon (Gurugram) me maid chahiye toh Rent a Maid India visit karein. DLF Phase, Sohna Road, Sector 56, Golf Course Road, MG Road aur poore Gurugram me verified part-time maid, full-time maid, live-in maid, cook maid, babysitter, cleaning maid aur japa maid available hain. Sabhi maids background-checked hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Bai chahiye Pune me — ghar ki kaam wali kahan se milegi?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pune me bai chahiye toh Rent a Maid India se milein. Hinjewadi, Baner, Kothrud, Wakad, Aundh, Viman Nagar, Kharadi, Hadapsar aur poore Pune me verified kaam wali bai, safai wali, cook maid, babysitter aur japa maid available hain. Sabhi verified aur background-checked hain."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Searching for maid in Pune — where to find verified domestic help?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Looking for a maid in Pune? Rent a Maid India provides verified part-time maids, full-time maids, live-in maids, cook maids, babysitters, japa maids and cleaning staff across Pune including Hinjewadi, Baner, Wakad, Kothrud, Viman Nagar, Kharadi, Magarpatta and all areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire a maid in Thiruvananthapuram (Trivandrum)?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a maid in Thiruvananthapuram (Trivandrum), use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids in Trivandrum — including Kowdiar, Vazhuthacaud, Kesavadasapuram, Pattom and all areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to find a maid in Guwahati?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To find a maid in Guwahati, use Rent a Maid India. We provide verified part-time maids, full-time maids, cook maids, babysitters and cleaning maids in Guwahati — including Dispur, GS Road, Beltola, Ulubari, Geetanagar and all areas of Guwahati and Kamrup."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I hire a kitchen maid or cook near me in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire a kitchen maid or cook near you in India, visit Rent a Maid India, select 'Cook' or 'Kitchen Helper' as your service, enter your city and browse verified cook profiles. Our platform has 10,000+ registered cooks across India available for part-time or full-time cooking duties starting ₹5,000/month."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the cost of a cleaning maid in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A part-time cleaning maid (safai wali bai) in India costs ₹3,000 to ₹6,000 per month for 2-4 hours daily. A full-time cleaning maid costs ₹7,000 to ₹12,000 per month. Rates vary by city — slightly higher in Delhi and Mumbai."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to find a babysitter or nanny near me in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Search for 'babysitter' or 'nanny' in your city on Rent a Maid India. View verified nanny profiles with ratings and book a child care helper for your baby. Babysitter costs ₹8,000 to ₹15,000 per month. Newborn care maid and japa maid are also available."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is maid service available in Kota, Rajasthan?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes! Rent a Maid India provides verified maid service in Kota, Jaipur, Jodhpur, Udaipur, Ajmer, Bikaner and all cities in Rajasthan. You can find part-time maids, cook maids, cleaning maids and babysitters in Kota and nearby areas."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How to hire an elderly care attendant at home in India?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "To hire an elderly care attendant or patient care helper at home, search for 'Elder Care' on Rent a Maid India. Our trained attendants help senior citizens with medication, mobility, doctor visits and companionship. Elder care helper costs ₹10,000 to ₹20,000 per month in India."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is a japa maid and how to hire one?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A japa maid is a specialized helper for new mothers and newborn babies, providing post-delivery care, baby massage, feeding assistance and mother recovery support. Hire a trusted japa maid on Rent a Maid India starting ₹10,000 per month. Available in Delhi, Mumbai, Bangalore, Hyderabad, Kota and 500+ cities across India."
       }
     }
   ]
@@ -1713,135 +2351,7 @@ tr:hover td{background:#f8fafc;}
 }
 </script>
 
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "name": "Rent a Maid India — Frequently Asked Questions",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "Which is the best maid service in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Rent a Maid India is India's #1 best maid service platform. It provides background-checked, Aadhaar-verified, police-verified maids, cooks, babysitters, japa maids, elderly care attendants and domestic helpers across 500+ cities. With 12000+ happy families and 4.8 star rating, it is the most trusted maid service in India."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Which is the best app to hire maid in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Rent a Maid India at rentamaidindia.com is the best platform to hire a maid in India. It offers verified maids, instant online booking, replacement guarantee and services in 500+ cities across India starting from ₹3000/month."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How to find a verified maid near me in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "To find a verified maid near you in India, visit rentamaidindia.com, enter your city, choose the type of maid you need and book online instantly. All maids are background-checked, Aadhaar-verified and police-verified. Available in 500+ cities."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is the cost of hiring a maid in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "The cost of hiring a maid in India through Rent a Maid India starts from ₹3000/month for part-time maid (2-4 hours). Full-time maid costs ₹8000-₹15000/month. Live-in maid costs ₹10000-₹20000/month. Cook costs ₹5000-₹12000/month. Babysitter costs ₹8000-₹15000/month."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Which is the top maid agency in Kota Rajasthan?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Rent a Maid India is the top maid agency in Kota, Rajasthan. It provides verified maids, cooks, babysitters, japa maids, cleaning staff and domestic helpers in Kota. All maids in Kota are background-checked and ID-verified. Book online at rentamaidindia.com."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is Rent a Maid India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Rent a Maid India (rentamaidindia.com) is India's number one platform for hiring verified domestic helpers. It connects families with background-verified maids, cooks, babysitters, japa maids, elderly care attendants, patient care helpers, home nurses, cleaning staff and drivers across 500+ cities of India. Founded in 2020, it has served 12000+ families with 1500+ verified helpers."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is Rent a Maid India safe and reliable?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes, Rent a Maid India is completely safe and reliable. All maids and domestic helpers are 100% background-checked, Aadhaar-verified and police-verified before being listed on the platform. The platform has a 4.8 star rating with 4200+ verified reviews from satisfied customers."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How to hire a cook near me in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "To hire a cook near you in India, visit rentamaidindia.com and select Cook service. Rent a Maid India provides verified personal cooks for breakfast, lunch and dinner in 500+ cities including Kota, Jaipur, Delhi, Mumbai, Bangalore, Hyderabad and Chennai. Starting ₹5000/month."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Where can I find a babysitter near me in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "You can find a trusted babysitter near you at rentamaidindia.com. Rent a Maid India provides verified babysitters and nannies for infant to 12-year-old child care in 500+ cities across India. All babysitters are background-checked and ID-verified. Starting ₹8000/month."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is a japa maid and where to find one in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "A japa maid is a trained helper for post-delivery care of mother and newborn baby. Japa maid services include baby massage, bathing, feeding support, mother diet care and newborn hygiene. Rent a Maid India provides experienced japa maids in 500+ cities across India starting ₹10000/month at rentamaidindia.com."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Which website is best for hiring domestic help in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Rentamaidindia.com is the best website for hiring domestic help in India. It is India's #1 platform for verified maids, cooks, babysitters, japa maids, elderly care and all domestic help services across 500+ cities. Features include online booking, background verification, replacement guarantee and 24/7 support."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How to get elderly care at home in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "To get elderly care at home in India, visit rentamaidindia.com and select Elderly Care service. Rent a Maid India provides trained elderly care attendants for senior citizen care, old age care, medication reminder, mobility assistance and companionship in 500+ cities starting ₹10000/month."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is there any maid service available in Rajasthan?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes, Rent a Maid India provides verified maid services across all major cities of Rajasthan including Kota, Jaipur, Jodhpur, Udaipur, Ajmer, Bikaner, Alwar, Bharatpur, Sikar and 20+ more cities. Book verified maid in Rajasthan at rentamaidindia.com."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How much does a live-in maid cost in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "A live-in maid in India costs between ₹10000 to ₹20000 per month through Rent a Maid India. Live-in maids work 24 hours and handle all household tasks including cooking, cleaning, childcare and elderly care. Book at rentamaidindia.com."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Can I get a home nurse near me in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes, Rent a Maid India provides qualified home nurses near you for home nursing care, wound care, injection, IV drip, vitals monitoring and post-surgery care in 500+ cities across India starting ₹15000/month. Book at rentamaidindia.com."
-      }
-    }
-  ]
-}
-</script>
+
 
 <script type="application/ld+json">
 {
@@ -2199,6 +2709,276 @@ tr:hover td{background:#f8fafc;}
 
 <!-- Razorpay Checkout SDK — permanently loaded so it's ready before the customer's first click -->
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<!-- ══ NEW CITY-WISE SEO BLOCK — ADDED FOR EXPANDED LOCAL SEARCH COVERAGE ══ -->
+<!-- Covers all under-optimized cities with high-search keywords, FAQs & Schema -->
+
+<!-- EXTENDED CITY KEYWORDS META (new cities not fully covered above) -->
+<meta name="keywords-cities-extended" content="
+rent a maid in Lucknow, searching for maid in Lucknow, bai chahiye Lucknow me, kaam wali bai Lucknow, maid on rent Lucknow, part time maid Lucknow, full time maid Lucknow, live in maid Lucknow, cook maid Lucknow, babysitter Lucknow, cleaning maid Lucknow, japa maid Lucknow, elderly care Lucknow, ghar ki bai Lucknow, safai wali Lucknow, domestic help Lucknow, hire maid Lucknow, maid agency Lucknow, verified maid Lucknow, nanny Lucknow,
+rent a maid in Kanpur, maid chahiye Kanpur, bai chahiye Kanpur, kaam wali Kanpur, part time maid Kanpur, cook maid Kanpur, babysitter Kanpur, cleaning maid Kanpur, domestic help Kanpur, ghar ki bai Kanpur, safai wali Kanpur, hire maid Kanpur, verified maid Kanpur,
+rent a maid in Agra, maid chahiye Agra, bai chahiye Agra me, kaam wali Agra, part time maid Agra, cook maid Agra, babysitter Agra, cleaning maid Agra, domestic help Agra, ghar ki bai Agra, japa maid Agra, hire maid Agra,
+rent a maid in Varanasi, maid chahiye Varanasi, bai chahiye Varanasi me, kaam wali Varanasi, domestic help Varanasi, cook maid Varanasi, cleaning maid Varanasi, ghar ki bai Varanasi, safai wali Varanasi, hire maid Varanasi,
+rent a maid in Meerut, maid chahiye Meerut, bai chahiye Meerut, kaam wali bai Meerut, domestic help Meerut, cook maid Meerut, cleaning maid Meerut, safai wali Meerut, ghar ki bai Meerut,
+rent a maid in Prayagraj, maid chahiye Prayagraj, bai Prayagraj, kaam wali bai Prayagraj, domestic help Prayagraj, cook maid Prayagraj, safai wali Prayagraj, ghar ki bai Prayagraj, hire maid Prayagraj, Allahabad maid service,
+rent a maid in Gorakhpur, maid chahiye Gorakhpur, bai Gorakhpur, kaam wali bai Gorakhpur, domestic help Gorakhpur, cook maid Gorakhpur, cleaning maid Gorakhpur, ghar ki bai Gorakhpur,
+rent a maid in Bareilly, maid chahiye Bareilly, bai Bareilly, kaam wali bai Bareilly, domestic help Bareilly, cook maid Bareilly, ghar ki bai Bareilly,
+rent a maid in Aligarh, bai chahiye Aligarh, kaam wali bai Aligarh, domestic help Aligarh, cook maid Aligarh,
+rent a maid in Moradabad, bai chahiye Moradabad, kaam wali bai Moradabad, domestic help Moradabad,
+rent a maid in Saharanpur, bai chahiye Saharanpur, kaam wali bai Saharanpur, domestic help Saharanpur,
+UP maid service, UP me maid chahiye, Uttar Pradesh kaam wali bai, UP domestic help, bai chahiye UP me,
+rent a maid in Surat, maid chahiye Surat, bai chahiye Surat me, kaam wali bai Surat, part time maid Surat, full time maid Surat, cook maid Surat, babysitter Surat, cleaning maid Surat, domestic help Surat, ghar ki bai Surat, safai wali Surat, hire maid Surat, japa maid Surat, verified maid Surat,
+rent a maid in Vadodara, maid chahiye Vadodara, bai chahiye Vadodara, kaam wali bai Vadodara, domestic help Vadodara, cook maid Vadodara, cleaning maid Vadodara, Baroda maid service, hire maid Vadodara, ghar ki bai Vadodara,
+rent a maid in Rajkot, maid chahiye Rajkot, bai chahiye Rajkot me, kaam wali bai Rajkot, domestic help Rajkot, cook maid Rajkot, cleaning maid Rajkot, ghar ki bai Rajkot,
+rent a maid in Gandhinagar, bai chahiye Gandhinagar, kaam wali bai Gandhinagar, domestic help Gandhinagar, maid service Gandhinagar,
+rent a maid in Bhavnagar, bai chahiye Bhavnagar, kaam wali bai Bhavnagar, domestic help Bhavnagar,
+rent a maid in Jamnagar, bai chahiye Jamnagar, kaam wali bai Jamnagar, domestic help Jamnagar,
+rent a maid in Anand, bai chahiye Anand, domestic help Anand, maid Anand,
+Gujarat maid service, Gujarat me maid chahiye, Gujarat kaam wali bai, bai chahiye Gujarat me, Gujarat domestic help,
+rent a maid in Nagpur, maid chahiye Nagpur, bai chahiye Nagpur me, kaam wali bai Nagpur, part time maid Nagpur, full time maid Nagpur, cook maid Nagpur, babysitter Nagpur, cleaning maid Nagpur, domestic help Nagpur, ghar ki bai Nagpur, japa maid Nagpur, hire maid Nagpur, verified maid Nagpur,
+rent a maid in Nashik, maid chahiye Nashik, bai chahiye Nashik me, kaam wali bai Nashik, domestic help Nashik, cook maid Nashik, cleaning maid Nashik, hire maid Nashik,
+rent a maid in Aurangabad, maid chahiye Aurangabad, bai chahiye Aurangabad, kaam wali bai Aurangabad, domestic help Aurangabad, cook maid Aurangabad, maid Sambhajinagar,
+rent a maid in Solapur, bai chahiye Solapur, kaam wali bai Solapur, domestic help Solapur, maid service Solapur,
+rent a maid in Kolhapur, bai chahiye Kolhapur, kaam wali bai Kolhapur, domestic help Kolhapur, maid service Kolhapur,
+rent a maid in Amravati, bai chahiye Amravati, kaam wali bai Amravati, domestic help Amravati,
+Maharashtra maid service, Maharashtra me bai chahiye, Maharashtra kaam wali bai, Maharashtra domestic help,
+rent a maid in Coimbatore, maid chahiye Coimbatore, searching for maid in Coimbatore, domestic help Coimbatore, cook maid Coimbatore, part time maid Coimbatore, full time maid Coimbatore, babysitter Coimbatore, cleaning maid Coimbatore, hire maid Coimbatore, verified maid Coimbatore,
+rent a maid in Madurai, maid chahiye Madurai, domestic help Madurai, cook maid Madurai, cleaning maid Madurai, hire maid Madurai, part time maid Madurai,
+rent a maid in Tiruchirappalli, maid Trichy, domestic help Trichy, cook maid Trichy, hire maid Trichy,
+rent a maid in Tiruppur, maid Tiruppur, domestic help Tiruppur, cook maid Tiruppur,
+rent a maid in Salem, maid Salem, domestic help Salem, cook maid Salem,
+rent a maid in Erode, maid Erode, domestic help Erode,
+rent a maid in Vellore, maid Vellore, domestic help Vellore,
+Tamil Nadu maid service, Tamil Nadu domestic help, TN maid service,
+rent a maid in Visakhapatnam, maid chahiye Vizag, domestic help Vizag, cook maid Visakhapatnam, part time maid Vizag, full time maid Vizag, babysitter Vizag, cleaning maid Vizag, hire maid Vizag, Vizag maid service, verified maid Visakhapatnam,
+rent a maid in Vijayawada, maid chahiye Vijayawada, domestic help Vijayawada, cook maid Vijayawada, cleaning maid Vijayawada, hire maid Vijayawada,
+rent a maid in Warangal, maid Warangal, domestic help Warangal, cook maid Warangal, hire maid Warangal,
+rent a maid in Guntur, maid Guntur, domestic help Guntur, cook maid Guntur,
+rent a maid in Nellore, maid Nellore, domestic help Nellore,
+rent a maid in Tirupati, maid Tirupati, domestic help Tirupati, cook maid Tirupati,
+Andhra Pradesh maid service, AP domestic help, Telangana maid service,
+rent a maid in Kolkata, maid chahiye Kolkata, searching for maid in Kolkata, domestic help Kolkata, cook maid Kolkata, part time maid Kolkata, full time maid Kolkata, live in maid Kolkata, babysitter Kolkata, cleaning maid Kolkata, japa maid Kolkata, elderly care Kolkata, hire maid Kolkata, verified maid Kolkata, ghar ki bai Kolkata, ayah Kolkata, maid service Howrah,
+rent a maid in Siliguri, maid chahiye Siliguri, domestic help Siliguri, cook maid Siliguri, cleaning maid Siliguri, hire maid Siliguri,
+rent a maid in Durgapur, maid Durgapur, domestic help Durgapur, cook maid Durgapur,
+rent a maid in Asansol, maid Asansol, domestic help Asansol,
+West Bengal maid service, WB domestic help, Bengal maid service, ayah Bengal,
+rent a maid in Mysore, maid chahiye Mysore, searching for maid in Mysore, domestic help Mysore, cook maid Mysore, part time maid Mysore, cleaning maid Mysore, hire maid Mysore, verified maid Mysore, Mysuru maid service,
+rent a maid in Hubli, maid chahiye Hubli, domestic help Hubli, cook maid Hubli, cleaning maid Hubli, hire maid Hubli, Dharwad maid service,
+rent a maid in Mangalore, maid chahiye Mangalore, domestic help Mangalore, cook maid Mangalore, cleaning maid Mangalore, hire maid Mangalore, Mangaluru maid service,
+rent a maid in Belgaum, maid Belgaum, domestic help Belgaum, Belagavi maid service,
+rent a maid in Tumkur, maid Tumkur, domestic help Tumkur,
+Karnataka maid service, Karnataka domestic help,
+rent a maid in Thiruvananthapuram, maid chahiye Trivandrum, domestic help Trivandrum, cook maid Thiruvananthapuram, part time maid Trivandrum, cleaning maid Trivandrum, hire maid Trivandrum, Trivandrum maid service,
+rent a maid in Kozhikode, maid Kozhikode, domestic help Kozhikode, cook maid Kozhikode, Calicut maid service,
+rent a maid in Thrissur, maid Thrissur, domestic help Thrissur, cook maid Thrissur,
+rent a maid in Kollam, maid Kollam, domestic help Kollam,
+rent a maid in Kannur, maid Kannur, domestic help Kannur,
+Kerala maid service, Kerala domestic help, Kerala cook maid,
+rent a maid in Patna, maid chahiye Patna, searching for maid in Patna, domestic help Patna, cook maid Patna, part time maid Patna, full time maid Patna, cleaning maid Patna, babysitter Patna, hire maid Patna, verified maid Patna, ghar ki bai Patna, safai wali Patna,
+rent a maid in Gaya, maid Gaya, domestic help Gaya, cook maid Gaya,
+rent a maid in Muzaffarpur, maid Muzaffarpur, domestic help Muzaffarpur,
+rent a maid in Bhagalpur, maid Bhagalpur, domestic help Bhagalpur,
+Bihar maid service, Bihar domestic help, Bihar kaam wali bai, bai chahiye Bihar me,
+rent a maid in Ranchi, maid chahiye Ranchi, searching for maid in Ranchi, domestic help Ranchi, cook maid Ranchi, part time maid Ranchi, full time maid Ranchi, cleaning maid Ranchi, babysitter Ranchi, hire maid Ranchi, verified maid Ranchi, ghar ki bai Ranchi,
+rent a maid in Jamshedpur, maid Jamshedpur, domestic help Jamshedpur, cook maid Jamshedpur, cleaning maid Jamshedpur, hire maid Jamshedpur,
+rent a maid in Dhanbad, maid Dhanbad, domestic help Dhanbad, cook maid Dhanbad,
+rent a maid in Bokaro, maid Bokaro, domestic help Bokaro,
+Jharkhand maid service, Jharkhand domestic help,
+rent a maid in Bhubaneswar, maid chahiye Bhubaneswar, domestic help Bhubaneswar, cook maid Bhubaneswar, part time maid Bhubaneswar, cleaning maid Bhubaneswar, babysitter Bhubaneswar, hire maid Bhubaneswar, verified maid Bhubaneswar,
+rent a maid in Cuttack, maid Cuttack, domestic help Cuttack, cook maid Cuttack,
+rent a maid in Rourkela, maid Rourkela, domestic help Rourkela,
+rent a maid in Berhampur, maid Berhampur, domestic help Berhampur,
+Odisha maid service, Odisha domestic help,
+rent a maid in Raipur, maid chahiye Raipur, domestic help Raipur, cook maid Raipur, part time maid Raipur, cleaning maid Raipur, babysitter Raipur, hire maid Raipur, verified maid Raipur, ghar ki bai Raipur, safai wali Raipur,
+rent a maid in Bhilai, maid Bhilai, domestic help Bhilai, cook maid Bhilai, ghar ki bai Bhilai,
+rent a maid in Bilaspur, maid Bilaspur, domestic help Bilaspur, cook maid Bilaspur,
+Chhattisgarh maid service, CG maid service, Chhattisgarh domestic help,
+rent a maid in Guwahati, maid chahiye Guwahati, domestic help Guwahati, cook maid Guwahati, part time maid Guwahati, cleaning maid Guwahati, babysitter Guwahati, hire maid Guwahati, verified maid Guwahati,
+rent a maid in Silchar, maid Silchar, domestic help Silchar,
+rent a maid in Dibrugarh, maid Dibrugarh, domestic help Dibrugarh,
+Assam maid service, Northeast maid service, Assam domestic help,
+rent a maid in Chandigarh, maid chahiye Chandigarh, searching for maid in Chandigarh, domestic help Chandigarh, cook maid Chandigarh, part time maid Chandigarh, full time maid Chandigarh, live in maid Chandigarh, cleaning maid Chandigarh, babysitter Chandigarh, japa maid Chandigarh, hire maid Chandigarh, verified maid Chandigarh, ghar ki bai Chandigarh, safai wali Chandigarh,
+rent a maid in Amritsar, maid chahiye Amritsar, domestic help Amritsar, cook maid Amritsar, cleaning maid Amritsar, ghar ki bai Amritsar, hire maid Amritsar,
+rent a maid in Ludhiana, maid chahiye Ludhiana, domestic help Ludhiana, cook maid Ludhiana, cleaning maid Ludhiana, ghar ki bai Ludhiana, hire maid Ludhiana,
+rent a maid in Jalandhar, maid Jalandhar, domestic help Jalandhar, cook maid Jalandhar, ghar ki bai Jalandhar,
+rent a maid in Patiala, maid Patiala, domestic help Patiala, ghar ki bai Patiala,
+rent a maid in Bathinda, maid Bathinda, domestic help Bathinda,
+Punjab maid service, Punjab domestic help, Punjab kaam wali bai, bai chahiye Punjab me,
+rent a maid in Dehradun, maid chahiye Dehradun, searching for maid in Dehradun, domestic help Dehradun, cook maid Dehradun, part time maid Dehradun, full time maid Dehradun, cleaning maid Dehradun, babysitter Dehradun, hire maid Dehradun, verified maid Dehradun, ghar ki bai Dehradun,
+rent a maid in Haridwar, maid Haridwar, domestic help Haridwar, cook maid Haridwar, ghar ki bai Haridwar,
+rent a maid in Roorkee, maid Roorkee, domestic help Roorkee,
+rent a maid in Rishikesh, maid Rishikesh, domestic help Rishikesh,
+Uttarakhand maid service, Uttarakhand domestic help,
+rent a maid in Bhopal, maid chahiye Bhopal, searching for maid in Bhopal, domestic help Bhopal, cook maid Bhopal, part time maid Bhopal, full time maid Bhopal, live in maid Bhopal, cleaning maid Bhopal, babysitter Bhopal, japa maid Bhopal, hire maid Bhopal, verified maid Bhopal, ghar ki bai Bhopal, safai wali Bhopal,
+rent a maid in Indore, maid chahiye Indore, searching for maid in Indore, domestic help Indore, cook maid Indore, part time maid Indore, full time maid Indore, cleaning maid Indore, babysitter Indore, hire maid Indore, verified maid Indore, ghar ki bai Indore, safai wali Indore,
+rent a maid in Jabalpur, maid chahiye Jabalpur, domestic help Jabalpur, cook maid Jabalpur, cleaning maid Jabalpur, ghar ki bai Jabalpur, hire maid Jabalpur,
+rent a maid in Gwalior, maid Gwalior, domestic help Gwalior, cook maid Gwalior, ghar ki bai Gwalior, safai wali Gwalior,
+rent a maid in Ujjain, maid Ujjain, domestic help Ujjain, cook maid Ujjain, ghar ki bai Ujjain,
+Madhya Pradesh maid service, MP domestic help, MP kaam wali bai,
+rent a maid in Shimla, maid chahiye Shimla, domestic help Shimla, cook maid Shimla, cleaning maid Shimla, hire maid Shimla,
+rent a maid in Solan, maid Solan, domestic help Solan,
+Himachal Pradesh maid service, HP domestic help,
+rent a maid in Jammu, maid chahiye Jammu, domestic help Jammu, cook maid Jammu, cleaning maid Jammu, hire maid Jammu, ghar ki bai Jammu,
+rent a maid in Srinagar, maid chahiye Srinagar, domestic help Srinagar, cook maid Srinagar, hire maid Srinagar,
+J&K maid service, Kashmir domestic help,
+rent a maid in Goa, maid chahiye Goa, domestic help Goa, cook maid Goa, cleaning maid Goa, babysitter Goa, hire maid Goa, Panaji maid service, Margao maid service,
+rent a maid in Puducherry, maid Puducherry, domestic help Puducherry, cook maid Puducherry, Pondicherry maid service,
+rent a maid in Agartala, maid Agartala, domestic help Agartala,
+rent a maid in Imphal, maid Imphal, domestic help Imphal,
+rent a maid in Shillong, maid Shillong, domestic help Shillong,
+rent a maid in Gangtok, maid Gangtok, domestic help Gangtok,
+searching for maid in Delhi, maid dhundh raha hun Delhi, bai chahiye Delhi me, ghar ki kaam wali chahiye Delhi, rent a maid in Delhi NCR, maid for my home in Delhi,
+searching for maid in Mumbai, bai chahiye Mumbai me, ghar ki kaam wali chahiye Mumbai, rent a maid in Mumbai,
+searching for maid in Bangalore, bai chahiye Bangalore me, ghar ki kaam wali chahiye Bangalore, rent a maid in Bangalore,
+searching for maid in Pune, bai chahiye Pune me, ghar ki kaam wali chahiye Pune, rent a maid in Pune,
+searching for maid in Hyderabad, bai chahiye Hyderabad me, ghar ki kaam wali chahiye Hyderabad, rent a maid in Hyderabad,
+searching for maid in Chennai, rent a maid in Chennai, maid dhundh raha hun Chennai,
+searching for maid in Kota, bai chahiye Kota me, ghar ki kaam wali chahiye Kota Rajasthan, maid dhundh raha hun Kota, rent a maid in Kota,
+searching for maid in Jaipur, bai chahiye Jaipur me, rent a maid in Jaipur,
+bai chahiye near me, kaam wali chahiye near me, ghar ki sahayika chahiye, domestic help chahiye near me, cook chahiye near me, safai wali chahiye, nanny chahiye near me
+" />
+
+<!-- ══ CITY-WISE FAQ SCHEMA — HIGH SEARCH CITIES ══ -->
+
+
+<!-- ══ CITY-WISE SERVICE SCHEMA — ADDITIONAL CITIES ══ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Maid Service Available Cities - Rent a Maid India",
+  "description": "Verified maid and domestic help service available in all major cities of India",
+  "itemListElement": [
+    {"@type":"ListItem","position":1,"name":"Maid Service Lucknow","item":"https://www.rentamaidindia.com/maid-lucknow"},
+    {"@type":"ListItem","position":2,"name":"Maid Service Kanpur","item":"https://www.rentamaidindia.com/maid-kanpur"},
+    {"@type":"ListItem","position":3,"name":"Maid Service Agra","item":"https://www.rentamaidindia.com/maid-agra"},
+    {"@type":"ListItem","position":4,"name":"Maid Service Varanasi","item":"https://www.rentamaidindia.com/maid-varanasi"},
+    {"@type":"ListItem","position":5,"name":"Maid Service Surat","item":"https://www.rentamaidindia.com/maid-surat"},
+    {"@type":"ListItem","position":6,"name":"Maid Service Vadodara","item":"https://www.rentamaidindia.com/maid-vadodara"},
+    {"@type":"ListItem","position":7,"name":"Maid Service Rajkot","item":"https://www.rentamaidindia.com/maid-rajkot"},
+    {"@type":"ListItem","position":8,"name":"Maid Service Nagpur","item":"https://www.rentamaidindia.com/maid-nagpur"},
+    {"@type":"ListItem","position":9,"name":"Maid Service Nashik","item":"https://www.rentamaidindia.com/maid-nashik"},
+    {"@type":"ListItem","position":10,"name":"Maid Service Coimbatore","item":"https://www.rentamaidindia.com/maid-coimbatore"},
+    {"@type":"ListItem","position":11,"name":"Maid Service Madurai","item":"https://www.rentamaidindia.com/maid-madurai"},
+    {"@type":"ListItem","position":12,"name":"Maid Service Visakhapatnam","item":"https://www.rentamaidindia.com/maid-visakhapatnam"},
+    {"@type":"ListItem","position":13,"name":"Maid Service Vijayawada","item":"https://www.rentamaidindia.com/maid-vijayawada"},
+    {"@type":"ListItem","position":14,"name":"Maid Service Kolkata","item":"https://www.rentamaidindia.com/maid-kolkata"},
+    {"@type":"ListItem","position":15,"name":"Maid Service Bhopal","item":"https://www.rentamaidindia.com/maid-bhopal"},
+    {"@type":"ListItem","position":16,"name":"Maid Service Indore","item":"https://www.rentamaidindia.com/maid-indore"},
+    {"@type":"ListItem","position":17,"name":"Maid Service Chandigarh","item":"https://www.rentamaidindia.com/maid-chandigarh"},
+    {"@type":"ListItem","position":18,"name":"Maid Service Dehradun","item":"https://www.rentamaidindia.com/maid-dehradun"},
+    {"@type":"ListItem","position":19,"name":"Maid Service Patna","item":"https://www.rentamaidindia.com/maid-patna"},
+    {"@type":"ListItem","position":20,"name":"Maid Service Ranchi","item":"https://www.rentamaidindia.com/maid-ranchi"},
+    {"@type":"ListItem","position":21,"name":"Maid Service Bhubaneswar","item":"https://www.rentamaidindia.com/maid-bhubaneswar"},
+    {"@type":"ListItem","position":22,"name":"Maid Service Raipur","item":"https://www.rentamaidindia.com/maid-raipur"},
+    {"@type":"ListItem","position":23,"name":"Maid Service Guwahati","item":"https://www.rentamaidindia.com/maid-guwahati"},
+    {"@type":"ListItem","position":24,"name":"Maid Service Mysore","item":"https://www.rentamaidindia.com/maid-mysore"},
+    {"@type":"ListItem","position":25,"name":"Maid Service Amritsar","item":"https://www.rentamaidindia.com/maid-amritsar"},
+    {"@type":"ListItem","position":26,"name":"Maid Service Ludhiana","item":"https://www.rentamaidindia.com/maid-ludhiana"},
+    {"@type":"ListItem","position":27,"name":"Maid Service Goa","item":"https://www.rentamaidindia.com/maid-goa"},
+    {"@type":"ListItem","position":28,"name":"Maid Service Mangalore","item":"https://www.rentamaidindia.com/maid-mangalore"},
+    {"@type":"ListItem","position":29,"name":"Maid Service Hubli","item":"https://www.rentamaidindia.com/maid-hubli"},
+    {"@type":"ListItem","position":30,"name":"Maid Service Thiruvananthapuram","item":"https://www.rentamaidindia.com/maid-thiruvananthapuram"},
+    {"@type":"ListItem","position":31,"name":"Maid Service Jabalpur","item":"https://www.rentamaidindia.com/maid-jabalpur"},
+    {"@type":"ListItem","position":32,"name":"Maid Service Gwalior","item":"https://www.rentamaidindia.com/maid-gwalior"},
+    {"@type":"ListItem","position":33,"name":"Maid Service Shimla","item":"https://www.rentamaidindia.com/maid-shimla"},
+    {"@type":"ListItem","position":34,"name":"Maid Service Jammu","item":"https://www.rentamaidindia.com/maid-jammu"},
+    {"@type":"ListItem","position":35,"name":"Maid Service Gorakhpur","item":"https://www.rentamaidindia.com/maid-gorakhpur"},
+    {"@type":"ListItem","position":36,"name":"Maid Service Prayagraj","item":"https://www.rentamaidindia.com/maid-prayagraj"},
+    {"@type":"ListItem","position":37,"name":"Maid Service Meerut","item":"https://www.rentamaidindia.com/maid-meerut"}
+  ]
+}
+</script>
+
+<!-- ══ ADDITIONAL LOCAL BUSINESS SCHEMA — MULTI-CITY ══ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Rent a Maid India",
+  "url": "https://www.rentamaidindia.com/",
+  "logo": "https://www.rentamaidindia.com/og-image.jpg",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "telephone": "+91-9530112346",
+    "contactType": "customer service",
+    "areaServed": "IN",
+    "availableLanguage": ["Hindi", "English", "Tamil", "Telugu", "Kannada", "Malayalam", "Bengali", "Marathi", "Gujarati", "Punjabi"]
+  },
+  "sameAs": [],
+  "serviceArea": [
+    {"@type":"City","name":"Lucknow"},
+    {"@type":"City","name":"Kanpur"},
+    {"@type":"City","name":"Agra"},
+    {"@type":"City","name":"Varanasi"},
+    {"@type":"City","name":"Prayagraj"},
+    {"@type":"City","name":"Meerut"},
+    {"@type":"City","name":"Gorakhpur"},
+    {"@type":"City","name":"Bareilly"},
+    {"@type":"City","name":"Surat"},
+    {"@type":"City","name":"Vadodara"},
+    {"@type":"City","name":"Rajkot"},
+    {"@type":"City","name":"Gandhinagar"},
+    {"@type":"City","name":"Bhavnagar"},
+    {"@type":"City","name":"Nagpur"},
+    {"@type":"City","name":"Nashik"},
+    {"@type":"City","name":"Aurangabad"},
+    {"@type":"City","name":"Solapur"},
+    {"@type":"City","name":"Kolhapur"},
+    {"@type":"City","name":"Coimbatore"},
+    {"@type":"City","name":"Madurai"},
+    {"@type":"City","name":"Tiruchirappalli"},
+    {"@type":"City","name":"Tiruppur"},
+    {"@type":"City","name":"Salem"},
+    {"@type":"City","name":"Visakhapatnam"},
+    {"@type":"City","name":"Vijayawada"},
+    {"@type":"City","name":"Warangal"},
+    {"@type":"City","name":"Guntur"},
+    {"@type":"City","name":"Tirupati"},
+    {"@type":"City","name":"Kolkata"},
+    {"@type":"City","name":"Siliguri"},
+    {"@type":"City","name":"Durgapur"},
+    {"@type":"City","name":"Howrah"},
+    {"@type":"City","name":"Mysore"},
+    {"@type":"City","name":"Hubli"},
+    {"@type":"City","name":"Mangalore"},
+    {"@type":"City","name":"Thiruvananthapuram"},
+    {"@type":"City","name":"Kozhikode"},
+    {"@type":"City","name":"Thrissur"},
+    {"@type":"City","name":"Bhopal"},
+    {"@type":"City","name":"Indore"},
+    {"@type":"City","name":"Jabalpur"},
+    {"@type":"City","name":"Gwalior"},
+    {"@type":"City","name":"Ujjain"},
+    {"@type":"City","name":"Chandigarh"},
+    {"@type":"City","name":"Amritsar"},
+    {"@type":"City","name":"Ludhiana"},
+    {"@type":"City","name":"Jalandhar"},
+    {"@type":"City","name":"Patiala"},
+    {"@type":"City","name":"Dehradun"},
+    {"@type":"City","name":"Haridwar"},
+    {"@type":"City","name":"Rishikesh"},
+    {"@type":"City","name":"Patna"},
+    {"@type":"City","name":"Ranchi"},
+    {"@type":"City","name":"Jamshedpur"},
+    {"@type":"City","name":"Dhanbad"},
+    {"@type":"City","name":"Bhubaneswar"},
+    {"@type":"City","name":"Cuttack"},
+    {"@type":"City","name":"Raipur"},
+    {"@type":"City","name":"Bhilai"},
+    {"@type":"City","name":"Guwahati"},
+    {"@type":"City","name":"Shimla"},
+    {"@type":"City","name":"Jammu"},
+    {"@type":"City","name":"Srinagar"},
+    {"@type":"City","name":"Goa"},
+    {"@type":"City","name":"Puducherry"},
+    {"@type":"City","name":"Rourkela"},
+    {"@type":"City","name":"Bilaspur"}
+  ]
+}
+</script>
+
+<!-- ══ END NEW CITY-WISE SEO BLOCK ══ -->
 
 </head>
 <body>
@@ -10989,8 +11769,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
 
       <!-- Payment Gateway Placeholder -->
-      <div id="paymentGatewayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;">
-        <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:420px;position:relative;">
+      <div id="paymentGatewayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:420px;position:relative;margin:auto;">
           <button onclick="closePaymentGatewayModal()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);">&times;</button>
           <div style="text-align:center;margin-bottom:20px;">
             <div style="font-size:48px;margin-bottom:8px;">🔐</div>
@@ -11324,62 +12104,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </script>
 
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "How do I hire a kitchen maid or cook near me in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "To hire a kitchen maid or cook near you in India, visit Rent a Maid India, select 'Cook' or 'Kitchen Helper' as your service, enter your city and browse verified cook profiles. Our platform has 10,000+ registered cooks across India available for part-time or full-time cooking duties starting ₹5,000/month."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is the cost of a cleaning maid in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "A part-time cleaning maid (safai wali bai) in India costs ₹3,000 to ₹6,000 per month for 2-4 hours daily. A full-time cleaning maid costs ₹7,000 to ₹12,000 per month. Rates vary by city — slightly higher in Delhi and Mumbai."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How to find a babysitter or nanny near me in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Search for 'babysitter' or 'nanny' in your city on Rent a Maid India. View verified nanny profiles with ratings and book a child care helper for your baby. Babysitter costs ₹8,000 to ₹15,000 per month. Newborn care maid and japa maid are also available."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "Is maid service available in Kota, Rajasthan?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Yes! Rent a Maid India provides verified maid service in Kota, Jaipur, Jodhpur, Udaipur, Ajmer, Bikaner and all cities in Rajasthan. You can find part-time maids, cook maids, cleaning maids and babysitters in Kota and nearby areas."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "How to hire an elderly care attendant at home in India?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "To hire an elderly care attendant or patient care helper at home, search for 'Elder Care' on Rent a Maid India. Our trained attendants help senior citizens with medication, mobility, doctor visits and companionship. Elder care helper costs ₹10,000 to ₹20,000 per month in India."
-      }
-    },
-    {
-      "@type": "Question",
-      "name": "What is a japa maid and how to hire one?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "A japa maid is a specialized helper for new mothers and newborn babies, providing post-delivery care, baby massage, feeding assistance and mother recovery support. Hire a trusted japa maid on Rent a Maid India starting ₹10,000 per month. Available in Delhi, Mumbai, Bangalore, Hyderabad, Kota and 500+ cities across India."
-      }
-    }
-  ]
-}
-</script>
+
 
 <!-- ══ SPEAKABLE SCHEMA (Voice Search / Google Assistant Optimization) ══ -->
 <script type="application/ld+json">
@@ -12460,8 +13185,11 @@ async function _syncAdminNotificationsFromFirebase() {
 }
 function startAdminNotificationSync() {
   if (_adminNotifSyncTimer) clearInterval(_adminNotifSyncTimer);
-  _syncAdminNotificationsFromFirebase(); // Turant ek baar
-  _adminNotifSyncTimer = setInterval(_syncAdminNotificationsFromFirebase, 10000); // Har 10 sec
+  // ── FIX: Timer polling hataya — timer ki wajah se duplicate/stale notifications aati thin ──
+  // Ab sirf ek baar sync karo on load, baaki real-time updates Firebase onSnapshot se aate hain
+  _syncAdminNotificationsFromFirebase(); // Sirf ek baar on load
+  // Timer nahi lagana — onSnapshot listener already real-time updates deta hai
+  _adminNotifSyncTimer = null;
 }
 
 function sendSmsDemo(toPhone, message) {
@@ -12919,6 +13647,7 @@ function updateAreaDropdown(stateId, districtId, areaId, isFilter) {
 .ss-search-box i { color:var(--muted,#9ca3af); font-size:13px; }
 .ss-search-input { flex:1; border:none; outline:none; font-size:13px; background:transparent; color:var(--text,#111); }
 .ss-list { max-height:220px; overflow-y:auto; }
+.ss-opt-all { font-weight:600; color:var(--primary,#f97316); border-bottom:1px solid var(--border,#e5e7eb); margin-bottom:2px; }
 .ss-opt { padding:9px 12px; font-size:14px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .ss-opt:hover, .ss-opt.ss-focused { background:rgba(249,115,22,.08); color:#f97316; }
 .ss-opt.ss-selected { font-weight:700; color:#f97316; }
@@ -12972,10 +13701,15 @@ function updateAreaDropdown(stateId, districtId, areaId, isFilter) {
 
     const opts = Array.from(sel.options);
     opts.forEach(opt => {
-      if (!opt.value) return; // skip placeholder
       const item = document.createElement('div');
       item.className = 'ss-opt';
-      if (opt.value === sel.value) item.classList.add('ss-selected');
+      if (!opt.value) {
+        // "All / placeholder" option — top pe dikhao, alag style
+        item.classList.add('ss-opt-all');
+        if (!sel.value) item.classList.add('ss-selected');
+      } else {
+        if (opt.value === sel.value) item.classList.add('ss-selected');
+      }
       item.textContent = opt.textContent;
       item.dataset.value = opt.value;
       item.addEventListener('mousedown', function(e) {
@@ -13002,6 +13736,11 @@ function updateAreaDropdown(stateId, districtId, areaId, isFilter) {
       const q = inp.value.toLowerCase().trim();
       let visible = 0;
       list.querySelectorAll('.ss-opt').forEach(item => {
+        // "All" option: search ho raha ho to hide karo, clear ho to hamesha dikhao
+        if (item.classList.contains('ss-opt-all')) {
+          item.classList.toggle('ss-hidden', !!q);
+          return;
+        }
         const match = !q || item.textContent.toLowerCase().includes(q);
         item.classList.toggle('ss-hidden', !match);
         if (match) visible++;
@@ -18268,6 +19007,9 @@ async function rcSubmitLogin() {
               <option value="">All Services</option>
               <option>Full-Time Maid</option><option>Part-Time Maid</option><option>Cook / Bai</option>
               <option>Babysitter / Nanny</option><option>Elder Care</option><option>Patient Care</option>
+              <option>Cleaning</option><option>Laundry</option><option>Driver</option>
+              <option>Nurse / Medical</option><option>Newborn Care</option><option>Home Tutor</option>
+              <option>Maid Request</option>
             </select>
           </div>
           <button class="filter-btn filter-reset" onclick="resetBookFilter()">Reset</button>
@@ -20049,6 +20791,26 @@ function initApp() {
   }
   // Firebase se latest maids sync karo (admin panel mein turant dikhe)
   _syncAdminMaidsFromFirebase();
+  // ── One-time cleanup: Firebase pe pade purane duplicates saaf karo ──
+  _cleanDuplicateDeletedMaids();
+}
+
+function _cleanDuplicateDeletedMaids() {
+  try {
+    var allDel = [];
+    try { allDel = JSON.parse(localStorage.getItem('ram_deleted_maids') || '[]'); } catch(e) {}
+    if (!Array.isArray(allDel) || allDel.length === 0) return;
+    var seen = new Set();
+    var deduped = [];
+    allDel.forEach(function(m) {
+      var key = m.phone || m.id || m.name;
+      if (!key || !seen.has(key)) { if (key) seen.add(key); deduped.push(m); }
+    });
+    if (deduped.length === allDel.length) return; // koi duplicate nahi
+    localStorage.setItem('ram_deleted_maids', JSON.stringify(deduped));
+    var _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn) _fbFn('adminData', 'ram_deleted_maids', deduped).catch(function(){});
+  } catch(e) {}
 }
 
 async function _syncAdminMaidsFromFirebase(retryCount) {
@@ -20068,9 +20830,9 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
       try {
         var regObj = await window._fbGet("adminData", "ram_registered_maids");
         if (regObj && typeof regObj === "object" && !Array.isArray(regObj)) {
-          fbMaids = Object.values(regObj).filter(function(m){ return m && m.name && !m._adminDeleted; });
+          fbMaids = Object.values(regObj).filter(function(m){ return m && m.name && m._adminDeleted !== true; });
         } else if (Array.isArray(regObj) && regObj.length > 0) {
-          fbMaids = regObj.filter(function(m){ return !m._adminDeleted; });
+          fbMaids = regObj.filter(function(m){ return m._adminDeleted !== true; });
         }
       } catch(e2) {}
     }
@@ -20091,7 +20853,8 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
           // Merge maidDocs into fbMaids (add missing ones), skip _adminDeleted docs
           fbMaids = fbMaids && Array.isArray(fbMaids) ? [...fbMaids] : [];
           maidDocs.forEach(function(md) {
-            if (md._adminDeleted) return; // Admin ne delete kiya hai — skip karo
+            // Sirf tab skip karo jab _adminDeleted EXPLICITLY true ho (false ya undefined = not deleted)
+            if (md._adminDeleted === true) return;
             if (!fbMaids.find(function(fm){ return fm.phone === md.phone; })) {
               fbMaids.push(md);
             } else {
@@ -20108,11 +20871,11 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
       // Safe defaults har maid ke liye
       fbMaids = fbMaids.map(function(m, idx) {
         return Object.assign({
-          id: idx + 1, name: "", phone: "", city: "", state: "",
+          id: 0, name: "", phone: "", city: "", state: "",
           services: [], rating: 0, reviewCount: 0, experience: 0,
           available: true, verified: false
         }, m, {
-          id: m.id || (idx + 1),
+          id: m.id || (m.phone ? (function(p){ var h=0; for(var i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return Math.abs(h)||idx+1; })(String(m.phone)) : idx+1),
           services: Array.isArray(m.services) ? m.services : [],
           name: String(m.name || ""),
           phone: String(m.phone || ""),
@@ -20132,7 +20895,15 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
       var _curDeleted = getDeletedMaids ? getDeletedMaids() : [];
       var _delIds = new Set(_curDeleted.map(function(dm){ return dm.id; }).filter(Boolean));
       var _delPhones = new Set(_curDeleted.map(function(dm){ return dm.phone; }).filter(Boolean));
-      fbMaids = fbMaids.filter(function(m){ return !_delIds.has(m.id) && !_delPhones.has(m.phone); });
+      // Filter: jo deleted list mein hai (aur _adminDeleted: false se restore nahi hui) unhe hatao
+      fbMaids = fbMaids.filter(function(m){
+        // Agar maid ka _adminDeleted explicitly false hai, toh restored hai — rakhho
+        if (m._adminDeleted === false) return true;
+        // Agar deleted list mein hai (aur woh explicitly restore nahi hui) toh hatao
+        return !_delIds.has(m.id) && !_delPhones.has(m.phone);
+      });
+      // _adminDeleted flag ab cleaned data mein nahi chahiye
+      fbMaids = fbMaids.map(function(m){ var c = Object.assign({}, m); delete c._adminDeleted; delete c.deletedAt; return c; });
 
       // localStorage ke saath merge (local mein naye maids bhi rakhho, deleted filter ke saath)
       var localMaids = getMaids();
@@ -20142,6 +20913,9 @@ async function _syncAdminMaidsFromFirebase(retryCount) {
       });
 
       // Firebase pe bhi updated merged list save karo (future syncs ke liye)
+      // ── FIX: Write se pehle flag set karo taaki onSnapshot loop na ho ──
+      window._adminRefreshInProgress = true;
+      setTimeout(function(){ window._adminRefreshInProgress = false; }, 6000);
       try { if (typeof window._fbSet === "function") window._fbSet("adminData", "ram_admin_maids", merged).catch(function(){}); } catch(eS) {}
 
       localStorage.setItem("ram_admin_maids", JSON.stringify(merged));
@@ -20592,8 +21366,11 @@ function deleteMaidById(id) {
     const all = getMaids();
     const maid = all.find(m => m.id !== id ? false : true);
     if (maid) {
-      const deleted = getDeletedMaids();
-      deleted.unshift({ ...maid, deletedAt: new Date().toISOString() });
+      // Duplicate prevent: pehle se same phone wali entry hatao
+      const existingDeleted = getDeletedMaids();
+      const filteredExisting = existingDeleted.filter(function(d){ return d.phone !== maid.phone; });
+      filteredExisting.unshift({ ...maid, deletedAt: new Date().toISOString(), _adminDeleted: true });
+      const deleted = filteredExisting;
       setDeletedMaids(deleted);
       // Firebase mein bhi deleted list save karo
       const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
@@ -23299,7 +24076,10 @@ function openEditMaidModal(id) {
   document.getElementById('mm-name').value = m.name;
   document.getElementById('mm-phone').value = m.phone||'';
   document.getElementById('mm-city').value = m.city;
-  document.getElementById('mm-state').value = m.state;
+  // State set karo aur searchable dropdown display bhi update karo
+  const stateEl = document.getElementById('mm-state');
+  stateEl.value = m.state;
+  stateEl.dispatchEvent(new Event('change', {bubbles:true}));
   document.getElementById('mm-exp').value = m.experience;
   document.getElementById('mm-rating').value = m.rating;
   document.getElementById('mm-reviewCount').value = m.reviewCount || 0;
@@ -23311,6 +24091,11 @@ function openEditMaidModal(id) {
   document.getElementById('mm-password').value = ''; // security: password kabhi prefill nahi hota, sirf naya set karne ke liye khaali
   _resetAdminMaidPhotoUI(m.photo||'');
   openModal('maidModal');
+  // Modal open hone ke baad ek baar aur sync karo (searchable wrapper ready hone ke liye)
+  setTimeout(function() {
+    var el = document.getElementById('mm-state');
+    if (el) { el.value = m.state; el.dispatchEvent(new Event('change', {bubbles:true})); }
+  }, 50);
 }
 async function saveMaid() {
   const name = document.getElementById('mm-name').value.trim();
@@ -23449,8 +24234,11 @@ function deleteMaid(id) {
     const all = getMaids();
     const maid = all.find(m => m.id === id);
     if (maid) {
-      const deleted = getDeletedMaids();
-      deleted.unshift({ ...maid, deletedAt: new Date().toISOString() });
+      // Duplicate prevent: pehle se same phone wali entry hatao
+      const existingDel = getDeletedMaids();
+      const filteredDel = existingDel.filter(function(d){ return d.phone !== maid.phone; });
+      filteredDel.unshift({ ...maid, deletedAt: new Date().toISOString(), _adminDeleted: true });
+      const deleted = filteredDel;
       setDeletedMaids(deleted);
       // Firebase mein bhi deleted list save karo (adminData collection mein)
       const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
@@ -23733,7 +24521,24 @@ window.adminManuallyActivatePlan = async function(paymentLogId) {
 // DELETED MAIDS
 // ══════════════════════════════════════
 function renderDeletedMaids() {
-  let list = getDeletedMaids();
+  // ── Deduplicate by phone (same phone wali multiple entries hataao) ──
+  let allDeleted = getDeletedMaids();
+  const seenPhones = new Set();
+  const dedupedDeleted = [];
+  allDeleted.forEach(function(m) {
+    const key = m.phone || m.id || m.name;
+    if (!key || !seenPhones.has(key)) {
+      if (key) seenPhones.add(key);
+      dedupedDeleted.push(m);
+    }
+  });
+  if (dedupedDeleted.length !== allDeleted.length) {
+    setDeletedMaids(dedupedDeleted);
+    const _fbFn2 = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
+    if (_fbFn2) _fbFn2('adminData', 'ram_deleted_maids', dedupedDeleted).catch(function(){});
+  }
+
+  let list = dedupedDeleted;
   const q = (document.getElementById('deletedMaidSearch')?.value || '').toLowerCase();
   if (q) list = list.filter(m => (m.name||'').toLowerCase().includes(q) || (m.phone||'').includes(q));
   const el = document.getElementById('deletedMaidCount');
@@ -23744,7 +24549,9 @@ function renderDeletedMaids() {
     tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-slash"></i><h3>Koi deleted maid nahi hai</h3></div></td></tr>';
     return;
   }
-  tbody.innerHTML = list.map((m, idx) => {
+  tbody.innerHTML = list.map((m) => {
+    // Use phone as unique key for restore/delete actions (idx se galat maid select hoti thi)
+    const safePhone = escHtml(m.phone || '');
     const agencyLabel = m.agencyName ? `<span class="badge badge-blue" style="font-size:11px;">${escHtml(m.agencyName)}</span>` : '—';
     const deletedDate = m.deletedAt ? m.deletedAt.split('T')[0] : '—';
     const services = (m.services || []).map(s => `<span class="badge badge-gray" style="font-size:10px;">${escHtml(s)}</span>`).join(' ');
@@ -23757,71 +24564,133 @@ function renderDeletedMaids() {
       <td style="color:#ef4444;font-size:13px;">${deletedDate}</td>
       <td>
         <div class="btn-group">
-          <button class="action-btn action-btn-outline action-btn-sm" onclick="restoreDeletedMaid(${idx})" title="Restore"><i class="fas fa-rotate-left"></i> Restore</button>
-          <button class="action-btn action-btn-danger action-btn-sm" onclick="permanentDeleteMaid(${idx})" title="Delete Forever"><i class="fas fa-trash"></i></button>
+          <button class="action-btn action-btn-outline action-btn-sm" onclick="restoreDeletedMaidByPhone('${safePhone}')" title="Restore"><i class="fas fa-rotate-left"></i> Restore</button>
+          <button class="action-btn action-btn-danger action-btn-sm" onclick="permanentDeleteMaidByPhone('${safePhone}')" title="Delete Forever"><i class="fas fa-trash"></i></button>
         </div>
       </td>
     </tr>`;
   }).join('');
 }
 
-function restoreDeletedMaid(idx) {
+function restoreDeletedMaidByPhone(phone) {
   confirmAction('Restore Maid', 'Is maid ko wapas Maids list mein restore karna chahte ho?', () => {
     const deleted = getDeletedMaids();
-    const maid = deleted[idx];
-    if (!maid) return;
-    // deletedAt aur _adminDeleted flag remove karo
-    const { deletedAt, _adminDeleted, ...maidData } = maid;
+    const maidIdx = deleted.findIndex(function(m){ return m.phone === phone; });
+    if (maidIdx === -1) { showToast('Maid nahi mili, refresh karo'); return; }
+    const maid = deleted[maidIdx];
+    // deletedAt aur _adminDeleted flag remove karo — pure data lao
+    const maidData = Object.assign({}, maid);
+    delete maidData.deletedAt;
+    delete maidData._adminDeleted;
+    // Phone se stable unique ID ensure karo — ID collision se bachao
+    if (maidData.phone) {
+      var _p = String(maidData.phone); var _h = 0;
+      for (var _i = 0; _i < _p.length; _i++) { _h = ((_h << 5) - _h) + _p.charCodeAt(_i); _h |= 0; }
+      maidData.id = Math.abs(_h) || maidData.id;
+    }
+
     // Maids list mein wapas add karo
     const maids = getMaids();
-    // Duplicate check — same id already hai toh skip
-    if (!maids.find(m => m.id === maidData.id)) {
+    // Duplicate check — sirf phone se match karo (ID clash se bachne ke liye)
+    const existingIdx = maids.findIndex(function(m){ return m.phone === maidData.phone; });
+    if (existingIdx === -1) {
       maids.unshift(maidData);
-      setMaids(maids);
+    } else {
+      maids[existingIdx] = Object.assign({}, maids[existingIdx], maidData);
     }
-    // Deleted list se hata do
-    deleted.splice(idx, 1);
-    setDeletedMaids(deleted);
-    // Firebase mein bhi _adminDeleted flag hatao — taaki sync mein wapas aaye
+    setMaids(maids);
+
+    // Deleted list se hata do — sari entries is phone ki hata do
+    const newDeleted = deleted.filter(function(m){ return m.phone !== phone; });
+    setDeletedMaids(newDeleted);
+
     const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
     if (_fbFn) {
-      _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
-      if (maidData.phone) {
-        _fbFn('adminData', 'maid_' + maidData.phone, { ...maidData, _adminDeleted: false }).catch(function(){});
-      }
+      // Firebase deleted list update karo
+      _fbFn('adminData', 'ram_deleted_maids', newDeleted).catch(function(){});
+      // Firebase admin maids list update karo
       _fbFn('adminData', 'ram_admin_maids', maids).catch(function(){});
+      // Individual maid doc mein _adminDeleted EXPLICITLY false karo + deletedAt hataao
+      if (maidData.phone) {
+        const cleanMaidDoc = Object.assign({}, maidData, { _adminDeleted: false });
+        delete cleanMaidDoc.deletedAt;
+        _fbFn('adminData', 'maid_' + maidData.phone, cleanMaidDoc).catch(function(){});
+      }
     }
+
     // ram_registered_maids mein bhi _adminDeleted flag hatao
+    // Agar entry missing hai (isliye login "account nahi mila" keh raha tha) toh add karo
     try {
       var _regM = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
-      if (maidData.phone && _regM[maidData.phone]) {
-        delete _regM[maidData.phone]._adminDeleted;
-        delete _regM[maidData.phone].deletedAt;
+      if (maidData.phone) {
+        if (!_regM[maidData.phone]) {
+          // Entry nahi thi — maid_PHONE Firebase doc se try karo, warna maidData se banao
+          var _baseRec = { name: maidData.name || '', phone: maidData.phone, verified: !!maidData.verified };
+          if (maidData.passwordHash) _baseRec.passwordHash = maidData.passwordHash;
+          _regM[maidData.phone] = _baseRec;
+          // Firebase se fresh record merge karo agar available ho
+          if (typeof window._fbGet === 'function') {
+            window._fbGet('adminData', 'maid_' + maidData.phone).then(function(fbDoc) {
+              if (fbDoc && fbDoc.name) {
+                var _fresh = JSON.parse(localStorage.getItem('ram_registered_maids') || '{}');
+                var _merged = Object.assign({}, _baseRec, fbDoc);
+                delete _merged._adminDeleted; delete _merged.deletedAt;
+                _fresh[maidData.phone] = _merged;
+                localStorage.setItem('ram_registered_maids', JSON.stringify(_fresh));
+                if (_fbFn) _fbFn('adminData', 'ram_registered_maids', _fresh).catch(function(){});
+              }
+            }).catch(function(){});
+          }
+        } else {
+          delete _regM[maidData.phone]._adminDeleted;
+          delete _regM[maidData.phone].deletedAt;
+        }
         localStorage.setItem('ram_registered_maids', JSON.stringify(_regM));
         if (_fbFn) _fbFn('adminData', 'ram_registered_maids', _regM).catch(function(){});
       }
     } catch(_re) {}
+
     renderDeletedMaids();
+    renderMaids();
     updateNavBadges();
     showToast('✅ Maid restore ho gayi!');
   });
 }
 
-function permanentDeleteMaid(idx) {
+// Legacy index-based wrapper (backward compat — ab use nahi hota)
+function restoreDeletedMaid(idx) {
+  const deleted = getDeletedMaids();
+  const maid = deleted[idx];
+  if (maid && maid.phone) restoreDeletedMaidByPhone(maid.phone);
+}
+
+function permanentDeleteMaidByPhone(phone) {
   confirmAction('Permanently Delete', 'Ye maid hamesha ke liye delete ho jayegi. Confirm karo?', () => {
     const deleted = getDeletedMaids();
-    const maid = deleted[idx];
-    deleted.splice(idx, 1);
-    setDeletedMaids(deleted);
-    // Firebase mein bhi deleted list update karo
+    const maid = deleted.find(function(m){ return m.phone === phone; });
+    // Sari entries is phone ki hata do
+    const newDeleted = deleted.filter(function(m){ return m.phone !== phone; });
+    setDeletedMaids(newDeleted);
+
     const _fbFn = typeof window._fbSetWhenReady === 'function' ? window._fbSetWhenReady : (typeof window._fbSet === 'function' ? window._fbSet : null);
-    if (_fbFn) _fbFn('adminData', 'ram_deleted_maids', deleted).catch(function(){});
-    // Note: maid_{phone} doc mein _adminDeleted: true already hai — woh wahan rehne do
-    // taaki sync mein yeh permanently deleted maid wapas na aaye
+    if (_fbFn) {
+      _fbFn('adminData', 'ram_deleted_maids', newDeleted).catch(function(){});
+      // Individual doc mein _adminDeleted: true rakho — sync pe wapas na aaye
+      if (maid && maid.phone) {
+        _fbFn('adminData', 'maid_' + maid.phone, Object.assign({}, maid, { _adminDeleted: true })).catch(function(){});
+      }
+    }
     renderDeletedMaids();
     updateNavBadges();
     showToast('Maid permanently deleted');
   });
+}
+
+// Legacy index-based wrapper
+function permanentDeleteMaid(idx) {
+  const deleted = getDeletedMaids();
+  const maid = deleted[idx];
+  if (maid && maid.phone) permanentDeleteMaidByPhone(maid.phone);
 }
 
 // ══════════════════════════════════════
@@ -25949,15 +26818,40 @@ function applySavedTheme(){
 // ══════════════════════════════════════
 function getNotifications(){
   const list=[];
-  getBookings().filter(b=>b.status==='Pending').forEach(b=>list.push({icon:'fa-calendar-check',bg:'var(--yellow-bg)',color:'var(--yellow)',text:`Booking <strong>${b.id}</strong> from ${b.custName} — ${b.service}`,page:'bookings',time:b.date||'Now'}));
-  getMaids().filter(m=>!m.verified).forEach(m=>list.push({icon:'fa-user-tie',bg:'var(--blue-bg)',color:'var(--blue)',text:`<strong>${m.name}</strong> (${m.city||'N/A'}) awaiting verification`,page:'maids',time:'Pending'}));
-  getReviews().filter(r=>r.status==='Pending').forEach(r=>list.push({icon:'fa-star',bg:'var(--purple-bg)',color:'var(--purple)',text:`Review from <strong>${r.name}</strong> needs approval`,page:'reviews',time:'Pending'}));
-  getSubscribers().filter(s=>s.status==='Expired').forEach(s=>list.push({icon:'fa-crown',bg:'var(--red-bg)',color:'var(--red)',text:`<strong>${s.maidName}</strong>'s subscription expired`,page:'subscriptions',time:'Expired'}));
+  // ── Seen tracking: jo notifications admin ne dekh li hain, unhe skip karo ──
+  // Key format: type_id (e.g. booking_5, maid_9876543210, review_3, sub_9876543210, cust_9876543210)
+  var _seenNotifs = {};
+  try { _seenNotifs = JSON.parse(localStorage.getItem('ram_seen_notifs') || '{}'); } catch(_sne) {}
+
+  getBookings().filter(b=>b.status==='Pending').forEach(b=>{
+    var _nKey = 'booking_' + b.id;
+    if (_seenNotifs[_nKey]) return; // Admin ne pehle hi dekh liya
+    list.push({icon:'fa-calendar-check',bg:'var(--yellow-bg)',color:'var(--yellow)',text:`Booking <strong>${b.id}</strong> from ${b.custName} — ${b.service}`,page:'bookings',time:b.date||'Now',_seenKey:_nKey});
+  });
+  getMaids().filter(m=>!m.verified).forEach(m=>{
+    var _nKey = 'maid_' + (m.phone || m.id);
+    if (_seenNotifs[_nKey]) return; // Admin ne pehle hi dekh liya
+    list.push({icon:'fa-user-tie',bg:'var(--blue-bg)',color:'var(--blue)',text:`<strong>${m.name}</strong> (${m.city||'N/A'}) awaiting verification`,page:'maids',time:'Pending',_seenKey:_nKey});
+  });
+  getReviews().filter(r=>r.status==='Pending').forEach(r=>{
+    var _nKey = 'review_' + r.id;
+    if (_seenNotifs[_nKey]) return;
+    list.push({icon:'fa-star',bg:'var(--purple-bg)',color:'var(--purple)',text:`Review from <strong>${r.name}</strong> needs approval`,page:'reviews',time:'Pending',_seenKey:_nKey});
+  });
+  getSubscribers().filter(s=>s.status==='Expired').forEach(s=>{
+    var _nKey = 'sub_' + (s.maidPhone || s.maidName);
+    if (_seenNotifs[_nKey]) return;
+    list.push({icon:'fa-crown',bg:'var(--red-bg)',color:'var(--red)',text:`<strong>${s.maidName}</strong>'s subscription expired`,page:'subscriptions',time:'Expired',_seenKey:_nKey});
+  });
   // New: check new customer registrations in last 24h
   const custs = getCustomers();
   const now = Date.now();
   Object.values(custs).filter(c => c.createdAt && (now - new Date(c.createdAt).getTime()) < 86400000)
-    .forEach(c => list.push({icon:'fa-user-plus',bg:'var(--green-bg)',color:'var(--green)',text:`New customer <strong>${c.name}</strong> registered`,page:'customers',time:'New'}));
+    .forEach(c => {
+      var _nKey = 'cust_' + (c.phone || c.email || c.name);
+      if (_seenNotifs[_nKey]) return;
+      list.push({icon:'fa-user-plus',bg:'var(--green-bg)',color:'var(--green)',text:`New customer <strong>${c.name}</strong> registered`,page:'customers',time:'New',_seenKey:_nKey});
+    });
   // ── Help & Chat notifications: Firebase-synced, cross-device pe bhi dikhti hain ──
   try {
     const helpNotifs = readNotifications().filter(n => n.audience === 'admin' && !n.read);
@@ -25974,6 +26868,28 @@ function getNotifications(){
     });
   } catch(e) {}
   return list;
+}
+function _markNotifSeen(seenKey) {
+  if (!seenKey) return;
+  try {
+    var _seenNotifs = JSON.parse(localStorage.getItem('ram_seen_notifs') || '{}');
+    _seenNotifs[seenKey] = 1;
+    localStorage.setItem('ram_seen_notifs', JSON.stringify(_seenNotifs));
+  } catch(e) {}
+}
+function _markAllNotifsSeen() {
+  try {
+    var notifs = getNotifications();
+    var _seenNotifs = JSON.parse(localStorage.getItem('ram_seen_notifs') || '{}');
+    notifs.forEach(function(n){ if (n._seenKey) _seenNotifs[n._seenKey] = 1; });
+    localStorage.setItem('ram_seen_notifs', JSON.stringify(_seenNotifs));
+    // Help notifications bhi read mark karo
+    var list = readNotifications();
+    var changed = false;
+    list.forEach(function(n){ if (n.audience === 'admin' && !n.read) { n.read = true; changed = true; } });
+    if (changed) writeNotifications(list);
+    renderNotifications();
+  } catch(e) {}
 }
 function renderNotifications(){
   const notifs=getNotifications();
@@ -25993,25 +26909,25 @@ function renderNotifications(){
 
   const list=document.getElementById('notifList');
   if(!list) return;
-  list.innerHTML = notifs.length ? notifs.map(n=>`
-    <div class="notif-item" onclick="gotoPage('${n.page}');toggleNotifPanel();">
-      <i class="fas ${n.icon}" style="background:${n.bg};color:${n.color};"></i>
-      <div class="notif-item-text">${n.text}${n.time?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${n.time}</div>`:''}</div>
-    </div>
-  `).join('') : '<div class="notif-empty"><i class="fas fa-bell-slash" style="font-size:22px;margin-bottom:8px;display:block;"></i>No new notifications</div>';
+  if (notifs.length) {
+    list.innerHTML = notifs.map(n=>`
+      <div class="notif-item" style="position:relative;padding-right:32px;" onclick="_markNotifSeen('${n._seenKey||''}');gotoPage('${n.page}');toggleNotifPanel();">
+        <i class="fas ${n.icon}" style="background:${n.bg};color:${n.color};"></i>
+        <div class="notif-item-text">${n.text}${n.time?`<div style="font-size:11px;color:var(--text3);margin-top:2px;">${n.time}</div>`:''}</div>
+        <span onclick="event.stopPropagation();_markNotifSeen('${n._seenKey||''}');renderNotifications();" title="Dismiss" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--text3);font-size:13px;line-height:1;">✕</span>
+      </div>
+    `).join('') + `<div style="padding:8px 16px;border-top:1px solid var(--border);"><button onclick="_markAllNotifsSeen()" style="width:100%;background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:4px;">✓ Mark all as seen</button></div>`;
+  } else {
+    list.innerHTML = '<div class="notif-empty"><i class="fas fa-bell-slash" style="font-size:22px;margin-bottom:8px;display:block;"></i>No new notifications</div>';
+  }
 }
 function toggleNotifPanel(){
   const p=document.getElementById('notifPanel');
   renderNotifications();
   p.classList.toggle('open');
-  // Help notifications ko read mark karo jab panel open ho
-  if (p.classList.contains('open')) {
-    try {
-      const list = readNotifications();
-      let changed = false;
-      list.forEach(n => { if (n.audience === 'admin' && !n.read) { n.read = true; changed = true; } });
-      if (changed) writeNotifications(list);
-    } catch(e) {}
+  // Panel band hone pe sab seen mark karo (admin ne dekh liya)
+  if (!p.classList.contains('open')) {
+    _markAllNotifsSeen();
   }
 }
 
@@ -26159,6 +27075,12 @@ async function refreshAllData(){
   }
   const topbarRefreshBtns = document.querySelectorAll('.topbar-icon-btn[onclick="refreshAllData()"] i');
   topbarRefreshBtns.forEach(i => { i.style.transition = 'transform 0.8s ease'; i.style.transform = 'rotate(360deg)'; setTimeout(()=>{ i.style.transform=''; },900); });
+
+  // ── FIX: Refresh ke dauraan onSnapshot ko overwrite karne se rokko ──
+  // onSnapshot automatic trigger hota hai jab Firebase mein write hota hai —
+  // isliye refresh ke baad kuch seconds ke liye flag set karo
+  window._adminRefreshInProgress = true;
+  setTimeout(function(){ window._adminRefreshInProgress = false; }, 8000);
 
   showToast('🔄 Firebase se data sync ho raha hai...');
 
@@ -27280,6 +28202,13 @@ function setupRealtimeSync() {
 
   onSnapshot(doc(_db, 'adminData', 'ram_admin_maids'), snap => {
     if (snap.exists()) {
+      // ── FIX: Agar manual refresh chal raha hai to onSnapshot ko localStorage overwrite nahi karne denge ──
+      // Manual refreshAllData apna khud ka filtered data save karta hai — onSnapshot use overwrite na kare
+      if (window._adminRefreshInProgress) {
+        // Sirf re-render karo, overwrite mat karo
+        if (typeof window.syncAndRenderMaids === 'function') { try { window.syncAndRenderMaids(); } catch(_sr) {} }
+        return;
+      }
       // Capture this maid's previous live-state BEFORE overwriting, so we can
       // detect "just went live" and notify her in real time.
       let prevLive = null, myPhone = null;
@@ -27299,12 +28228,25 @@ function setupRealtimeSync() {
       // existing localStorage data wipe mat karo — warna sari maids gayab ho jaati hain.
       var _fbMaidsSnap = snap.data().data;
       if (Array.isArray(_fbMaidsSnap) && _fbMaidsSnap.length > 0) {
-        localStorage.setItem('ram_admin_maids', JSON.stringify(_fbMaidsSnap));
-        // ── LIVE FIX: Firebase se aaya fresh data seedha MAIDS array mein daalo ──
+        // ── FIX: Deleted maids ko onSnapshot mein bhi filter karo ──
+        // Warna refreshAllData ke baad bhi onSnapshot unfiltered data se overwrite kar deta tha
+        var _snapDeletedMaids = [];
+        try { _snapDeletedMaids = JSON.parse(localStorage.getItem('ram_deleted_maids') || '[]'); } catch(_sde) {}
+        var _snapDelIds = new Set(_snapDeletedMaids.map(function(dm){ return dm.id; }).filter(Boolean));
+        var _snapDelPhones = new Set(_snapDeletedMaids.map(function(dm){ return dm.phone; }).filter(Boolean));
+        var _filteredSnapMaids = _fbMaidsSnap.filter(function(m){ return !_snapDelIds.has(m.id) && !_snapDelPhones.has(m.phone); });
+        // Sirf tab save karo jab filtered result empty na ho, ya local bhi empty ho
+        var _localSnapMaids = [];
+        try { _localSnapMaids = JSON.parse(localStorage.getItem('ram_admin_maids') || '[]'); } catch(_lse) {}
+        if (_filteredSnapMaids.length > 0 || _localSnapMaids.length === 0) {
+          localStorage.setItem('ram_admin_maids', JSON.stringify(_filteredSnapMaids));
+        }
+        // ── LIVE FIX: Firebase se aaya fresh (filtered) data seedha MAIDS array mein daalo ──
         // localStorage ke through jaane ka wait nahi — rating/reviewCount turant dikhe
+        var _finalSnapMaids = _filteredSnapMaids.length > 0 ? _filteredSnapMaids : _localSnapMaids;
         if (typeof window.MAIDS !== 'undefined') {
           window.MAIDS.length = 0;
-          _fbMaidsSnap.forEach(function(m){ window.MAIDS.push(m); });
+          _finalSnapMaids.forEach(function(m){ window.MAIDS.push(m); });
         }
       } else if (Array.isArray(_fbMaidsSnap) && _fbMaidsSnap.length === 0) {
         // Genuinely empty array — sirf tab overwrite karo jab local bhi empty ho
